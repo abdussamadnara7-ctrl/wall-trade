@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wall-Trade — The PSX, finally decoded for you</title>
+<meta name="description" content="AI-powered stock analysis for Pakistan's retail investors. Pick a stock, get the verdict — no spreadsheets, no jargon, no guesswork.">
+<meta name="theme-color" content="#09090f">
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:  #09090f;
+  --bg1: #0f0f18;
+  --bg2: #141420;
+  --rim: rgba(255,255,255,0.07);
+  --t1:  #eeedf8;
+  --t2:  rgba(238,237,248,0.5);
+  --t3:  rgba(238,237,248,0.25);
+  --ga:  #5fffc0; --gb: #22d98a;
+  --pa:  #c4b5fd; --pb: #8b5cf6;
+  --ra:  #ff8080; --rb: #ef4444;
+}
+html { background: var(--bg); scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--t1);
+  font-family: 'Geist', system-ui, sans-serif;
+  font-size: 15px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar { width: 0; }
+
+/* ── NAV ── */
+nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 24px; max-width: 1100px; margin: 0 auto;
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(9,9,15,0.85); backdrop-filter: blur(20px);
+}
+.nav-logo {
+  font-size: 20px; font-weight: 700; letter-spacing: -0.04em;
+  background: linear-gradient(130deg, var(--ga), var(--pa));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.nav-cta {
+  background: linear-gradient(130deg, var(--gb), var(--pb));
+  color: #fff; font-family: inherit; font-size: 13px; font-weight: 700;
+  padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer;
+  text-decoration: none; display: inline-block;
+  box-shadow: 0 2px 16px rgba(139,92,246,0.3);
+  transition: opacity 0.15s;
+}
+.nav-cta:hover { opacity: 0.85; }
+
+/* ── HERO ── */
+.hero {
+  max-width: 680px; margin: 0 auto;
+  padding: 80px 24px 60px;
+  text-align: center;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--gb); background: rgba(34,217,138,0.1);
+  border: 1px solid rgba(34,217,138,0.2);
+  padding: 5px 14px; border-radius: 50px; margin-bottom: 28px;
+}
+.hero-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gb); animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.hero-h1 {
+  font-size: clamp(36px, 8vw, 58px);
+  font-weight: 700; letter-spacing: -0.04em; line-height: 1.1;
+  margin-bottom: 20px;
+}
+.hero-h1 span {
+  background: linear-gradient(130deg, var(--ga) 0%, var(--pa) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.hero-sub {
+  font-size: 18px; color: var(--t2); line-height: 1.7;
+  max-width: 520px; margin: 0 auto 36px; font-weight: 300;
+}
+.hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-primary {
+  background: linear-gradient(130deg, var(--gb), var(--pb));
+  color: #fff; font-family: inherit; font-size: 15px; font-weight: 700;
+  padding: 14px 32px; border-radius: 13px; border: none; cursor: pointer;
+  text-decoration: none; display: inline-block;
+  box-shadow: 0 4px 24px rgba(139,92,246,0.35);
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-ghost {
+  color: var(--t2); font-family: inherit; font-size: 15px; font-weight: 500;
+  padding: 14px 28px; border-radius: 13px; border: 1px solid var(--rim);
+  cursor: pointer; text-decoration: none; display: inline-block;
+  background: var(--bg1);
+  transition: background 0.15s, color 0.15s;
+}
+.btn-ghost:hover { background: var(--bg2); color: var(--t1); }
+
+/* ── MOCK APP PREVIEW ── */
+.preview-wrap {
+  max-width: 420px; margin: 64px auto 0;
+  background: var(--bg1); border: 1px solid var(--rim);
+  border-radius: 28px; overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 40px 80px rgba(0,0,0,0.6);
+}
+.preview-bar {
+  background: var(--bg); border-bottom: 1px solid var(--rim);
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.preview-logo { font-size: 16px; font-weight: 700; letter-spacing: -0.04em; background: linear-gradient(130deg,var(--ga),var(--pa)); -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+.preview-pill { background: var(--bg2); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; padding: 5px 11px 5px 8px; display:flex;align-items:center;gap:6px; }
+.preview-pill-av { width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,rgba(95,255,192,0.2),rgba(139,92,246,0.2));display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:700;color:var(--pa); }
+.preview-pill-lbl { font-size:11px;font-weight:600;color:var(--t1); }
+.preview-body { padding: 22px 20px; }
+.preview-company { font-size:10px;color:var(--t3);letter-spacing:0.02em;margin-bottom:10px; }
+.preview-ticker-row { display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px; }
+.preview-ticker { font-size:40px;font-weight:700;letter-spacing:-0.05em;line-height:1; background:linear-gradient(130deg,#fff 30%,rgba(238,237,248,0.5));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+.preview-price-block { text-align:right; }
+.preview-cur { font-size:10px;color:var(--t3);margin-bottom:2px; }
+.preview-price { font-size:28px;font-weight:600;letter-spacing:-0.04em; background:linear-gradient(130deg,#fff 30%,rgba(238,237,248,0.5));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+.preview-chg { font-size:11px;font-weight:600;color:var(--gb);margin-top:4px; }
+.preview-card { background:var(--bg2);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px; }
+.preview-eyebrow { font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--t3);margin-bottom:12px; }
+.preview-verdict-row { display:flex;align-items:center;justify-content:space-between;margin-bottom:14px; }
+.preview-verdict { font-size:40px;font-weight:700;letter-spacing:-0.03em;line-height:1; background:linear-gradient(130deg,var(--ga),var(--gb));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+.preview-insights { display:flex;flex-direction:column;gap:7px; }
+.preview-insight { background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px; }
+.preview-insight-icon { width:26px;height:26px;border-radius:7px;background:rgba(34,217,138,0.1);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0; }
+.preview-insight-val { font-size:13px;font-weight:700;letter-spacing:-0.02em;background:linear-gradient(130deg,var(--ga),var(--gb));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:1px; }
+.preview-insight-lbl { font-size:10px;color:var(--t3); }
+
+/* ── FEATURES ── */
+.features {
+  max-width: 1000px; margin: 100px auto 0;
+  padding: 0 24px;
+}
+.section-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--pb); margin-bottom: 14px;
+}
+.section-h2 {
+  font-size: clamp(28px, 5vw, 40px); font-weight: 700;
+  letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 12px;
+}
+.section-sub { font-size: 16px; color: var(--t2); font-weight: 300; max-width: 520px; }
+.feat-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px; margin-top: 48px;
+}
+.feat-card {
+  background: var(--bg1); border: 1px solid var(--rim);
+  border-radius: 18px; padding: 24px;
+  transition: border-color 0.2s;
+}
+.feat-card:hover { border-color: rgba(139,92,246,0.3); }
+.feat-icon {
+  width: 44px; height: 44px; border-radius: 12px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.feat-title { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 8px; }
+.feat-desc { font-size: 13px; color: var(--t2); line-height: 1.7; }
+
+/* ── HOW IT WORKS ── */
+.how { max-width: 700px; margin: 100px auto 0; padding: 0 24px; text-align: center; }
+.steps { display: flex; flex-direction: column; gap: 0; margin-top: 48px; text-align: left; }
+.step { display: flex; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--rim); }
+.step:last-child { border-bottom: none; }
+.step-num {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(95,255,192,0.15), rgba(139,92,246,0.2));
+  border: 1px solid rgba(139,92,246,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  background-clip: unset;
+  color: var(--pa);
+}
+.step-title { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 5px; }
+.step-desc { font-size: 13px; color: var(--t2); line-height: 1.7; }
+
+/* ── DISCLAIMER SECTION ── */
+.legal {
+  max-width: 700px; margin: 80px auto 0; padding: 0 24px;
+  background: var(--bg1); border: 1px solid var(--rim);
+  border-radius: 18px; padding: 24px 28px;
+}
+.legal-title { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t3); margin-bottom: 10px; }
+.legal-text { font-size: 12px; color: var(--t3); line-height: 1.8; }
+
+/* ── CTA BAND ── */
+.cta-band {
+  max-width: 600px; margin: 80px auto 0; padding: 0 24px;
+  text-align: center;
+}
+.cta-band h2 {
+  font-size: clamp(28px, 5vw, 40px); font-weight: 700;
+  letter-spacing: -0.03em; margin-bottom: 14px;
+}
+.cta-band p { font-size: 16px; color: var(--t2); margin-bottom: 32px; font-weight: 300; }
+
+/* ── FOOTER ── */
+footer {
+  max-width: 1100px; margin: 80px auto 0;
+  padding: 28px 24px;
+  border-top: 1px solid var(--rim);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+.footer-logo { font-size: 16px; font-weight: 700; letter-spacing: -0.04em; background: linear-gradient(130deg,var(--ga),var(--pa)); -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+.footer-text { font-size: 11px; color: var(--t3); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Wall-Trade</div>
+  <a href="/app.html" class="nav-cta">Open App →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge"><div class="hero-badge-dot"></div>Pakistan Stock Exchange · AI-Powered</div>
+  <h1 class="hero-h1">The PSX, finally <span>decoded for you.</span></h1>
+  <p class="hero-sub">Stop drowning in charts and financial reports. Wall-Trade cuts through the noise and tells you exactly what matters about any stock — in seconds.</p>
+  <div class="hero-btns">
+    <a href="/app.html" class="btn-primary">Analyse a stock →</a>
+    <a href="#how" class="btn-ghost">How it works</a>
+  </div>
+
+  <!-- MOCK PREVIEW -->
+  <div class="preview-wrap">
+    <div class="preview-bar">
+      <div class="preview-logo">Wall-Trade</div>
+      <div class="preview-pill">
+        <div class="preview-pill-av">MAR</div>
+        <span class="preview-pill-lbl">MARI</span>
+        <span style="font-size:8px;color:rgba(238,237,248,0.25);margin-left:2px;">▾</span>
+      </div>
+    </div>
+    <div class="preview-body">
+      <div class="preview-company">Mari Petroleum Co. Ltd · Exploration & Production</div>
+      <div class="preview-ticker-row">
+        <div class="preview-ticker">MARI</div>
+        <div class="preview-price-block">
+          <div class="preview-cur">PKR</div>
+          <div class="preview-price">2,310</div>
+          <div class="preview-chg">+2.1% today</div>
+        </div>
+      </div>
+      <div class="preview-card">
+        <div class="preview-eyebrow">Wall-Trade suggestion</div>
+        <div class="preview-verdict-row">
+          <div class="preview-verdict">Positive</div>
+          <!-- mini gauge SVG -->
+          <svg width="100" height="58" viewBox="0 0 100 58" fill="none">
+            <defs>
+              <filter id="pg"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            </defs>
+            <script></script>
+          </svg>
+        </div>
+        <div class="preview-insights">
+          <div class="preview-insight">
+            <div class="preview-insight-icon">🏆</div>
+            <div>
+              <div class="preview-insight-val">31.4% ROE</div>
+              <div class="preview-insight-lbl">Best return on equity in E&P sector</div>
+            </div>
+          </div>
+          <div class="preview-insight">
+            <div class="preview-insight-icon" style="background:rgba(139,92,246,0.1);">🛡️</div>
+            <div>
+              <div class="preview-insight-val" style="background:linear-gradient(130deg,#c4b5fd,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">0.04 D/E</div>
+              <div class="preview-insight-lbl">Essentially debt-free balance sheet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-tag">Why Wall-Trade</div>
+  <h2 class="section-h2" style="background:linear-gradient(130deg,#eeedf8 30%,#8b5cf6 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Built for Pakistan's retail investor</h2>
+  <p class="section-sub">Not for fund managers. Not for analysts. For anyone who wants to understand what they're investing in.</p>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(34,217,138,0.1);">🧠</div>
+      <div class="feat-title">AI verdicts, not raw data</div>
+      <div class="feat-desc">Our AI reads the financial ratios and the current Pakistan macro environment — IMF programme, interest rates, circular debt — and tells you what it means for that stock.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(139,92,246,0.1);">📖</div>
+      <div class="feat-title">Zero jargon</div>
+      <div class="feat-desc">P/E ratio, ROE, current ratio — we explain every number in plain Urdu-friendly English. No finance degree required, ever.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(255,128,128,0.1);">🇵🇰</div>
+      <div class="feat-title">Pakistan-specific context</div>
+      <div class="feat-desc">Generic stock apps don't understand circular debt, PSDP cuts, or SBP policy rates. We do. Every analysis is grounded in what's actually happening in Pakistan's economy.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(251,191,36,0.1);">💬</div>
+      <div class="feat-title">Ask anything</div>
+      <div class="feat-desc">"Why is PSO risky?" "What does a 0.9x current ratio mean?" "Should I be worried about the SBP rate?" Ask in plain English and get a plain English answer.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(96,165,250,0.1);">📱</div>
+      <div class="feat-title">Installs like an app</div>
+      <div class="feat-desc">Add to your home screen on iPhone or Android. Opens fullscreen, works offline for cached stocks, no App Store needed.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:rgba(34,217,138,0.08);">🔒</div>
+      <div class="feat-title">Your data stays private</div>
+      <div class="feat-desc">No account required. No tracking. No selling your data. Wall-Trade is a tool, not a surveillance product.</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="section-tag">How it works</div>
+  <h2 class="section-h2" style="background:linear-gradient(130deg,#c4b5fd 0%,#eeedf8 60%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Three steps to understanding any stock</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div>
+        <div class="step-title">Pick a stock</div>
+        <div class="step-desc">Tap the ticker at the top and choose from our growing list of PSX stocks across Energy, Banking, Cement, Fertiliser and more.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div>
+        <div class="step-title">Read the verdict</div>
+        <div class="step-desc">Our AI analyses the company's financial health, Pakistan's current macro environment, and key risks — then gives you a plain-English summary in seconds.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div>
+        <div class="step-title">Ask your own questions</div>
+        <div class="step-desc">Not sure about something? Type any question about the stock and get a direct, jargon-free answer. Like having a finance friend on speed dial.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LEGAL -->
+<div class="legal" style="max-width:800px;margin:80px auto 0;">
+  <div class="legal-title">Important — please read</div>
+  <div class="legal-text">Wall-Trade provides financial information and AI-generated analysis for educational and informational purposes only. It does not constitute investment advice and is not registered with the Securities and Exchange Commission of Pakistan (SECP). Signals labelled Positive, Neutral, or Caution are algorithmic indicators based on publicly available financial data — they are not instructions to buy or sell any security. Past performance is not indicative of future results. Always consult a licensed financial advisor before making any investment decisions. Wall-Trade accepts no liability for investment decisions made based on information provided by this platform.</div>
+</div>
+
+<!-- CTA BAND -->
+<div class="cta-band">
+  <h2 style="background:linear-gradient(130deg,#5fffc0 0%,#eeedf8 60%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Your edge in Pakistan's market.</h2>
+  <p>Real analysis. No finance degree needed. Works on any device.</p>
+  <a href="/app.html" class="btn-primary" style="font-size:16px;padding:16px 40px;">Open Wall-Trade →</a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Wall-Trade</div>
+  <div class="footer-text">For informational purposes only · Not SECP registered · Not investment advice</div>
+</footer>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
