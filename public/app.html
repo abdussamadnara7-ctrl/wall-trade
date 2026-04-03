@@ -4,12 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Wall-Trade — Pakistan Stock Analysis</title>
-<meta name="theme-color" content="#09090f">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Wall-Trade">
-<meta name="description" content="AI-powered Pakistan stock analysis in plain English">
-<link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -380,7 +374,7 @@ body {
 <body>
 
 <header class="hdr">
-  <a href="/" style="text-decoration:none;"><div class="logo">Wall-Trade</div></a>
+  <div class="logo">Wall-Trade</div>
   <div class="hdr-pill" id="hdr-pill" onclick="openSheet()">
     <div class="pill-av" id="pill-av">OGD</div>
     <span class="pill-lbl" id="pill-lbl">OGDC</span>
@@ -398,7 +392,6 @@ body {
 <div id="root"></div>
 
 <script>
-const CFG={k:''}; // replace with your sk-ant- key
 const DATA = {
   OGDC:{name:"Oil & Gas Development Co.",sector:"Exploration & Production",price:"188",chg:"+1.8%",dir:"up",vtype:"Neutral",vscore:6.0,
     insights:[
@@ -720,11 +713,6 @@ function select(ticker){
   if(!verdicts[ticker]) loadVerdict(ticker);
 }
 select('OGDC');
-</script>
-<script>
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').catch(()=>{});
-}
 </script>
 </body>
 </html>
