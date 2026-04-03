@@ -25,24 +25,36 @@ function fetchJSON(url, timeoutMs = 6000) {
 async function getPSXPrice(ticker) {
   try {
     const data = await fetchJSON(`https://psxterminal.com/api/ticks/REG/${ticker}`);
-    if (!data) return null;
+    if (!data) { console.log(`${ticker}: no data from PSX Terminal`); return null; }
 
-    // PSX Terminal response format
-    const price  = data.currentPrice || data.ldcp || data.close || data.last;
-    const prev   = data.ldcp || data.previousClose || data.open;
-    const change = price && prev ? ((price - prev) / prev * 100) : (data.change || 0);
+    const keys = Array.isArray(data) ? (data[0] ? Object.keys(data[0]) : ['empty array']) : Object.keys(d);
+    console.log(`${ticker} keys:`, keys.join(','));
+    console.log(`${ticker} sample:`, JSON.stringify(Array.isArray(data) ? data[0] : data).slice(0, 300));
 
-    if (!price) return null;
+    // Handle both array and object responses
+    const d = Array.isArray(data) ? data[0] : data;
+    if (!d) return null;
+
+    // Try all possible field names PSX Terminal might use
+    const price = d.currentPrice ?? d.ldcp ?? d.close ?? d.last ?? d.ltp ?? d.price ?? d.closePrice;
+    const prev  = d.previousClose ?? d.ldcp ?? d.prevClose ?? d.open ?? d.basePrice;
+    const high  = d.high ?? d.dayHigh ?? d.highPrice;
+    const low   = d.low  ?? d.dayLow  ?? d.lowPrice;
+    const vol   = d.volume ?? d.totalVolume ?? d.tradedVolume;
+
+    if (!price) { console.log(`${ticker}: no price field. Keys:`, Object.keys(d).join(',')); return null; }
+
+    const change = price && prev ? ((Number(price) - Number(prev)) / Number(prev) * 100) : (d.change ?? d.pctChange ?? 0);
 
     return {
       price:  Number(price).toFixed(2),
       change: Number(change).toFixed(2),
-      high:   data.high ? Number(data.high).toFixed(2) : null,
-      low:    data.low  ? Number(data.low).toFixed(2)  : null,
-      volume: data.volume || data.totalVolume || null,
-      dir:    change >= 0 ? 'up' : 'dn'
+      high:   high ? Number(high).toFixed(2) : null,
+      low:    low  ? Number(low).toFixed(2)  : null,
+      volume: vol  ? Number(vol).toLocaleString() : null,
+      dir:    Number(change) >= 0 ? 'up' : 'dn'
     };
-  } catch(e) { return null; }
+  } catch(e) { console.error(`${ticker} error:`, e.message); return null; }
 }
 
 // ── KSE-100 INDEX (Yahoo Finance — already working) ────────────
