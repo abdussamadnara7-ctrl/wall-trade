@@ -765,8 +765,15 @@ function buildSheet() {
   Object.entries(DATA).forEach(([ticker,s])=>{
     const d=document.createElement('div');
     d.className='si'+(ticker===cur?' on':'');
-    d.onclick=()=>{closeSheet();select(ticker);};
-    d.innerHTML=`<div class="si-l"><div class="si-av">${ticker.slice(0,3)}</div><div><div class="si-tick">${ticker}</div><div class="si-name">${s.name.split(' ').slice(0,3).join(' ')}</div></div></div><div><div class="si-pr">PKR ${s.price}</div><div class="si-ch ${s.dir==='up'?'up':'dn'}">${s.chg}</div></div>`;
+    const handler = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeSheet();
+      setTimeout(() => select(ticker), 50);
+    };
+    d.addEventListener('click', handler);
+    d.addEventListener('touchend', handler, {passive: false});
+    d.innerHTML=`<div class="si-l"><div class="si-av">${ticker.slice(0,3)}</div><div><div class="si-tick">${ticker}</div><div class="si-name">${s.name.split(' ').slice(0,3).join(' ')}</div></div></div><div><div class="si-pr">PKR ${livePrices[ticker] ? livePrices[ticker].price : s.price}</div><div class="si-ch ${s.dir==='up'?'up':'dn'}">${s.chg}</div></div>`;
     list.appendChild(d);
   });
 }
