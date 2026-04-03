@@ -1,13 +1,16 @@
 const https = require('https');
 
-// ── HELPERS ────────────────────────────────────────────────────
-function fetchJSON(url, headers = {}) {
+function fetchJSON(url, timeoutMs = 6000) {
   return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve(null), 5000);
-    const opts = {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WallTrade/1.0)', ...headers }
-    };
-    https.get(url, opts, res => {
+    const timer = setTimeout(() => resolve(null), timeoutMs);
+    https.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json',
+        'Origin': 'https://psxterminal.com',
+        'Referer': 'https://psxterminal.com/'
+      }
+    }, res => {
       let body = '';
       res.on('data', c => body += c);
       res.on('end', () => {
@@ -18,149 +21,67 @@ function fetchJSON(url, headers = {}) {
   });
 }
 
-// ── PSX PRICES VIA YAHOO FINANCE (free, no key) ───────────────
-async function getPSXPrices(tickers) {
-  const results = {};
-  
-  // Batch fetch all tickers at once using Yahoo Finance v7 quote endpoint
-  const symbols = tickers.map(t => `${t}.KA`).join(',');
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}&fields=symbol,regularMarketPrice,regularMarketChangePercent,regularMarketChange,regularMarketDayHigh,regularMarketDayLow,regularMarketVolume,regularMarketPreviousClose,fiftyTwoWeekHigh,fiftyTwoWeekLow,marketCap,trailingPE,forwardPE,bookValue,priceToBook,trailingAnnualDividendYield`;
-  
+// ── PSX TERMINAL API (free, no key needed) ─────────────────────
+async function getPSXPrice(ticker) {
   try {
-    const data = await fetchJSON(url);
-    const quotes = data?.quoteResponse?.result || [];
-    
-    quotes.forEach(q => {
-      const ticker = q.symbol?.replace('.KA', '');
-      if (!ticker) return;
-      
-      const change = q.regularMarketChangePercent;
-      results[ticker] = {
-        price:     q.regularMarketPrice?.toFixed(2),
-        change:    change?.toFixed(2),
-        changeAmt: q.regularMarketChange?.toFixed(2),
-        high:      q.regularMarketDayHigh?.toFixed(2),
-        low:       q.regularMarketDayLow?.toFixed(2),
-        prevClose: q.regularMarketPreviousClose?.toFixed(2),
-        volume:    q.regularMarketVolume,
-        week52High:q.fiftyTwoWeekHigh?.toFixed(2),
-        week52Low: q.fiftyTwoWeekLow?.toFixed(2),
-        marketCap: q.marketCap,
-        pe:        q.trailingPE?.toFixed(2),
-        fwdPe:     q.forwardPE?.toFixed(2),
-        pb:        q.priceToBook?.toFixed(2),
-        divYield:  q.trailingAnnualDividendYield ? (q.trailingAnnualDividendYield * 100).toFixed(2) : null,
-        dir:       change >= 0 ? 'up' : 'dn',
-        currency:  'PKR'
-      };
-    });
-  } catch(e) {
-    console.error('Yahoo PSX error:', e.message);
-  }
-  
-  return results;
+    const data = await fetchJSON(`https://psxterminal.com/api/ticks/REG/${ticker}`);
+    if (!data) return null;
+
+    // PSX Terminal response format
+    const price  = data.currentPrice || data.ldcp || data.close || data.last;
+    const prev   = data.ldcp || data.previousClose || data.open;
+    const change = price && prev ? ((price - prev) / prev * 100) : (data.change || 0);
+
+    if (!price) return null;
+
+    return {
+      price:  Number(price).toFixed(2),
+      change: Number(change).toFixed(2),
+      high:   data.high ? Number(data.high).toFixed(2) : null,
+      low:    data.low  ? Number(data.low).toFixed(2)  : null,
+      volume: data.volume || data.totalVolume || null,
+      dir:    change >= 0 ? 'up' : 'dn'
+    };
+  } catch(e) { return null; }
 }
 
-// ── KSE-100 INDEX (Yahoo Finance) ─────────────────────────────
+// ── KSE-100 INDEX (Yahoo Finance — already working) ────────────
 async function getKSE100() {
   try {
     const data = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/%5EKSE?interval=1d&range=2d');
     if (!data?.chart?.result?.[0]) return null;
-    const r = data.chart.result[0];
-    const meta = r.meta;
-    const closes = r.indicators?.quote?.[0]?.close?.filter(v => v != null);
+    const closes = data.chart.result[0].indicators?.quote?.[0]?.close?.filter(v => v != null);
     if (!closes || closes.length < 2) return null;
     const current = closes[closes.length - 1];
     const prev    = closes[closes.length - 2];
     const change  = ((current - prev) / prev * 100);
     return {
       price:  Math.round(current).toLocaleString(),
-      raw:    Math.round(current),
       change: change.toFixed(2),
-      prev:   Math.round(prev).toLocaleString(),
       dir:    change >= 0 ? 'up' : 'dn'
     };
   } catch(e) { return null; }
 }
 
-// ── GLOBAL MACRO VIA FMP (US market data) ────────────────────
-async function getGlobalMacro() {
-  const key = process.env.FMP_API_KEY;
-  const macro = {};
-
-  if (!key) return macro;
-
-  try {
-    // S&P 500 — global risk sentiment
-    const sp500 = await fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=SPY&apikey=${key}`);
-    if (sp500?.[0]) {
-      macro.sp500 = {
-        price:  sp500[0].price?.toFixed(2),
-        change: sp500[0].changesPercentage?.toFixed(2)
-      };
-    }
-  } catch(e) {}
-
-  try {
-    // Gold ETF (GLD) — safe haven sentiment
-    const gold = await fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=GLD&apikey=${key}`);
-    if (gold?.[0]) {
-      macro.goldETF = {
-        price:  gold[0].price?.toFixed(2),
-        change: gold[0].changesPercentage?.toFixed(2)
-      };
-    }
-  } catch(e) {}
-
-  try {
-    // US Oil ETF (USO) — oil price proxy via FMP
-    const uso = await fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=USO&apikey=${key}`);
-    if (uso?.[0]) {
-      macro.oilETF = {
-        price:  uso[0].price?.toFixed(2),
-        change: uso[0].changesPercentage?.toFixed(2)
-      };
-    }
-  } catch(e) {}
-
-  try {
-    // USD Index (UUP ETF) — dollar strength
-    const uup = await fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=UUP&apikey=${key}`);
-    if (uup?.[0]) {
-      macro.usdETF = {
-        price:  uup[0].price?.toFixed(2),
-        change: uup[0].changesPercentage?.toFixed(2)
-      };
-    }
-  } catch(e) {}
-
-  return macro;
-}
-
-// ── BRENT CRUDE + GOLD (Yahoo Finance backup) ─────────────────
+// ── COMMODITIES (Yahoo Finance — already working) ──────────────
 async function getCommodities() {
-  const results = {};
-
   try {
-    const data = await fetchJSON('https://query1.finance.yahoo.com/v7/finance/quote?symbols=BZ%3DF,GC%3DF,DX-Y.NYB&fields=symbol,regularMarketPrice,regularMarketChangePercent');
+    const data = await fetchJSON('https://query1.finance.yahoo.com/v7/finance/quote?symbols=BZ%3DF,GC%3DF&fields=symbol,regularMarketPrice,regularMarketChangePercent');
     const quotes = data?.quoteResponse?.result || [];
+    const result = {};
     quotes.forEach(q => {
-      if (q.symbol === 'BZ=F') results.brent = { price: q.regularMarketPrice?.toFixed(2), change: q.regularMarketChangePercent?.toFixed(2) };
-      if (q.symbol === 'GC=F') results.gold  = { price: Math.round(q.regularMarketPrice)?.toString(), change: q.regularMarketChangePercent?.toFixed(2) };
-      if (q.symbol === 'DX-Y.NYB') results.dxy = { price: q.regularMarketPrice?.toFixed(2), change: q.regularMarketChangePercent?.toFixed(2) };
+      if (q.symbol === 'BZ=F') result.brent = { price: q.regularMarketPrice?.toFixed(2), change: q.regularMarketChangePercent?.toFixed(2) };
+      if (q.symbol === 'GC=F') result.gold  = { price: Math.round(q.regularMarketPrice)?.toString(), change: q.regularMarketChangePercent?.toFixed(2) };
     });
-  } catch(e) {}
-
-  return results;
+    return result;
+  } catch(e) { return {}; }
 }
 
-// ── PKR/USD ───────────────────────────────────────────────────
+// ── PKR/USD ────────────────────────────────────────────────────
 async function getPKRUSD() {
   try {
     const data = await fetchJSON('https://open.er-api.com/v6/latest/USD');
-    if (data?.rates?.PKR) {
-      return { rate: data.rates.PKR.toFixed(2) };
-    }
+    if (data?.rates?.PKR) return { rate: data.rates.PKR.toFixed(2) };
   } catch(e) {}
   return null;
 }
@@ -180,46 +101,44 @@ exports.handler = async (event) => {
   let payload = {};
   try { payload = JSON.parse(event.body || '{}'); } catch(e) {}
 
-  // Default PSX tickers if none provided
   const ALLOWED = [
-    // Energy & Oil
     'OGDC','PPL','PSO','MARI','APL','HASCOL',
-    // Banking
     'HBL','MCB','UBL','NBP','ABL','BAFL','BAHL','MEBL','FABL',
-    // Fertiliser
     'ENGRO','FFBL','FFC','EFERT',
-    // Cement
     'LUCK','MLCF','CHCC','DGKC','PIOC','FCCL',
-    // Tech & Other
     'TRG','SYS','NETSOL','PAKT','PNSC','SNGP','SSGC'
   ];
 
-  const requestedTickers = (payload.tickers || ALLOWED).filter(t => ALLOWED.includes(t));
+  const tickers = (payload.tickers || ALLOWED).filter(t => ALLOWED.includes(t));
 
-  // Fetch everything in parallel
-  const [psxPrices, kse100, commodities, pkrusd, globalMacro] = await Promise.all([
-    getPSXPrices(requestedTickers),
+  // Fetch all PSX prices in parallel + macro data
+  const [priceResults, kse100, commodities, pkrusd] = await Promise.all([
+    Promise.all(tickers.map(async ticker => {
+      const data = await getPSXPrice(ticker);
+      return { ticker, data };
+    })),
     getKSE100(),
     getCommodities(),
-    getPKRUSD(),
-    getGlobalMacro()
+    getPKRUSD()
   ]);
+
+  const prices = {};
+  priceResults.forEach(({ ticker, data }) => {
+    if (data) prices[ticker] = data;
+  });
+
+  console.log(`Prices fetched: ${Object.keys(prices).length}/${tickers.length} tickers`);
 
   return {
     statusCode: 200,
     headers,
     body: JSON.stringify({
-      prices:      psxPrices,
-      kse100:      kse100,
-      commodities: commodities,
-      pkrusd:      pkrusd,
-      globalMacro: globalMacro,
-      timestamp:   new Date().toISOString(),
-      sources: {
-        psx:    'Yahoo Finance (.KA)',
-        macro:  'Yahoo Finance + FMP (US ETFs)',
-        pkrusd: 'ExchangeRate-API'
-      }
+      prices,
+      kse100,
+      commodities,
+      pkrusd,
+      timestamp: new Date().toISOString(),
+      source: 'psxterminal.com'
     })
   };
 };
