@@ -183,13 +183,8 @@ body {
 
 /* ── SUGGESTION CARD ── */
 .sc-wrap { padding: 0 20px 4px; }
-.sc {
-  border-radius: 20px; overflow: hidden;
-  background: var(--bg1);
-  border: 1px solid var(--rim2);
-  box-shadow: var(--float-shadow);
-}
-.sc-top { padding: 22px 22px 20px; }
+.sc { overflow: hidden; background: transparent; border: none; box-shadow: none; }
+.sc-top { padding: 8px 0 20px; }
 .sc-eyebrow { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--t3); margin-bottom: 18px; }
 .sc-verdict-row {
   display: flex; align-items: center; justify-content: space-between;
@@ -197,8 +192,8 @@ body {
 }
 .sc-verdict { font-size: 52px; font-weight: 700; letter-spacing: -0.03em; line-height: 0.9; }
 
-.sc-sep { height: 1px; background: linear-gradient(90deg, transparent, var(--rim2) 25%, var(--rim2) 75%, transparent); }
-.sc-bot { padding: 18px 22px 20px; }
+.sc-sep { height: 1px; background: linear-gradient(90deg, transparent, var(--rim2) 25%, var(--rim2) 75%, transparent); margin: 4px 0; }
+.sc-bot { padding: 18px 0 20px; }
 
 .ai-row {
   display: flex; align-items: center; gap: 7px;
@@ -349,26 +344,29 @@ body {
 .gauge-svg { display: block; }
 .gauge-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t3); }
 
-/* ── INSIGHT CARDS (bullets replacement) ── */
-.insights { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
+/* ── INSIGHT CARDS — left border accent ── */
+.insights { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .insight-card {
-  display: flex; align-items: flex-start; gap: 13px;
-  background: var(--bg3);
-  border: 1px solid var(--rim2);
-  border-radius: 13px;
-  padding: 13px 14px;
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(255,255,255,0.02);
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 0 8px 8px 0;
+  padding: 11px 14px;
+  transition: background 0.15s;
 }
+.insight-card:hover { background: rgba(255,255,255,0.04); }
 .insight-icon-wrap {
-  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
+  font-size: 13px; background: transparent;
 }
 .insight-right { flex: 1; min-width: 0; }
 .insight-value {
-  font-size: 15px; font-weight: 700; letter-spacing: -0.03em; line-height: 1;
+  font-size: 14px; font-weight: 700; letter-spacing: -0.02em; line-height: 1;
   margin-bottom: 3px;
 }
-.insight-label { font-size: 11px; color: var(--t2); line-height: 1.45; }
+.insight-label { font-size: 11px; color: var(--t2); line-height: 1.45; font-weight: 400; }
 </style>
 </head>
 <body>
@@ -546,10 +544,10 @@ function render(ticker, verdict) {
           </div>
           <div class="insights">
             ${s.insights.map(ins => {
-              const bgMap = {green:'rgba(34,217,138,0.1)',amber:'rgba(251,191,36,0.1)',red:'rgba(239,68,68,0.1)',purple:'rgba(139,92,246,0.1)',blue:'rgba(59,130,246,0.1)'};
+              const borderMap = {green:'var(--gb)',amber:'var(--aa)',red:'var(--ra)',purple:'var(--pb)',blue:'var(--bb)'};
               const gradMap = {green:'linear-gradient(130deg,#5fffc0,#22d98a)',amber:'linear-gradient(130deg,#fbbf24,#d97706)',red:'linear-gradient(130deg,#ff8080,#ef4444)',purple:'linear-gradient(130deg,#c4b5fd,#8b5cf6)',blue:'linear-gradient(130deg,#93c5fd,#3b82f6)'};
-              return `<div class="insight-card">
-                <div class="insight-icon-wrap" style="background:${bgMap[ins.color]||bgMap.purple}">${ins.icon}</div>
+              return `<div class="insight-card" style="border-left-color:${borderMap[ins.color]||borderMap.purple}">
+                <div class="insight-icon-wrap">${ins.icon}</div>
                 <div class="insight-right">
                   <div class="insight-value" style="background:${gradMap[ins.color]||gradMap.purple};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${ins.value}</div>
                   <div class="insight-label">${ins.label}</div>
