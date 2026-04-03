@@ -1,12 +1,12 @@
 const https = require('https');
 
-function fetchJSON(url, timeoutMs = 6000) {
+function fetchJSON(url, timeoutMs = 8000) {
   return new Promise((resolve) => {
     const timer = setTimeout(() => resolve(null), timeoutMs);
     https.get(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'application/json',
+        'Accept': 'application/json, */*',
         'Origin': 'https://psxterminal.com',
         'Referer': 'https://psxterminal.com/'
       }
@@ -15,69 +15,117 @@ function fetchJSON(url, timeoutMs = 6000) {
       res.on('data', c => body += c);
       res.on('end', () => {
         clearTimeout(timer);
-        try { resolve(JSON.parse(body)); } catch(e) { resolve(null); }
+        try { resolve(JSON.parse(body)); }
+        catch(e) { resolve(null); }
       });
     }).on('error', () => { clearTimeout(timer); resolve(null); });
   });
 }
 
-// ── PSX TERMINAL API (free, no key needed) ─────────────────────
-async function getPSXPrice(ticker) {
+// ── PSX TERMINAL — single stock tick ──────────────────────────
+async function getPSXTick(ticker) {
   try {
     const data = await fetchJSON(`https://psxterminal.com/api/ticks/REG/${ticker}`);
-    if (!data) { console.log(`${ticker}: no data`); return null; }
+    if (!data) return null;
 
-    // Handle both array and object responses — define d FIRST
-    const d = Array.isArray(data) ? data[0] : data;
-    if (!d) { console.log(`${ticker}: empty response`); return null; }
+    // PSX Terminal wraps response in {success, data}
+    const d = data.success ? (Array.isArray(data.data) ? data.data[0] : data.data) 
+                           : (Array.isArray(data) ? data[0] : data);
+    if (!d) return null;
 
-    // Log the actual field names so we can see the structure
-    console.log(`${ticker} keys:`, Object.keys(d).join(','));
-    console.log(`${ticker} sample:`, JSON.stringify(d).slice(0, 300));
+    const price        = d.price ?? d.currentPrice ?? d.close ?? d.last ?? d.ltp;
+    const change       = d.change ?? d.priceChange ?? 0;
+    const changePercent= d.changePercent ?? d.pctChange ?? d.changePct ?? 0;
+    const high         = d.high ?? d.dayHigh;
+    const low          = d.low  ?? d.dayLow;
+    const volume       = d.volume ?? d.totalVolume;
 
-    // Try all possible field names PSX Terminal might use
-    const price = d.currentPrice ?? d.ldcp ?? d.close ?? d.last ?? d.ltp ?? d.price ?? d.closePrice ?? d.LDCP ?? d.Close;
-    const prev  = d.previousClose ?? d.prevClose ?? d.open ?? d.basePrice ?? d.Open ?? d.PreviousClose;
-    const high  = d.high ?? d.dayHigh ?? d.highPrice ?? d.High;
-    const low   = d.low  ?? d.dayLow  ?? d.lowPrice  ?? d.Low;
-    const vol   = d.volume ?? d.totalVolume ?? d.tradedVolume ?? d.Volume;
-
-    if (!price) { console.log(`${ticker}: no price field found`); return null; }
-
-    const pNum  = Number(price);
-    const prevN = prev ? Number(prev) : null;
-    const change = prevN ? ((pNum - prevN) / prevN * 100) : Number(d.change ?? d.pctChange ?? d.changePercent ?? 0);
+    if (!price) return null;
 
     return {
-      price:  pNum.toFixed(2),
-      change: change.toFixed(2),
-      high:   high ? Number(high).toFixed(2) : null,
-      low:    low  ? Number(low).toFixed(2)  : null,
-      volume: vol  ? Number(vol).toLocaleString() : null,
-      dir:    change >= 0 ? 'up' : 'dn'
+      price:  Number(price).toFixed(2),
+      change: Number(changePercent * (Math.abs(changePercent) > 1 ? 1 : 100)).toFixed(2),
+      high:   high   ? Number(high).toFixed(2)   : null,
+      low:    low    ? Number(low).toFixed(2)     : null,
+      volume: volume ? Number(volume).toLocaleString() : null,
+      dir:    Number(changePercent) >= 0 ? 'up' : 'dn'
     };
-  } catch(e) { console.error(`${ticker} error:`, e.message); return null; }
+  } catch(e) {
+    console.error(`Tick error ${ticker}:`, e.message);
+    return null;
+  }
 }
 
-// ── KSE-100 INDEX (Yahoo Finance — already working) ────────────
+// ── PSX TERMINAL — batch all symbols via market data ──────────
+async function getAllPSXPrices(tickers) {
+  try {
+    // Try to get all market data in one call
+    const data = await fetchJSON('https://psxterminal.com/api/ticks/REG');
+    if (!data) return {};
+
+    const list = data.success ? data.data : (Array.isArray(data) ? data : null);
+    if (!list || !Array.isArray(list)) return {};
+
+    console.log(`Market data: ${list.length} symbols`);
+
+    const prices = {};
+    list.forEach(d => {
+      const sym = d.symbol ?? d.ticker ?? d.code;
+      if (!sym || !tickers.includes(sym)) return;
+
+      const price        = d.price ?? d.currentPrice ?? d.close ?? d.last;
+      const changePercent= d.changePercent ?? d.pctChange ?? d.changePct ?? 0;
+
+      if (!price) return;
+
+      prices[sym] = {
+        price:  Number(price).toFixed(2),
+        change: Number(changePercent * (Math.abs(changePercent) > 1 ? 1 : 100)).toFixed(2),
+        high:   d.high   ? Number(d.high).toFixed(2)   : null,
+        low:    d.low    ? Number(d.low).toFixed(2)     : null,
+        volume: d.volume ? Number(d.volume).toLocaleString() : null,
+        dir:    Number(changePercent) >= 0 ? 'up' : 'dn'
+      };
+    });
+
+    return prices;
+  } catch(e) {
+    console.error('Batch error:', e.message);
+    return {};
+  }
+}
+
+// ── KSE-100 INDEX ─────────────────────────────────────────────
 async function getKSE100() {
   try {
-    const data = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/%5EKSE?interval=1d&range=2d');
-    if (!data?.chart?.result?.[0]) return null;
-    const closes = data.chart.result[0].indicators?.quote?.[0]?.close?.filter(v => v != null);
+    // Try PSX Terminal first
+    const data = await fetchJSON('https://psxterminal.com/api/ticks/REG/KSE100');
+    if (data) {
+      const d = data.success ? data.data : data;
+      const dd = Array.isArray(d) ? d[0] : d;
+      if (dd) {
+        const price = dd.price ?? dd.currentPrice ?? dd.close;
+        const chg   = dd.changePercent ?? dd.pctChange ?? 0;
+        if (price) return {
+          price:  Math.round(Number(price)).toLocaleString(),
+          change: Number(chg * (Math.abs(chg) > 1 ? 1 : 100)).toFixed(2),
+          dir:    Number(chg) >= 0 ? 'up' : 'dn'
+        };
+      }
+    }
+    // Fallback to Yahoo Finance
+    const ydata = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/%5EKSE?interval=1d&range=2d');
+    if (!ydata?.chart?.result?.[0]) return null;
+    const closes = ydata.chart.result[0].indicators?.quote?.[0]?.close?.filter(v => v != null);
     if (!closes || closes.length < 2) return null;
-    const current = closes[closes.length - 1];
-    const prev    = closes[closes.length - 2];
-    const change  = ((current - prev) / prev * 100);
-    return {
-      price:  Math.round(current).toLocaleString(),
-      change: change.toFixed(2),
-      dir:    change >= 0 ? 'up' : 'dn'
-    };
+    const cur  = closes[closes.length - 1];
+    const prev = closes[closes.length - 2];
+    const chg  = ((cur - prev) / prev * 100);
+    return { price: Math.round(cur).toLocaleString(), change: chg.toFixed(2), dir: chg >= 0 ? 'up' : 'dn' };
   } catch(e) { return null; }
 }
 
-// ── COMMODITIES (Yahoo Finance — already working) ──────────────
+// ── COMMODITIES ───────────────────────────────────────────────
 async function getCommodities() {
   try {
     const data = await fetchJSON('https://query1.finance.yahoo.com/v7/finance/quote?symbols=BZ%3DF,GC%3DF&fields=symbol,regularMarketPrice,regularMarketChangePercent');
@@ -91,7 +139,7 @@ async function getCommodities() {
   } catch(e) { return {}; }
 }
 
-// ── PKR/USD ────────────────────────────────────────────────────
+// ── PKR/USD ───────────────────────────────────────────────────
 async function getPKRUSD() {
   try {
     const data = await fetchJSON('https://open.er-api.com/v6/latest/USD');
@@ -125,34 +173,33 @@ exports.handler = async (event) => {
 
   const tickers = (payload.tickers || ALLOWED).filter(t => ALLOWED.includes(t));
 
-  // Fetch all PSX prices in parallel + macro data
-  const [priceResults, kse100, commodities, pkrusd] = await Promise.all([
-    Promise.all(tickers.map(async ticker => {
-      const data = await getPSXPrice(ticker);
-      return { ticker, data };
-    })),
+  // Try batch first, fall back to individual
+  const [batchPrices, kse100, commodities, pkrusd] = await Promise.all([
+    getAllPSXPrices(tickers),
     getKSE100(),
     getCommodities(),
     getPKRUSD()
   ]);
 
-  const prices = {};
-  priceResults.forEach(({ ticker, data }) => {
-    if (data) prices[ticker] = data;
-  });
+  // For any missing tickers, try individual calls
+  const missingTickers = tickers.filter(t => !batchPrices[t]);
+  let prices = { ...batchPrices };
+
+  if (missingTickers.length > 0) {
+    console.log(`Batch got ${Object.keys(batchPrices).length}, fetching ${missingTickers.length} individually`);
+    const individualResults = await Promise.all(
+      missingTickers.map(async ticker => ({ ticker, data: await getPSXTick(ticker) }))
+    );
+    individualResults.forEach(({ ticker, data }) => {
+      if (data) prices[ticker] = data;
+    });
+  }
 
   console.log(`Prices fetched: ${Object.keys(prices).length}/${tickers.length} tickers`);
 
   return {
     statusCode: 200,
     headers,
-    body: JSON.stringify({
-      prices,
-      kse100,
-      commodities,
-      pkrusd,
-      timestamp: new Date().toISOString(),
-      source: 'psxterminal.com'
-    })
+    body: JSON.stringify({ prices, kse100, commodities, pkrusd, timestamp: new Date().toISOString() })
   };
 };
