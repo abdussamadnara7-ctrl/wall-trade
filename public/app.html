@@ -446,131 +446,75 @@ body {
 <div id="root"></div>
 
 <script>
-const DATA = {
-  OGDC:{name:"Oil & Gas Development Co.",sector:"Exploration & Production",price:"188",chg:"+1.8%",dir:"up",vtype:"Neutral",vscore:6.0,
-    insights:[
-      {icon:"📊",value:"6.2× P/E",label:"Trading below sector average of 9× — good value for a state-backed company",color:"green"},
-      {icon:"💰",value:"9.4% Yield",label:"One of the highest dividend yields on the entire PSX — strong income",color:"green"},
-      {icon:"⚠️",value:"Circular Debt",label:"Billions owed by power companies who pay late — caps real cash flow despite strong earnings",color:"amber"}
-    ],
-    ratios:{"P/E Ratio":{v:"6.2×",c:"green",ctx:"Below sector avg"},"Div Yield":{v:"9.4%",c:"green",ctx:"Attractive income"},"Debt / Equity":{v:"0.08",c:"green",ctx:"Very low leverage"},"ROE":{v:"18.2%",c:"green",ctx:"Strong returns"},"Current Ratio":{v:"1.4×",c:"amber",ctx:"Adequate"},"Gross Margin":{v:"61%",c:"green",ctx:"High quality"}},
-    sigs:[{l:"State-backed",t:"purple"},{l:"High dividend",t:"green"},{l:"Circular debt",t:"red"},{l:"Low leverage",t:"green"},{l:"Gas price lag",t:"amber"}],
-    scores:{"Financial health":{v:8},"Macro environment":{v:5},"Growth outlook":{v:5},"Risk level":{v:6}},overall:6.0,odesc:"Stable income play — attractive yield, but circular debt caps the upside",
-    factors:[{i:"🌍",t:"IMF & energy pricing",d:"Government keeps gas wellhead prices below market rates. Revenue is directly impacted — revisions are slow and politically sensitive under the IMF austerity programme."},{i:"💸",t:"Circular debt cash flow risk",d:"OGDC is owed billions by state entities that consistently pay late. Earnings look strong on paper, but real cash collection is a persistent underlying problem."},{i:"💱",t:"Dollar-linked revenues",d:"Crude oil sales are partially dollar-linked. A weaker rupee boosts revenues, and the net effect is positive even after accounting for hard currency exploration costs."}]},
-
-  PPL:{name:"Pakistan Petroleum Ltd",sector:"Exploration & Production",price:"132",chg:"+0.9%",dir:"up",vtype:"Neutral",vscore:6.0,
-    insights:[
-      {icon:"📊",value:"5.4× P/E",label:"Cheaper than most peers on earnings — looks undervalued at current price",color:"green"},
-      {icon:"💰",value:"8.1% Yield",label:"Solid dividend income — one of the better yields in the E&P sector",color:"green"},
-      {icon:"⛏️",value:"Field Risk",label:"Flagship Sui gas field is in long-term decline — new exploration is the key to watch",color:"amber"}
-    ],
-    ratios:{"P/E Ratio":{v:"5.4×",c:"green",ctx:"Cheap vs peers"},"Div Yield":{v:"8.1%",c:"green",ctx:"Good income"},"Debt / Equity":{v:"0.12",c:"green",ctx:"Low debt"},"ROE":{v:"15.7%",c:"green",ctx:"Solid returns"},"Current Ratio":{v:"1.2×",c:"amber",ctx:"Tight but ok"},"Gross Margin":{v:"55%",c:"green",ctx:"Strong margins"}},
-    sigs:[{l:"Undervalued",t:"green"},{l:"Good dividend",t:"green"},{l:"Circular debt",t:"red"},{l:"Field depletion",t:"amber"},{l:"New discoveries",t:"purple"}],
-    scores:{"Financial health":{v:7},"Macro environment":{v:5},"Growth outlook":{v:6},"Risk level":{v:6}},overall:6.0,odesc:"Solid E&P — new field discoveries would be a meaningful catalyst for re-rating",
-    factors:[{i:"⛏️",t:"Sui gas field in decline",d:"PPL's flagship field is mature and declining. New exploration in Balochistan and offshore blocks will determine the long-term growth story."},{i:"🏛️",t:"State ownership provides a floor",d:"Government majority ownership means no hostile acquisitions or sudden strategy pivots. But pricing decisions involve politics, not just market economics."},{i:"🔄",t:"Circular debt resolution is upside",d:"If the IMF programme forces a genuine circular debt workout, PPL's blocked receivables finally convert to cash — a significant positive the market hasn't priced in."}]},
-
-  PSO:{name:"Pakistan State Oil",sector:"Oil Marketing Company",price:"386",chg:"-0.6%",dir:"dn",vtype:"Caution",vscore:4.0,
-    insights:[
-      {icon:"🚨",value:"Rs. 800bn+",label:"Unpaid receivables from power companies — existential-level risk on the balance sheet",color:"red"},
-      {icon:"⚡",value:"0.9× Ratio",label:"Current ratio below 1.0 — means short-term debts exceed short-term assets right now",color:"red"},
-      {icon:"📊",value:"4.1× P/E",label:"Very cheap on earnings — but the low price reflects the serious risks above",color:"amber"}
-    ],
-    ratios:{"P/E Ratio":{v:"4.1×",c:"green",ctx:"Very cheap"},"Div Yield":{v:"5.2%",c:"amber",ctx:"Moderate yield"},"Debt / Equity":{v:"0.65",c:"amber",ctx:"Elevated — watch"},"ROE":{v:"22.1%",c:"green",ctx:"High but volatile"},"Current Ratio":{v:"0.9×",c:"red",ctx:"Below 1 — risky"},"Gross Margin":{v:"4.2%",c:"amber",ctx:"Thin OMC margin"}},
-    sigs:[{l:"Circular debt",t:"red"},{l:"Liquidity stress",t:"red"},{l:"Cheap P/E",t:"green"},{l:"Market leader",t:"purple"},{l:"Oil price risk",t:"amber"}],
-    scores:{"Financial health":{v:4},"Macro environment":{v:4},"Growth outlook":{v:5},"Risk level":{v:3}},overall:4.0,odesc:"Cheap for a reason — circular debt is systemic risk, not a temporary issue to wait out",
-    factors:[{i:"🚨",t:"Rs. 800bn+ circular debt",d:"Power companies owe PSO over Rs. 800bn and genuinely cannot pay. PSO has needed emergency government bailouts before. This isn't background noise — it is the central investment thesis."},{i:"⛽",t:"Government controls margins",d:"Retail fuel prices are government-set. Per-litre margins are wafer-thin and a large chunk of reported profit is actually financial income on unpaid receivables, not real trading profit."},{i:"🌐",t:"Global oil price exposure",d:"As Pakistan's largest fuel importer, PSO takes direct hits from crude price spikes. High oil prices worsen the current account deficit and tighten PSO's import financing simultaneously."}]},
-
-  MARI:{name:"Mari Petroleum Co. Ltd",sector:"Exploration & Production",price:"2,310",chg:"+2.1%",dir:"up",vtype:"Positive",vscore:7.3,
-    insights:[
-      {icon:"🏆",value:"31.4% ROE",label:"Best return on equity in the entire E&P sector — and virtually zero debt to achieve it",color:"green"},
-      {icon:"🛡️",value:"0.04 D/E",label:"Essentially debt-free — unmatched financial strength, won't get hurt by high interest rates",color:"green"},
-      {icon:"72%",value:"72% Margin",label:"Industry-leading gross margin — feeds fertiliser plants which pay far more reliably than power companies",color:"purple"}
-    ],
-    ratios:{"P/E Ratio":{v:"9.8×",c:"amber",ctx:"Fair for quality"},"Div Yield":{v:"3.9%",c:"amber",ctx:"Modest yield"},"Debt / Equity":{v:"0.04",c:"green",ctx:"Debt-free"},"ROE":{v:"31.4%",c:"green",ctx:"Exceptional"},"Current Ratio":{v:"2.1×",c:"green",ctx:"Very strong"},"Gross Margin":{v:"72%",c:"green",ctx:"Best in class"}},
-    sigs:[{l:"Debt-free",t:"green"},{l:"Best ROE",t:"green"},{l:"Premium priced",t:"amber"},{l:"Critical infra",t:"purple"},{l:"Fertiliser link",t:"green"}],
-    scores:{"Financial health":{v:9},"Macro environment":{v:6},"Growth outlook":{v:6},"Risk level":{v:8}},overall:7.3,odesc:"Highest quality E&P on PSX — premium priced, but every rupee of that premium is earned",
-    factors:[{i:"✅",t:"Pakistan's most sound E&P",d:"Virtually debt-free with the best ROE in sector. The Mari gas field feeds Pakistan's urea fertiliser plants — strategically irreplaceable, and the government will always protect its cash flows."},{i:"🛡️",t:"Better insulated from circular debt",d:"Gas goes to FFBL and ENGRO — fertiliser companies that pay far more reliably than power distributors. This gives meaningfully better real cash collection than OGDC or PPL."},{i:"📍",t:"Growth needs new reserve finds",d:"Fortunes are tied heavily to a single large field. New concessions exist but haven't added material reserves yet. Exploration success is the key long-term variable."}]},
-
-  APL:{name:"Attock Petroleum Ltd",sector:"Oil Marketing Company",price:"724",chg:"+1.2%",dir:"up",vtype:"Positive",vscore:7.0,
-    insights:[
-      {icon:"✅",value:"Zero Debt Risk",label:"No circular debt exposure at all — focuses on private industrial customers who actually pay",color:"green"},
-      {icon:"💰",value:"7.8% Yield",label:"Strong, consistent dividend backed by a very clean balance sheet — reliable income",color:"green"},
-      {icon:"🏭",value:"Group Moat",label:"Part of Attock Group with its own refinery (ATRL) — supply and pricing advantages no OMC rival has",color:"purple"}
-    ],
-    ratios:{"P/E Ratio":{v:"7.3×",c:"green",ctx:"Reasonable value"},"Div Yield":{v:"7.8%",c:"green",ctx:"Strong & consistent"},"Debt / Equity":{v:"0.02",c:"green",ctx:"Zero debt"},"ROE":{v:"19.3%",c:"green",ctx:"Good returns"},"Current Ratio":{v:"1.7×",c:"green",ctx:"Comfortable"},"Gross Margin":{v:"6.1%",c:"green",ctx:"Better than PSO"}},
-    sigs:[{l:"No circular debt",t:"green"},{l:"Strong dividend",t:"green"},{l:"Group moat",t:"purple"},{l:"Private focus",t:"green"},{l:"Fuel demand risk",t:"amber"}],
-    scores:{"Financial health":{v:8},"Macro environment":{v:6},"Growth outlook":{v:6},"Risk level":{v:8}},overall:7.0,odesc:"The safer OMC — avoids circular debt entirely by focusing on private industrial customers",
-    factors:[{i:"✅",t:"Avoids the circular debt trap",d:"APL serves private industrial and retail customers, not government power plants. It collects cash quickly — a structural advantage that completely sidesteps the Rs. 800bn+ problem drowning PSO."},{i:"🏭",t:"Attock Group integration",d:"Part of a group that includes Attock Refinery (ATRL). This vertical integration provides supply security and pricing advantages that no standalone OMC can replicate."},{i:"⏳",t:"EV risk is a decade away",d:"Pakistan's import constraints mean meaningful EV adoption is very slow. APL has a long runway before petroleum demand structurally declines — not a near-term concern at all."}]},
-
-  HASCOL:{name:"Hascol Petroleum Ltd",sector:"Oil Marketing Company",price:"28",chg:"-1.4%",dir:"dn",vtype:"Caution",vscore:2.3,
-    insights:[
-      {icon:"🚨",value:"Negative Equity",label:"Total liabilities now exceed all assets — the company technically owes more than it owns",color:"red"},
-      {icon:"📉",value:"3.2× Debt/Eq",label:"Dangerously leveraged — this level of debt with negative equity is a real default risk",color:"red"},
-      {icon:"⚠️",value:"Fraud History",label:"Collapsed after sales volumes were massively over-reported — market trust not yet restored",color:"red"}
-    ],
-    ratios:{"P/E Ratio":{v:"N/A",c:"red",ctx:"Loss-making"},"Div Yield":{v:"0%",c:"red",ctx:"No dividend"},"Debt / Equity":{v:"3.2",c:"red",ctx:"Dangerously high"},"ROE":{v:"Neg.",c:"red",ctx:"Negative equity"},"Current Ratio":{v:"0.5×",c:"red",ctx:"Severe stress"},"Gross Margin":{v:"1.1%",c:"red",ctx:"Near zero"}},
-    sigs:[{l:"Near-insolvent",t:"red"},{l:"High debt",t:"red"},{l:"Fraud history",t:"red"},{l:"Speculative",t:"amber"},{l:"Ultra-cheap",t:"amber"}],
-    scores:{"Financial health":{v:2},"Macro environment":{v:3},"Growth outlook":{v:3},"Risk level":{v:1}},overall:2.3,odesc:"Extreme caution — speculative distressed situation with real risk of total loss",
-    factors:[{i:"🚨",t:"Severe financial distress",d:"Collapsed after fraud allegations and massive over-reporting of sales. Balance sheet shows negative equity — total liabilities exceed all assets. This is a fundamentally broken situation."},{i:"🔧",t:"Restructuring underway but binary",d:"Negotiating with lenders. Success = major upside catalyst. Failure = default and likely total loss. Experienced distressed investors only."},{i:"📉",t:"Macro recovery won't fix this",d:"Even strong Pakistan economic recovery can't repair a broken balance sheet. Hascol's problems are company-specific — fraud, not macro. Better conditions alone won't restore market trust."}]}
+// ── POPULAR PSX STOCKS (for quick browse) ──────────────────
+const POPULAR = {
+  'Energy & Oil':    ['OGDC','PPL','PSO','MARI','APL','HASCOL','SNGP','SSGC'],
+  'Banking':         ['HBL','MCB','UBL','NBP','ABL','BAFL','BAHL','MEBL','FABL'],
+  'Fertiliser':      ['ENGRO','FFBL','FFC','EFERT'],
+  'Cement':          ['LUCK','MLCF','CHCC','DGKC','PIOC','FCCL'],
+  'Technology':      ['TRG','SYS','NETSOL'],
+  'Other':           ['PAKT','PNSC']
 };
 
+const ALL_TICKERS = Object.values(POPULAR).flat();
+
+// ── STATE ──────────────────────────────────────────────────
+let cur = 'OGDC';
+let tab = 'overview';
+let stockCache = {};      // stockData per ticker
+let verdictCache = {};    // AI verdict per ticker
+let livePrices = {};      // live prices from prices.js
+
+// ── MACRO CONTEXT (static, updated periodically) ──────────
 const MACRO = [
   "SBP Policy Rate: 10.50% p.a. | Ceiling: 11.50% | Floor: 9.50%",
-  "Monetary policy: Easing cycle — cut from 22% peak to 10.50%",
+  "Monetary policy: Aggressive easing cycle from 22% peak to 10.50%",
   "IMF EFF programme: Active — energy reforms, circular debt reduction, DISCO privatisation",
-  "PKR/USD: ~278-282, stable after 2023 depreciation",
-  "Inflation CPI: ~8-10%, down from 38% peak",
+  "PKR/USD: ~278-282, relatively stable after 2023 depreciation",
+  "Inflation CPI: ~8-10%, down sharply from 38% peak",
   "Circular debt: Rs. 2.3tn+ in power sector",
-  "Brent crude: ~70-75 USD/bbl",
   "Iran-US tensions: elevated — Strait of Hormuz oil supply risk",
   "Current account: near-balanced, FX reserves recovering",
   "PSX KSE-100: at record highs — market re-rating on macro stabilisation",
-  "Key risks: oil price spike, IMF slippage, political instability, rupee vulnerability"
+  "Key risks: oil price spike, IMF slippage, political instability"
 ].join(". ");
 
+// ── COLOUR HELPERS ─────────────────────────────────────────
+const vGrad  = t => ({Positive:'gx-green',Neutral:'gx-beige',Caution:'gx-red'}[t]||'gx-white');
+const scGrad = v => v>=7?`linear-gradient(130deg,var(--ga),var(--gb))`:v>=5?`linear-gradient(130deg,#fbbf24,#d97706)`:`linear-gradient(130deg,var(--ra),var(--rb))`;
+const scTG   = v => v>=7?'sc-green':v>=5?'sc-amber':'sc-red';
+const rTG    = c => c==='green'?'rc-green':c==='red'?'rc-red':'rc-amber';
+const sdC    = t => ({green:'var(--gb)',amber:'var(--aa)',red:'var(--ra)',purple:'var(--pb)'}[t]||'var(--t3)');
 
-let cur='OGDC', verdicts={}, tab='overview';
-
-const vGrad = t => ({Positive:'gx-green',Neutral:'gx-beige',Caution:'gx-red'}[t]||'gx-white');
-const scGrad = v => v>=7?`linear-gradient(130deg,var(--ga),var(--gb))`:v>=5?`linear-gradient(130deg,#e8dcc8,#c4a882)`:`linear-gradient(130deg,var(--ra),var(--rb))`;
-const scTG = v => v>=7?'gx-green':v>=5?'gx-beige':'gx-red';
-const rTG = c => ({green:'gx-green',red:'gx-red',amber:'gx-amber',blue:'gx-blue'}[c]||'gx-white');
-const sdC = t => ({green:'var(--gb)',red:'var(--ra)',amber:'var(--aa)',purple:'var(--pb)',blue:'var(--bb)'}[t]||'var(--t3)');
-
+// ── GAUGE ──────────────────────────────────────────────────
 function gaugeArc(score) {
   const pct = Math.min(score / 10, 1);
   const W=140, H=90, cx=70, cy=76, R=50, n=22;
   const id = 'gg' + Math.random().toString(36).slice(2,8);
-
   let dots = '';
   for (let i = 0; i < n; i++) {
-    const t     = i / (n - 1);
+    const t = i / (n - 1);
     const angle = Math.PI + t * Math.PI;
-    const x     = cx + R * Math.cos(angle);
-    const y     = cy + R * Math.sin(angle);
-    const lit   = t <= pct;
-    const col   = t < 0.42 ? '#ff4444' : t < 0.58 ? '#ffaa00' : '#00e87a';
-    const r     = lit ? 5 : 4;
-    const op    = lit ? '1' : '0.13';
-    const glow  = lit ? ` filter="url(#${id}-glow)"` : '';
+    const x = cx + R * Math.cos(angle);
+    const y = cy + R * Math.sin(angle);
+    const lit = t <= pct;
+    const col = t < 0.42 ? '#ff4444' : t < 0.58 ? '#ffaa00' : '#00e87a';
+    const r = lit ? 5 : 4;
+    const op = lit ? '1' : '0.13';
+    const glow = lit ? ` filter="url(#${id}-glow)"` : '';
     dots += `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${r}" fill="${col}" opacity="${op}"${glow}/>`;
   }
-
   const na = Math.PI + pct * Math.PI;
   const nx = (cx + 36 * Math.cos(na)).toFixed(2);
   const ny = (cy + 36 * Math.sin(na)).toFixed(2);
-
   return `<div class="gauge-wrap">
     <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" fill="none">
-      <defs>
-        <filter id="${id}-glow" x="-80%" y="-80%" width="260%" height="260%">
-          <feGaussianBlur stdDeviation="2.5" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      </defs>
+      <defs><filter id="${id}-glow" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur stdDeviation="2.5" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter></defs>
       ${dots}
-      <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}"
-        stroke="#e8eeff" stroke-width="2" stroke-linecap="round"/>
+      <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#e8eeff" stroke-width="2" stroke-linecap="round"/>
       <circle cx="${cx}" cy="${cy}" r="5" fill="#1c1c2e" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
       <circle cx="${cx}" cy="${cy}" r="2.5" fill="#ffffff"/>
     </svg>
@@ -578,20 +522,34 @@ function gaugeArc(score) {
   </div>`;
 }
 
-function render(ticker, verdict) {
-  const s=DATA[ticker], v=verdict||verdicts[ticker];
-  document.getElementById('root').innerHTML=`
+// ── RENDER ─────────────────────────────────────────────────
+function render(ticker, stockData, verdict) {
+  const lp = livePrices[ticker];
+  const price   = lp?.price || stockData?.price || '—';
+  const change  = lp?.change || stockData?.change || '0';
+  const dir     = lp?.dir || stockData?.dir || 'up';
+  const name    = stockData?.name || ticker;
+  const sector  = stockData?.sector || 'Pakistan Stock Exchange';
+  const vtype   = verdict?.verdict || 'Neutral';
+  const vscore  = verdict?.score || 5;
+  const insights = verdict?.insights || [];
+  const signals  = verdict?.signals || [];
+  const scores   = verdict?.scores || {};
+  const factors  = verdict?.factors || [];
+  const ratios   = stockData ? buildRatios(stockData) : {};
+
+  document.getElementById('root').innerHTML = `
   <div class="hero">
-    <div class="hero-meta">${s.name}</div>
+    <div class="hero-meta">${name}</div>
     <div class="hero-row">
       <div>
         <div class="hero-ticker gx-white">${ticker}</div>
-        <div class="hero-sector"><div class="hero-sector-dot"></div>${s.sector}</div>
+        <div class="hero-sector"><div class="hero-sector-dot"></div>${sector}</div>
       </div>
       <div class="hero-r">
         <div class="hero-cur">PKR</div>
-        <div class="hero-price gx-white" id="live-price">PKR ${livePrices[ticker] ? livePrices[ticker].price : s.price}</div>
-        <div class="hero-chg ${livePrices[ticker] ? (livePrices[ticker].change >= 0 ? 'up' : 'dn') : (s.dir==='up'?'up':'dn')}" id="live-chg">${livePrices[ticker] ? (livePrices[ticker].change >= 0 ? '+' : '') + livePrices[ticker].change + '% today' : s.chg + ' today'}</div>
+        <div class="hero-price gx-white" id="live-price">${price}</div>
+        <div class="hero-chg ${dir === 'up' ? 'up' : 'dn'}" id="live-chg">${dir === 'up' ? '+' : ''}${change}% today</div>
       </div>
     </div>
   </div>
@@ -608,13 +566,13 @@ function render(ticker, verdict) {
         <div class="sc-top">
           <div class="sc-eyebrow">Wall-Trade suggestion</div>
           <div class="sc-verdict-row">
-            <div class="sc-verdict ${vGrad(s.vtype)}">${s.vtype}</div>
-            ${gaugeArc(s.vscore)}
+            <div class="sc-verdict ${vGrad(vtype)}">${vtype}</div>
+            ${gaugeArc(vscore)}
           </div>
           <div class="insights">
-            ${s.insights.map(ins => {
+            ${insights.map(ins => {
               const borderMap = {green:'var(--gb)',amber:'var(--aa)',red:'var(--ra)',purple:'var(--pb)',blue:'var(--bb)'};
-              const gradMap = {green:'linear-gradient(130deg,#5fffc0,#22d98a)',amber:'linear-gradient(130deg,#fbbf24,#d97706)',red:'linear-gradient(130deg,#ff8080,#ef4444)',purple:'linear-gradient(130deg,#c4b5fd,#8b5cf6)',blue:'linear-gradient(130deg,#93c5fd,#3b82f6)'};
+              const gradMap   = {green:'linear-gradient(130deg,#5fffc0,#22d98a)',amber:'linear-gradient(130deg,#fbbf24,#d97706)',red:'linear-gradient(130deg,#ff8080,#ef4444)',purple:'linear-gradient(130deg,#c4b5fd,#8b5cf6)',blue:'linear-gradient(130deg,#93c5fd,#3b82f6)'};
               return `<div class="insight-card" style="border-left-color:${borderMap[ins.color]||borderMap.purple}">
                 <div class="insight-icon-wrap">${ins.icon}</div>
                 <div class="insight-right">
@@ -628,25 +586,26 @@ function render(ticker, verdict) {
         <div class="sc-sep"></div>
         <div class="sc-bot">
           <div class="ai-row"><div class="ai-orb"></div>AI verdict</div>
-          ${v
-            ? `<div class="ai-headline">${v.headline}</div><div class="ai-body">${v.body}</div>`
-            : `<div class="ai-loading"><div class="spin"></div>Analysing ${ticker} against Pakistan macro…</div>`}
+          ${verdict
+            ? `<div class="ai-headline">${verdict.headline}</div><div class="ai-body">${verdict.body}</div>`
+            : `<div class="ai-loading"><div class="spin"></div>Analysing ${ticker} with live Pakistan market data…</div>`}
         </div>
       </div>
     </div>
+    ${signals.length ? `
     <div class="sigs-wrap">
       <div class="sec-lbl">Key signals</div>
       <div class="sigs">
-        ${s.sigs.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.t)}"></div>${sg.l}</div>`).join('')}
+        ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
       </div>
-    </div>
+    </div>` : ''}
   </div>
 
   <div class="tcontent ${tab==='financials'?'on':''}" id="tc-financials">
     <div class="ratio-wrap" style="padding-top:22px;">
       <div class="sec-lbl">Financial ratios</div>
       <div class="rgrid">
-        ${Object.entries(s.ratios).map(([n,r])=>`
+        ${Object.entries(ratios).map(([n,r])=>`
           <div class="rcard">
             <div class="rlbl">${n}</div>
             <div class="rval ${rTG(r.c)}">${r.v}</div>
@@ -654,36 +613,37 @@ function render(ticker, verdict) {
           </div>`).join('')}
       </div>
     </div>
+    ${Object.keys(scores).length ? `
     <div class="scores-wrap">
       <div class="sec-lbl">Score breakdown</div>
-      ${Object.entries(s.scores).map(([n,sc])=>`
+      ${Object.entries(scores).map(([n,v])=>`
         <div class="score-item">
           <div class="score-top">
             <span class="score-name">${n}</span>
-            <span class="score-num ${scTG(sc.v)}">${sc.v} / 10</span>
+            <span class="score-num ${scTG(v)}">${v} / 10</span>
           </div>
-          <div class="strack"><div class="sfill" style="width:${sc.v*10}%;background:${scGrad(sc.v)}"></div></div>
+          <div class="strack"><div class="sfill" style="width:${v*10}%;background:${scGrad(v)}"></div></div>
         </div>`).join('')}
     </div>
     <div class="overall-wrap">
       <div class="ocard">
         <div>
           <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;">Score</div>
-          <span class="onum ${scTG(s.overall)}">${s.overall}</span><span class="oden"> /10</span>
+          <span class="onum ${scTG(vscore)}">${vscore}</span><span class="oden"> /10</span>
         </div>
         <div class="oright">
           <div class="o-eye">Summary</div>
-          <div class="o-desc">${s.odesc}</div>
+          <div class="o-desc">${verdict?.summary || 'Analysis loading...'}</div>
         </div>
       </div>
-    </div>
+    </div>` : ''}
   </div>
 
   <div class="tcontent ${tab==='factors'?'on':''}" id="tc-factors">
     <div class="factors-wrap" style="padding-top:22px;">
-      ${s.factors.map(f=>`<div class="fi">
-        <div class="fi-icon">${f.i}</div>
-        <div><div class="fi-title">${f.t}</div><div class="fi-desc">${f.d}</div></div>
+      ${factors.map(f=>`<div class="fi">
+        <div class="fi-icon">${f.icon}</div>
+        <div><div class="fi-title">${f.title}</div><div class="fi-desc">${f.detail}</div></div>
       </div>`).join('')}
     </div>
   </div>
@@ -692,117 +652,258 @@ function render(ticker, verdict) {
     <div class="ans-lbl"><div class="ai-orb"></div>AI answer</div>
     <div class="ans-card" id="ans-card"></div>
   </div>
-
   <div class="ask-bar">
     <div class="ask-row">
       <input class="ask-in" id="ask-in" type="text" placeholder="Ask anything about ${ticker}…"/>
       <button class="ask-btn" id="ask-btn" onclick="doAsk()">Ask</button>
     </div>
   </div>
-  <div class="disc">Wall-Trade provides financial information and analysis for educational purposes only. It does not constitute investment advice and is not registered with the SECP. Signals (Positive / Neutral / Caution) are analytical indicators, not instructions to buy or sell. Always consult a licensed financial advisor before making investment decisions.</div>
+  <div class="disc">Wall-Trade provides financial information and analysis for educational purposes only. Not investment advice. Not SECP registered. Signals (Positive / Neutral / Caution) are analytical indicators, not instructions to buy or sell.</div>
   `;
-  document.getElementById('ask-in').addEventListener('keydown',e=>{if(e.key==='Enter')doAsk();});
+  document.getElementById('ask-in').addEventListener('keydown', e => { if(e.key==='Enter') doAsk(); });
 }
 
-async function loadVerdict(ticker) {
-  const s=DATA[ticker];
+// ── BUILD RATIOS FROM STOCK DATA ───────────────────────────
+function buildRatios(s) {
+  const ratios = {};
+  if (s.pe && s.pe !== 'N/A')          ratios['P/E Ratio']     = { v: s.pe + '×',    c: parseFloat(s.pe) < 15 ? 'green' : parseFloat(s.pe) < 25 ? 'amber' : 'red', ctx: 'Price to earnings' };
+  if (s.pb && s.pb !== 'N/A')          ratios['P/B Ratio']     = { v: s.pb + '×',    c: parseFloat(s.pb) < 2 ? 'green' : parseFloat(s.pb) < 4 ? 'amber' : 'red',    ctx: 'Price to book value' };
+  if (s.divYield && s.divYield !== 'N/A') ratios['Div Yield']  = { v: s.divYield,    c: parseFloat(s.divYield) > 5 ? 'green' : 'amber',                               ctx: 'Annual dividend yield' };
+  if (s.roe && s.roe !== 'N/A')        ratios['ROE']           = { v: s.roe,         c: parseFloat(s.roe) > 15 ? 'green' : parseFloat(s.roe) > 8 ? 'amber' : 'red',  ctx: 'Return on equity' };
+  if (s.netMargin && s.netMargin !== 'N/A') ratios['Net Margin'] = { v: s.netMargin, c: parseFloat(s.netMargin) > 15 ? 'green' : parseFloat(s.netMargin) > 5 ? 'amber' : 'red', ctx: 'Net profit margin' };
+  if (s.currentRatio && s.currentRatio !== 'N/A') ratios['Current Ratio'] = { v: s.currentRatio + '×', c: parseFloat(s.currentRatio) > 1.5 ? 'green' : parseFloat(s.currentRatio) > 1 ? 'amber' : 'red', ctx: 'Short-term liquidity' };
+  if (s.debtToEquity && s.debtToEquity !== 'N/A') ratios['Debt / Equity'] = { v: s.debtToEquity, c: parseFloat(s.debtToEquity) < 0.5 ? 'green' : parseFloat(s.debtToEquity) < 1.5 ? 'amber' : 'red', ctx: 'Financial leverage' };
+  if (s.grossMargin && s.grossMargin !== 'N/A') ratios['Gross Margin'] = { v: s.grossMargin, c: parseFloat(s.grossMargin) > 30 ? 'green' : parseFloat(s.grossMargin) > 10 ? 'amber' : 'red', ctx: 'Gross profit margin' };
+  return ratios;
+}
+
+// ── SHOW LOADING STATE ─────────────────────────────────────
+function renderLoading(ticker) {
+  document.getElementById('root').innerHTML = `
+  <div class="hero">
+    <div class="hero-meta">Loading ${ticker}...</div>
+    <div class="hero-row">
+      <div><div class="hero-ticker gx-white">${ticker}</div></div>
+      <div class="hero-r"><div class="hero-cur">PKR</div><div class="hero-price gx-white" style="color:var(--t3)">—</div></div>
+    </div>
+  </div>
+  <div style="padding:40px 20px;text-align:center">
+    <div class="ai-loading"><div class="spin"></div>Fetching live data for ${ticker}…</div>
+  </div>`;
+}
+
+// ── SHOW ERROR STATE ───────────────────────────────────────
+function renderError(ticker, message) {
+  document.getElementById('root').innerHTML = `
+  <div style="padding:40px 20px;text-align:center">
+    <div style="font-size:32px;margin-bottom:16px">⚠️</div>
+    <div style="font-size:15px;font-weight:600;color:var(--t1);margin-bottom:8px">Could not load ${ticker}</div>
+    <div style="font-size:12px;color:var(--t3);line-height:1.6">${message || 'This ticker may not be listed on PSX or data is temporarily unavailable.'}</div>
+    <div style="margin-top:20px;font-size:11px;color:var(--t3)">Try: OGDC, PPL, HBL, MCB, ENGRO, LUCK</div>
+  </div>`;
+}
+
+// ── LOAD STOCK DYNAMICALLY ─────────────────────────────────
+async function loadStock(ticker) {
+  // Check cache first
+  if (stockCache[ticker] && verdictCache[ticker]) {
+    render(ticker, stockCache[ticker], verdictCache[ticker]);
+    return;
+  }
+
+  renderLoading(ticker);
+
   try {
-    const res=await fetch('/.netlify/functions/analyze',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        type:'verdict', ticker,
-        ratios:Object.entries(s.ratios).map(([k,v])=>`${k}: ${v.v} (${v.ctx})`).join(', '),
-        macro:MACRO
-      })
+    const res = await fetch('/.netlify/functions/stock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticker, macroContext: MACRO })
     });
-    if(res.status===429){
-      verdicts[ticker]={headline:'Daily limit reached',body:'You have reached the free usage limit. Please try again in an hour.'};
-      if(cur===ticker) render(ticker,verdicts[ticker]); return;
+
+    if (res.status === 404) {
+      const err = await res.json();
+      renderError(ticker, err.error);
+      return;
     }
-    const data=await res.json();
-    const raw=data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim();
-    verdicts[ticker]=JSON.parse(raw);
-    if(cur===ticker) render(ticker,verdicts[ticker]);
+
+    if (!res.ok) throw new Error('Server error');
+
+    const data = await res.json();
+    stockCache[ticker]  = data.stockData;
+    verdictCache[ticker] = data.verdict;
+    render(ticker, data.stockData, data.verdict);
+
+    // Update pill with latest price
+    if (data.stockData?.price) {
+      livePrices[ticker] = {
+        price:  data.stockData.price,
+        change: data.stockData.change,
+        dir:    data.stockData.dir
+      };
+    }
   } catch(e) {
-    verdicts[ticker]={headline:`${ticker} — solid fundamentals, challenging macro environment`,body:`This stock operates under significant pressure from Pakistan's IMF programme and the energy sector circular debt problem. Check the score breakdown and key factors for the full picture.`};
-    if(cur===ticker) render(ticker,verdicts[ticker]);
+    renderError(ticker, 'Unable to connect. Please check your connection and try again.');
   }
 }
 
+// ── ASK QUESTION ──────────────────────────────────────────
 async function doAsk() {
-  const inp=document.getElementById('ask-in'),btn=document.getElementById('ask-btn');
-  const q=inp.value.trim(); if(!q)return;
-  btn.disabled=true; btn.textContent='…';
-  const aw=document.getElementById('ans-wrap'),ac=document.getElementById('ans-card');
-  aw.classList.add('on'); ac.textContent='Thinking…';
-  const s=DATA[cur];
+  const inp = document.getElementById('ask-in'), btn = document.getElementById('ask-btn');
+  const q = inp.value.trim(); if (!q) return;
+  btn.disabled = true; btn.textContent = '…';
+  const aw = document.getElementById('ans-wrap'), ac = document.getElementById('ans-card');
+  aw.classList.add('on'); ac.textContent = 'Thinking…';
+  const s = stockCache[cur];
   try {
-    const res=await fetch('/.netlify/functions/analyze',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        type:'question', ticker:cur, question:q,
-        ratios:Object.entries(s.ratios).map(([k,v])=>`${k}: ${v.v}`).join(', '),
-        macro:MACRO
+    const res = await fetch('/.netlify/functions/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'question', ticker: cur, question: q,
+        ratios: s ? Object.entries(buildRatios(s)).map(([k,v])=>`${k}: ${v.v}`).join(', ') : '',
+        macro: MACRO
       })
     });
-    if(res.status===429){ac.textContent='Usage limit reached. Please try again in an hour.'; btn.disabled=false; btn.textContent='Ask'; return;}
-    const data=await res.json();
-    ac.textContent=data.content.map(i=>i.text||'').join('');
-  } catch(e){ac.textContent='Could not connect — please try again.';}
-  btn.disabled=false; btn.textContent='Ask'; inp.value='';
+    if (res.status === 429) { ac.textContent = 'Usage limit reached. Please try again in an hour.'; btn.disabled = false; btn.textContent = 'Ask'; return; }
+    const data = await res.json();
+    ac.textContent = data.content?.map(i => i.text||'').join('') || 'Could not get a response.';
+  } catch(e) { ac.textContent = 'Could not connect — please try again.'; }
+  btn.disabled = false; btn.textContent = 'Ask'; inp.value = '';
 }
 
+// ── TAB SWITCHING ──────────────────────────────────────────
 function setTab(t) {
-  tab=t;
-  document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('on',el.textContent.toLowerCase().replace(/\s/g,'')===(t.replace(/\s/g,''))));
-  document.querySelectorAll('.tcontent').forEach(el=>el.classList.toggle('on',el.id==='tc-'+t));
+  tab = t;
+  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('on', el.textContent.toLowerCase().replace(/\s/g,'') === t.replace(/\s/,'')));
+  document.querySelectorAll('.tcontent').forEach(el => el.classList.toggle('on', el.id === 'tc-' + t));
 }
 
+// ── SHEET (STOCK PICKER) ──────────────────────────────────
 function buildSheet() {
-  const list=document.getElementById('sheet-list'); list.innerHTML='';
-  Object.entries(DATA).forEach(([ticker,s])=>{
-    const d=document.createElement('div');
-    d.className='si'+(ticker===cur?' on':'');
-    const handler = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      closeSheet();
-      setTimeout(() => select(ticker), 50);
-    };
-    d.addEventListener('click', handler);
-    d.addEventListener('touchend', handler, {passive: false});
-    d.innerHTML=`<div class="si-l"><div class="si-av">${ticker.slice(0,3)}</div><div><div class="si-tick">${ticker}</div><div class="si-name">${s.name.split(' ').slice(0,3).join(' ')}</div></div></div><div><div class="si-pr">PKR ${livePrices[ticker] ? livePrices[ticker].price : s.price}</div><div class="si-ch ${s.dir==='up'?'up':'dn'}">${s.chg}</div></div>`;
-    list.appendChild(d);
+  const list = document.getElementById('sheet-list');
+  list.innerHTML = '';
+
+  // Search box
+  const searchDiv = document.createElement('div');
+  searchDiv.style.cssText = 'padding:12px 20px 4px';
+  searchDiv.innerHTML = `<input id="sheet-search" type="text" placeholder="Search any PSX ticker (e.g. HBL, LUCK)…" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#eeedf8;font-size:13px;padding:10px 14px;outline:none;font-family:inherit">`;
+  list.appendChild(searchDiv);
+
+  // Sector groups
+  Object.entries(POPULAR).forEach(([sector, tickers]) => {
+    const secDiv = document.createElement('div');
+    secDiv.innerHTML = `<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(238,237,248,0.25);padding:14px 20px 6px">${sector}</div>`;
+    list.appendChild(secDiv);
+
+    tickers.forEach(ticker => {
+      const d = document.createElement('div');
+      d.className = 'si' + (ticker === cur ? ' on' : '');
+      d.dataset.ticker = ticker;
+      const lp = livePrices[ticker];
+      const priceDisplay = lp ? `PKR ${lp.price}` : '—';
+      const chgDisplay   = lp ? `${lp.dir==='up'?'+':''}${lp.change}%` : '';
+      const chgClass     = lp ? (lp.dir==='up'?'up':'dn') : '';
+      d.innerHTML = `<div class="si-l"><div class="si-av">${ticker.slice(0,3)}</div><div><div class="si-tick">${ticker}</div><div class="si-name">${getShortName(ticker)}</div></div></div><div><div class="si-pr">${priceDisplay}</div><div class="si-ch ${chgClass}">${chgDisplay}</div></div>`;
+      const handler = (e) => { e.preventDefault(); e.stopPropagation(); select(ticker); };
+      d.addEventListener('click', handler);
+      d.addEventListener('touchend', handler, { passive: false });
+      list.appendChild(d);
+    });
   });
+
+  // Search functionality
+  setTimeout(() => {
+    const searchInput = document.getElementById('sheet-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        const q = e.target.value.toUpperCase().trim();
+        if (!q) {
+          list.querySelectorAll('.si').forEach(el => el.style.display = '');
+          list.querySelectorAll('[style*="font-size:9px"]').forEach(el => el.style.display = '');
+          return;
+        }
+        list.querySelectorAll('.si').forEach(el => {
+          el.style.display = el.dataset.ticker?.includes(q) ? '' : 'none';
+        });
+        list.querySelectorAll('[style*="font-size:9px"]').forEach(el => el.style.display = 'none');
+
+        // If not in popular list, show "Search PSX" option
+        const found = list.querySelectorAll('.si:not([style*="none"])').length;
+        let customEl = document.getElementById('custom-search-item');
+        if (!found && q.length >= 2) {
+          if (!customEl) {
+            customEl = document.createElement('div');
+            customEl.id = 'custom-search-item';
+            customEl.className = 'si';
+            list.appendChild(customEl);
+          }
+          customEl.innerHTML = `<div class="si-l"><div class="si-av" style="background:rgba(139,92,246,0.15);color:#8b5cf6">PSX</div><div><div class="si-tick">${q}</div><div class="si-name">Search PSX for ${q}</div></div></div><div style="font-size:10px;color:rgba(238,237,248,0.3)">↵ Search</div>`;
+          customEl.style.display = '';
+          const handler = (e) => { e.preventDefault(); select(q); };
+          customEl.onclick = handler;
+          customEl.ontouchend = handler;
+        } else if (customEl) {
+          customEl.style.display = 'none';
+        }
+      });
+    }
+  }, 50);
 }
-function openSheet(){
+
+function getShortName(ticker) {
+  const names = {
+    OGDC:'Oil & Gas Dev Co',PPL:'Pakistan Petroleum',PSO:'Pakistan State Oil',
+    MARI:'Mari Petroleum',APL:'Attock Petroleum',HASCOL:'Hascol Petroleum',
+    SNGP:'Sui Northern Gas',SSGC:'Sui Southern Gas',
+    HBL:'Habib Bank Ltd',MCB:'MCB Bank',UBL:'United Bank',NBP:'National Bank',
+    ABL:'Allied Bank',BAFL:'Bank Al Falah',BAHL:'Bank Al Habib',
+    MEBL:'Meezan Bank',FABL:'Faysal Bank',
+    ENGRO:'Engro Corporation',FFBL:'Fauji Fertiliser Bin Qasim',
+    FFC:'Fauji Fertiliser Co',EFERT:'Engro Fertilisers',
+    LUCK:'Lucky Cement',MLCF:'Maple Leaf Cement',CHCC:'Cherat Cement',
+    DGKC:'D.G. Khan Cement',PIOC:'Pioneer Cement',FCCL:'Fauji Cement',
+    TRG:'TRG Pakistan',SYS:'Systems Ltd',NETSOL:'NetSol Technologies',
+    PAKT:'Pakistan Tobacco',PNSC:'Pakistan Natl Shipping'
+  };
+  return names[ticker] || ticker;
+}
+
+function openSheet() {
   buildSheet();
   document.getElementById('overlay').classList.add('on');
-  document.getElementById('sheet').style.display='block';
+  document.getElementById('sheet').style.display = 'block';
+  setTimeout(() => {
+    const si = document.getElementById('sheet-search');
+    if (si) si.focus();
+  }, 100);
 }
-function closeSheet(){
-  document.getElementById('overlay').classList.remove('on');
-  document.getElementById('sheet').style.display='none';
-}
-// Live price cache
-const livePrices = {};
 
+function closeSheet() {
+  document.getElementById('overlay').classList.remove('on');
+  document.getElementById('sheet').style.display = 'none';
+}
+
+function select(ticker) {
+  closeSheet();
+  cur = ticker.toUpperCase(); tab = 'overview';
+  document.getElementById('pill-av').textContent = cur.slice(0,3);
+  document.getElementById('pill-lbl').textContent = cur;
+  loadStock(cur);
+}
+
+// ── LIVE PRICES TICKER ─────────────────────────────────────
 async function fetchLivePrices() {
   try {
-    const tickers = Object.keys(DATA);
     const res = await fetch('/.netlify/functions/prices', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({tickers})
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tickers: ALL_TICKERS })
     });
     if (!res.ok) return;
     const data = await res.json();
     if (data.prices) {
       Object.assign(livePrices, data.prices);
       updateTickerBar(data.prices, data.kse100);
-      // Update current stock display if price changed
       if (livePrices[cur]) renderLivePrice(cur);
     }
   } catch(e) {}
@@ -813,62 +914,54 @@ function renderLivePrice(ticker) {
   if (!lp) return;
   const priceEl = document.getElementById('live-price');
   const chgEl   = document.getElementById('live-chg');
-  if (priceEl) priceEl.textContent = 'PKR ' + lp.price;
-  if (chgEl)   {
-    chgEl.textContent = (lp.change > 0 ? '+' : '') + lp.change + '% today';
-    chgEl.className = 'hero-chg ' + (lp.change >= 0 ? 'up' : 'dn');
+  if (priceEl) priceEl.textContent = lp.price;
+  if (chgEl) {
+    chgEl.textContent = `${lp.dir==='up'?'+':''}${lp.change}% today`;
+    chgEl.className = `hero-chg ${lp.dir==='up'?'up':'dn'}`;
   }
 }
 
 function updateTickerBar(prices, kse100) {
-  // Update KSE-100
   if (kse100) {
     const kseVal = document.getElementById('kse-val');
     const kseChg = document.getElementById('kse-chg');
-    if (kseVal) kseVal.textContent = Number(kse100.price).toLocaleString();
+    if (kseVal) kseVal.textContent = kse100.price;
     if (kseChg) {
-      const chg = parseFloat(kse100.change);
-      kseChg.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
-      kseChg.className = 'ticker-chg ' + (chg >= 0 ? 'up' : 'dn');
+      kseChg.textContent = `${parseFloat(kse100.change)>=0?'+':''}${kse100.change}%`;
+      kseChg.className = `ticker-chg ${kse100.dir==='up'?'up':'dn'}`;
     }
   }
 
-  // Build scrolling ticker items (doubled for seamless loop)
   const track = document.getElementById('ticker-track');
   if (!track) return;
 
-  const items = Object.entries(DATA).map(([ticker, s]) => {
+  const items = ALL_TICKERS.map(ticker => {
     const lp = prices[ticker];
-    const price  = lp ? 'PKR ' + lp.price : 'PKR ' + s.price;
-    const change = lp ? lp.change : parseFloat(s.chg);
-    const isUp   = change >= 0;
+    if (!lp) return '';
+    const isUp = lp.dir === 'up';
     return `<div class="ticker-item" onclick="select('${ticker}')">
-      <div class="ticker-dot" style="background:${isUp ? 'var(--gb)' : 'var(--ra)'}"></div>
+      <div class="ticker-dot" style="background:${isUp?'var(--gb)':'var(--ra)'}"></div>
       <span class="ticker-name">${ticker}</span>
-      <span class="ticker-price">${price}</span>
-      <span class="ticker-chg ${isUp ? 'up' : 'dn'}">${isUp ? '+' : ''}${change}%</span>
+      <span class="ticker-price">PKR ${lp.price}</span>
+      <span class="ticker-chg ${isUp?'up':'dn'}">${isUp?'+':''}${lp.change}%</span>
     </div>`;
-  }).join('');
+  }).filter(Boolean).join('');
 
-  // Double items for seamless infinite scroll
-  track.innerHTML = `<div class="kse-badge"><span class="kse-label">KSE-100</span><span class="kse-value" id="kse-val">${kse100 ? Number(kse100.price).toLocaleString() : '—'}</span><span class="ticker-chg ${kse100 && parseFloat(kse100.change) >= 0 ? 'up' : 'dn'}" id="kse-chg">${kse100 ? (parseFloat(kse100.change) >= 0 ? '+' : '') + parseFloat(kse100.change).toFixed(2) + '%' : ''}</span></div>${items}${items}`;
+  const kseHtml = kse100 ? `<div class="kse-badge"><span class="kse-label">KSE-100</span><span class="kse-value" id="kse-val">${kse100.price}</span><span class="ticker-chg ${kse100.dir==='up'?'up':'dn'}" id="kse-chg">${parseFloat(kse100.change)>=0?'+':''}${kse100.change}%</span></div>` : '';
+
+  track.innerHTML = kseHtml + items + items;
 }
 
-function select(ticker){
-  closeSheet();
-  cur=ticker; tab='overview';
-  document.getElementById('pill-av').textContent=ticker.slice(0,3);
-  document.getElementById('pill-lbl').textContent=ticker;
-  render(ticker,verdicts[ticker]||null);
-  if(!verdicts[ticker]) loadVerdict(ticker);
-  // Show live price if available
-  if(livePrices[ticker]) renderLivePrice(ticker);
+// ── SHEET TITLE UPDATE ─────────────────────────────────────
+function updateSheetTitle() {
+  const el = document.querySelector('.sheet-ttl');
+  if (el) el.textContent = 'Select a stock · PSX';
 }
 
-// Fetch live prices on load, then every 60 seconds
+// ── INIT ──────────────────────────────────────────────────
+updateSheetTitle();
 fetchLivePrices();
 setInterval(fetchLivePrices, 60000);
-
 select('OGDC');
 </script>
 </body>
