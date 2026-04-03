@@ -25,34 +25,36 @@ function fetchJSON(url, timeoutMs = 6000) {
 async function getPSXPrice(ticker) {
   try {
     const data = await fetchJSON(`https://psxterminal.com/api/ticks/REG/${ticker}`);
-    if (!data) { console.log(`${ticker}: no data from PSX Terminal`); return null; }
+    if (!data) { console.log(`${ticker}: no data`); return null; }
 
-    const keys = Array.isArray(data) ? (data[0] ? Object.keys(data[0]) : ['empty array']) : Object.keys(d);
-    console.log(`${ticker} keys:`, keys.join(','));
-    console.log(`${ticker} sample:`, JSON.stringify(Array.isArray(data) ? data[0] : data).slice(0, 300));
-
-    // Handle both array and object responses
+    // Handle both array and object responses — define d FIRST
     const d = Array.isArray(data) ? data[0] : data;
-    if (!d) return null;
+    if (!d) { console.log(`${ticker}: empty response`); return null; }
+
+    // Log the actual field names so we can see the structure
+    console.log(`${ticker} keys:`, Object.keys(d).join(','));
+    console.log(`${ticker} sample:`, JSON.stringify(d).slice(0, 300));
 
     // Try all possible field names PSX Terminal might use
-    const price = d.currentPrice ?? d.ldcp ?? d.close ?? d.last ?? d.ltp ?? d.price ?? d.closePrice;
-    const prev  = d.previousClose ?? d.ldcp ?? d.prevClose ?? d.open ?? d.basePrice;
-    const high  = d.high ?? d.dayHigh ?? d.highPrice;
-    const low   = d.low  ?? d.dayLow  ?? d.lowPrice;
-    const vol   = d.volume ?? d.totalVolume ?? d.tradedVolume;
+    const price = d.currentPrice ?? d.ldcp ?? d.close ?? d.last ?? d.ltp ?? d.price ?? d.closePrice ?? d.LDCP ?? d.Close;
+    const prev  = d.previousClose ?? d.prevClose ?? d.open ?? d.basePrice ?? d.Open ?? d.PreviousClose;
+    const high  = d.high ?? d.dayHigh ?? d.highPrice ?? d.High;
+    const low   = d.low  ?? d.dayLow  ?? d.lowPrice  ?? d.Low;
+    const vol   = d.volume ?? d.totalVolume ?? d.tradedVolume ?? d.Volume;
 
-    if (!price) { console.log(`${ticker}: no price field. Keys:`, Object.keys(d).join(',')); return null; }
+    if (!price) { console.log(`${ticker}: no price field found`); return null; }
 
-    const change = price && prev ? ((Number(price) - Number(prev)) / Number(prev) * 100) : (d.change ?? d.pctChange ?? 0);
+    const pNum  = Number(price);
+    const prevN = prev ? Number(prev) : null;
+    const change = prevN ? ((pNum - prevN) / prevN * 100) : Number(d.change ?? d.pctChange ?? d.changePercent ?? 0);
 
     return {
-      price:  Number(price).toFixed(2),
-      change: Number(change).toFixed(2),
+      price:  pNum.toFixed(2),
+      change: change.toFixed(2),
       high:   high ? Number(high).toFixed(2) : null,
       low:    low  ? Number(low).toFixed(2)  : null,
       volume: vol  ? Number(vol).toLocaleString() : null,
-      dir:    Number(change) >= 0 ? 'up' : 'dn'
+      dir:    change >= 0 ? 'up' : 'dn'
     };
   } catch(e) { console.error(`${ticker} error:`, e.message); return null; }
 }
