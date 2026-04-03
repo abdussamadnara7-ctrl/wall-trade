@@ -2,12 +2,9 @@
   publish = "public"
   functions = "netlify/functions"
 
-[[snippets]]
-  location = "head"
-  contents = "<meta name='wt-cfg' content='REPLACE_KEY_HERE'>"
-
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
+    Cache-Control = "no-cache, no-store, must-revalidate"
