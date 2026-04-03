@@ -1,5 +1,5 @@
 const CACHE = 'wall-trade-v1';
-const STATIC = ['/', '/index.html', '/app.html'];
+const STATIC = ['/', '/index.html', '/app.html', 'https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC)).catch(() => {}));
@@ -14,11 +14,18 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Never cache API calls
   if (e.request.url.includes('/.netlify/functions/')) return;
+
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
-      return fetch(e.request).catch(() => caches.match('/index.html'));
+      return fetch(e.request).then(res => {
+        if (!res || res.status !== 200 || res.type !== 'basic') return res;
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      }).catch(() => caches.match('/index.html'));
     })
   );
 });
