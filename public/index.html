@@ -213,6 +213,51 @@ footer {
 }
 .footer-logo { font-size: 16px; font-weight: 700; letter-spacing: -0.04em; background: linear-gradient(130deg,var(--ga),var(--pa)); -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
 .footer-text { font-size: 11px; color: var(--t3); }
+
+/* ── LIVE TICKER ── */
+.live-ticker {
+  width: 100%; overflow: hidden;
+  background: rgba(15,15,24,0.95);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 7px 0;
+  position: relative;
+}
+.live-ticker::before, .live-ticker::after {
+  content: ''; position: absolute; top: 0; width: 48px; height: 100%; z-index: 2; pointer-events: none;
+}
+.live-ticker::before { left: 0; background: linear-gradient(to right, rgba(15,15,24,0.95), transparent); }
+.live-ticker::after  { right: 0; background: linear-gradient(to left, rgba(15,15,24,0.95), transparent); }
+.ticker-scroll {
+  display: flex; align-items: center;
+  animation: tickerMove 22s linear infinite;
+  width: max-content;
+}
+.ticker-scroll:hover { animation-play-state: paused; }
+@keyframes tickerMove { 0%{ transform:translateX(0) } 100%{ transform:translateX(-50%) } }
+.t-kse {
+  display: flex; align-items: center; gap: 7px;
+  padding: 0 18px 0 22px;
+  border-right: 1px solid rgba(255,255,255,0.07);
+  white-space: nowrap;
+}
+.t-kse-lbl { font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(238,237,248,0.3); }
+.t-kse-val { font-size: 11px; font-weight: 700; color: #eeedf8; }
+.t-kse-chg { font-size: 10px; font-weight: 700; }
+.t-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 16px;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  white-space: nowrap; cursor: pointer; text-decoration: none;
+}
+.t-item:hover { background: rgba(255,255,255,0.03); }
+.t-dot { width: 4px; height: 4px; border-radius: 50%; animation: tdot 1.5s ease-in-out infinite; }
+@keyframes tdot { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.t-name { font-size: 10px; font-weight: 700; color: rgba(238,237,248,0.5); letter-spacing: 0.02em; }
+.t-price { font-size: 11px; font-weight: 600; color: #eeedf8; }
+.t-chg { font-size: 10px; font-weight: 700; }
+.t-up { color: #22d98a; }
+.t-dn { color: #ff8080; }
+
 </style>
 </head>
 <body>
@@ -222,6 +267,12 @@ footer {
   <div class="nav-logo">Wall-Trade</div>
   <a href="/app.html" class="nav-cta">Open App →</a>
 </nav>
+
+
+<!-- LIVE TICKER -->
+<div class="live-ticker">
+  <div class="ticker-scroll" id="hp-ticker"></div>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -374,6 +425,61 @@ footer {
 </footer>
 
 <script>
+
+// Homepage live ticker
+(function() {
+  const stocks = [
+    { t:'KSE-100', p:'115,842', c:'+0.82%', up:true,  kse:true },
+    { t:'OGDC',    p:'191.45',  c:'+2.4%',  up:true  },
+    { t:'PPL',     p:'134.20',  c:'+1.6%',  up:true  },
+    { t:'PSO',     p:'381.00',  c:'-1.3%',  up:false },
+    { t:'MARI',    p:'2,348',   c:'+1.6%',  up:true  },
+    { t:'APL',     p:'731.50',  c:'+1.0%',  up:true  },
+    { t:'HASCOL',  p:'27.30',   c:'-2.5%',  up:false },
+  ];
+
+  function buildItems() {
+    return stocks.map(s => {
+      if (s.kse) return `<div class="t-kse"><span class="t-kse-lbl">KSE-100</span><span class="t-kse-val">${s.p}</span><span class="t-kse-chg t-up">${s.c}</span></div>`;
+      return `<a href="/app.html" class="t-item"><div class="t-dot" style="background:${s.up?'#22d98a':'#ff8080'}"></div><span class="t-name">${s.t}</span><span class="t-price">PKR ${s.p}</span><span class="t-chg ${s.up?'t-up':'t-dn'}">${s.c}</span></a>`;
+    }).join('');
+  }
+
+  const track = document.getElementById('hp-ticker');
+  if (track) {
+    const items = buildItems();
+    track.innerHTML = items + items;
+  }
+
+  // Try to fetch live prices
+  fetch('/.netlify/functions/prices', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({tickers:['OGDC','PPL','PSO','MARI','APL','HASCOL']})
+  }).then(r=>r.json()).then(data=>{
+    if (!data.prices || !track) return;
+    const liveStocks = stocks.map(s => {
+      if (s.kse) {
+        if (data.kse100) {
+          const chg = parseFloat(data.kse100.change);
+          return { ...s, p: Number(data.kse100.price).toLocaleString(), c:(chg>=0?'+':'')+chg.toFixed(2)+'%', up:chg>=0 };
+        }
+        return s;
+      }
+      const lp = data.prices[s.t];
+      if (!lp) return s;
+      const chg = parseFloat(lp.change);
+      return { ...s, p: lp.price, c:(chg>=0?'+':'')+chg.toFixed(2)+'%', up:chg>=0 };
+    });
+    // Rebuild with live data
+    const liveItems = liveStocks.map(s => {
+      if (s.kse) return `<div class="t-kse"><span class="t-kse-lbl">KSE-100</span><span class="t-kse-val">${s.p}</span><span class="t-kse-chg ${s.up?'t-up':'t-dn'}">${s.c}</span></div>`;
+      return `<a href="/app.html" class="t-item"><div class="t-dot" style="background:${s.up?'#22d98a':'#ff8080'}"></div><span class="t-name">${s.t}</span><span class="t-price">PKR ${s.p}</span><span class="t-chg ${s.up?'t-up':'t-dn'}">${s.c}</span></a>`;
+    }).join('');
+    track.innerHTML = liveItems + liveItems;
+  }).catch(()=>{});
+})();
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
