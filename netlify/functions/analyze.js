@@ -15,6 +15,42 @@ function getRateLimit(ip) {
 }
 
 // ── HTTP FETCH ─────────────────────────────────────────────────
+function fetchXML(url, source, timeoutMs = 4000) {
+  return new Promise((resolve) => {
+    const lib = url.startsWith('https') ? https : http;
+    const timer = setTimeout(() => resolve([]), timeoutMs);
+    try {
+      lib.get(url, { headers: { 'User-Agent': 'WallTrade/1.0', 'Accept': 'application/rss+xml, application/xml, text/xml' } }, res => {
+        let body = '';
+        res.on('data', chunk => { body += chunk; });
+        res.on('end', () => {
+          clearTimeout(timer);
+          try {
+            const articles = [];
+            // Parse RSS items with regex (no XML parser needed)
+            const items = body.match(/<item>([\s\S]*?)<\/item>/gi) || [];
+            items.slice(0, 10).forEach(item => {
+              const title = (item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/i) || item.match(/<title>(.*?)<\/title>/i) || [])[1] || '';
+              const desc  = (item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/i) || item.match(/<description>(.*?)<\/description>/i) || [])[1] || '';
+              const pubDate = (item.match(/<pubDate>(.*?)<\/pubDate>/i) || [])[1] || '';
+              if (title.trim()) {
+                articles.push({
+                  title: title.trim().replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#39;/g,"'").replace(/&quot;/g,'"'),
+                  description: desc.replace(/<[^>]*>/g,'').trim().slice(0,200).replace(/&amp;/g,'&').replace(/&#39;/g,"'"),
+                  publishedAt: pubDate.trim(),
+                  date: pubDate ? new Date(pubDate).getTime() : 0,
+                  source
+                });
+              }
+            });
+            resolve(articles);
+          } catch(e) { resolve([]); }
+        });
+      }).on('error', () => { clearTimeout(timer); resolve([]); });
+    } catch(e) { clearTimeout(timer); resolve([]); }
+  });
+}
+
 function fetchJSON(url, timeoutMs = 4000) {
   return new Promise((resolve) => {
     const lib = url.startsWith('https') ? https : http;
@@ -129,21 +165,40 @@ async function fetchLiveMacro() {
   } catch(e) {}
 
   try {
-    // 6 — Pakistan & global financial news via GNews (free tier — 100/day)
-    const newsKey = process.env.GNEWS_API_KEY;
-    if (newsKey) {
-      const newsData = await fetchJSON(
-        `https://gnews.io/api/v4/search?q=Pakistan+economy+OR+PSX+OR+SBP+OR+oil+price+OR+Iran+war&lang=en&max=8&sortby=publishedAt&apikey=${newsKey}`
-      );
-      if (newsData?.articles?.length) {
-        macro.news = newsData.articles.slice(0, 8).map(a => ({
-          title:       a.title,
-          source:      a.source?.name,
-          publishedAt: a.publishedAt,
-          description: a.description?.slice(0, 150)
-        }));
+    // 6 — Pakistan financial news via free RSS feeds (unlimited, no API key)
+    const RSS_FEEDS = [
+      { url: 'https://www.dawn.com/feeds/business-finance', source: 'Dawn Business' },
+      { url: 'https://www.brecorder.com/feeds/rss', source: 'Business Recorder' },
+      { url: 'https://arynews.tv/feed/', source: 'ARY News' },
+      { url: 'https://www.thenews.com.pk/rss/2/29', source: 'The News Business' },
+    ];
+
+    const rssResults = await Promise.allSettled(
+      RSS_FEEDS.map(feed => fetchXML(feed.url, feed.source))
+    );
+
+    const allArticles = [];
+    rssResults.forEach(r => {
+      if (r.status === 'fulfilled' && r.value) {
+        allArticles.push(...r.value);
       }
-    }
+    });
+
+    // Sort by date, take top 8 most relevant
+    const keywords = ['economy', 'psx', 'sbp', 'stock', 'rupee', 'pkr', 'oil', 'imf', 'budget', 'inflation', 'interest rate', 'kse', 'market', 'investment', 'sector', 'energy', 'bank', 'cement', 'fertiliser'];
+    
+    const scored = allArticles.map(a => {
+      const text = (a.title + ' ' + (a.description || '')).toLowerCase();
+      const score = keywords.filter(k => text.includes(k)).length;
+      return { ...a, score };
+    }).filter(a => a.score > 0).sort((a, b) => b.score - a.score || b.date - a.date);
+
+    macro.news = scored.slice(0, 8).map(a => ({
+      title: a.title,
+      source: a.source,
+      description: a.description?.slice(0, 150),
+      publishedAt: a.publishedAt
+    }));
   } catch(e) {}
 
   return macro;
