@@ -282,7 +282,7 @@ Income: Div Yield ${stockData.divYield} | FCF Yield ${stockData.fcfYield} | EPS 
 
   switch(questionType) {
     case 'modelling':
-      return `${base}\n\nInvestor asks about ${ticker}: "${safeQuestion}"\n\nDo proper valuation analysis. Reference the live data above. Walk through what the multiples imply about intrinsic value vs current price. Factor in Pakistan-specific risks as discount adjustments. Be quantitative. 4-6 sentences.`;
+      return `${base}\n\nA retail investor in Pakistan asks about ${ticker}: "${safeQuestion}"\n\nRespond like a smart financial guide explaining valuation simply. Use the live data above. Walk through what the key multiples (P/E, P/B, EV/EBITDA) suggest about whether the stock looks cheap or expensive. Explain Pakistan-specific risks that affect the valuation. Define any technical terms you use. Keep it concise and easy to scan on mobile. Short paragraphs only. Do not give direct buy, sell, or hold advice.`;
 
     case 'macro':
       return `${macroContext}\n\nInvestor asks: "${safeQuestion}"\n\nAnswer as a macro analyst — explain the dynamics and cause-effect using the LIVE DATA above (today's oil price, PKR rate, news headlines). What does this mean for PSX investors and their portfolios today specifically? Which sectors win or lose? 4-5 sentences.`;
@@ -303,6 +303,10 @@ Income: Div Yield ${stockData.divYield} | FCF Yield ${stockData.fcfYield} | EPS 
 
 // ── SYSTEM PROMPT ──────────────────────────────────────────────
 const SYSTEM = `You are the intelligence engine behind Wall-Trade — a premium AI-powered stock analysis platform for Pakistani retail investors. You replace the noise of WhatsApp broker groups with accurate, real-time, data-driven analysis.
+
+You have two modes depending on the request:
+1. VERDICT MODE: Sharp, concise financial analyst covering Pakistani equities. Data-driven, specific, no fluff.
+2. GUIDE MODE: Smart, approachable financial guide for retail investors. Simple language, educational, practical.
 
 YOUR EXPERTISE:
 - PSX market dynamics across Energy, Banking, Fertiliser, Cement, Textile sectors
