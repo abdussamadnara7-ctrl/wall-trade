@@ -446,37 +446,200 @@ body {
 <div id="root"></div>
 
 <script>
-// ── POPULAR PSX STOCKS (for quick browse) ──────────────────
-const POPULAR = {
-  'Energy & Oil':    ['OGDC','PPL','PSO','MARI','APL','HASCOL','SNGP','SSGC'],
-  'Banking':         ['HBL','MCB','UBL','NBP','ABL','BAFL','BAHL','MEBL','FABL'],
-  'Fertiliser':      ['ENGRO','FFBL','FFC','EFERT'],
-  'Cement':          ['LUCK','MLCF','CHCC','DGKC','PIOC','FCCL'],
-  'Technology':      ['TRG','SYS','NETSOL'],
-  'Other':           ['PAKT','PNSC']
+// ── 20 STOCK DATA (fundamentals hardcoded, prices live via prices.js) ──
+const DATA = {
+  // ── ENERGY & OIL (6) ─────────────────────────────────────
+  OGDC:{name:"Oil & Gas Development Co.",sector:"Exploration & Production",price:"284",chg:"+1.8",dir:"up",
+    insights:[{icon:"📊",value:"6.2× P/E",label:"Below sector average — good value",color:"green"},{icon:"💰",value:"5.9% Yield",label:"Consistent high dividend payer",color:"green"},{icon:"⚠️",value:"Circular Debt",label:"Rs. 2.3tn state receivables risk",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"6.2×",c:"green",ctx:"Below sector avg"},"Div Yield":{v:"5.9%",c:"green",ctx:"Solid income"},"Debt/Equity":{v:"0.08",c:"green",ctx:"Very low leverage"},"ROE":{v:"18.2%",c:"green",ctx:"Strong returns"},"Current Ratio":{v:"1.4×",c:"amber",ctx:"Adequate"},"Gross Margin":{v:"61%",c:"green",ctx:"High quality"}},
+    sigs:[{l:"State-backed",t:"purple"},{l:"High dividend",t:"green"},{l:"Circular debt",t:"red"},{l:"Low leverage",t:"green"},{l:"Gas price lag",t:"amber"}],
+    scores:{"Financial health":{v:8},"Macro environment":{v:5},"Growth outlook":{v:5},"Risk level":{v:6}},overall:6.0,
+    odesc:"Stable income play — attractive yield but circular debt caps the upside",
+    factors:[{i:"🌍",t:"IMF & energy pricing",d:"Government keeps gas wellhead prices below market rates. Revenue is directly impacted — revisions are slow and politically sensitive under the IMF programme."},{i:"💸",t:"Circular debt cash flow",d:"OGDC is owed billions by state entities that consistently pay late. Earnings look strong on paper but real cash collection is a persistent underlying problem."},{i:"💱",t:"Dollar-linked revenues",d:"Crude oil sales are partially dollar-linked. A weaker rupee boosts revenues — the net effect is positive even after accounting for hard currency exploration costs."}]},
+
+  PPL:{name:"Pakistan Petroleum Ltd",sector:"Exploration & Production",price:"162",chg:"+0.9",dir:"up",
+    insights:[{icon:"📊",value:"5.4× P/E",label:"Cheaper than peers — looks undervalued",color:"green"},{icon:"💰",value:"8.1% Yield",label:"One of the better yields in E&P sector",color:"green"},{icon:"⛏️",value:"Field Risk",label:"Sui gas field in long-term decline",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"5.4×",c:"green",ctx:"Cheap vs peers"},"Div Yield":{v:"8.1%",c:"green",ctx:"Good income"},"Debt/Equity":{v:"0.12",c:"green",ctx:"Low debt"},"ROE":{v:"15.7%",c:"green",ctx:"Solid returns"},"Current Ratio":{v:"1.2×",c:"amber",ctx:"Tight but ok"},"Gross Margin":{v:"55%",c:"green",ctx:"Strong margins"}},
+    sigs:[{l:"Undervalued",t:"green"},{l:"Good dividend",t:"green"},{l:"Circular debt",t:"red"},{l:"Field depletion",t:"amber"},{l:"New discoveries",t:"purple"}],
+    scores:{"Financial health":{v:7},"Macro environment":{v:5},"Growth outlook":{v:6},"Risk level":{v:6}},overall:6.0,
+    odesc:"Solid E&P — new field discoveries would be a meaningful catalyst",
+    factors:[{i:"⛏️",t:"Sui gas field in decline",d:"PPL's flagship field is mature and declining. New exploration in Balochistan and offshore blocks will determine the long-term growth story."},{i:"🏛️",t:"State ownership provides a floor",d:"Government majority ownership means no hostile acquisitions. But pricing decisions involve politics, not just market economics."},{i:"🔄",t:"Circular debt resolution upside",d:"If the IMF programme forces a genuine circular debt workout, PPL's blocked receivables finally convert to cash — a significant positive the market hasn't priced in."}]},
+
+  PSO:{name:"Pakistan State Oil",sector:"Oil Marketing Company",price:"295",chg:"-0.6",dir:"dn",
+    insights:[{icon:"🚨",value:"Rs. 800bn+",label:"Unpaid receivables — existential risk",color:"red"},{icon:"⚡",value:"0.9× Ratio",label:"Current ratio below 1.0 — liquidity risk",color:"red"},{icon:"📊",value:"4.1× P/E",label:"Very cheap but risks are serious",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"4.1×",c:"amber",ctx:"Cheap but risky"},"Current Ratio":{v:"0.9×",c:"red",ctx:"Below 1 — risk"},"Debt/Equity":{v:"2.1",c:"red",ctx:"High leverage"},"ROE":{v:"22%",c:"green",ctx:"Strong if collected"},"Gross Margin":{v:"3.2%",c:"red",ctx:"Thin OMC margin"},"Div Yield":{v:"4.8%",c:"amber",ctx:"Uncertain payout"}},
+    sigs:[{l:"Receivables risk",t:"red"},{l:"High leverage",t:"red"},{l:"State backing",t:"purple"},{l:"Cheap valuation",t:"amber"},{l:"Thin margins",t:"amber"}],
+    scores:{"Financial health":{v:3},"Macro environment":{v:4},"Growth outlook":{v:4},"Risk level":{v:2}},overall:3.5,
+    odesc:"Deep value trap — cheap for a reason, receivables problem is existential",
+    factors:[{i:"💣",t:"Receivables are the crisis",d:"PSO is owed hundreds of billions by power companies and government entities that pay late or not at all. This has been building for years."},{i:"🏦",t:"Government will not let it fail",d:"PSO is too strategically important to go bankrupt. Support is implicit but that doesn't mean shareholders benefit — dilution remains a risk."},{i:"⛽",t:"Petrol pricing reforms are key",d:"If the government implements cost-reflective fuel pricing under the IMF programme, PSO's margins improve significantly. This is the main catalyst to watch."}]},
+
+  MARI:{name:"Mari Petroleum Co.",sector:"Exploration & Production",price:"1820",chg:"+2.1",dir:"up",
+    insights:[{icon:"🏆",value:"31.4% ROE",label:"Best return on equity in E&P sector",color:"green"},{icon:"🛡️",value:"0.04 D/E",label:"Essentially debt-free balance sheet",color:"green"},{icon:"📊",value:"8.2× P/E",label:"Premium valuation — market prices quality",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"8.2×",c:"amber",ctx:"Premium vs peers"},"ROE":{v:"31.4%",c:"green",ctx:"Best in sector"},"Debt/Equity":{v:"0.04",c:"green",ctx:"Debt-free"},"Gross Margin":{v:"72%",c:"green",ctx:"Exceptional"},"Current Ratio":{v:"2.8×",c:"green",ctx:"Very liquid"},"Div Yield":{v:"4.2%",c:"green",ctx:"Growing payout"}},
+    sigs:[{l:"Best quality E&P",t:"green"},{l:"Debt-free",t:"green"},{l:"Premium valuation",t:"amber"},{l:"Gas-focused",t:"purple"},{l:"Mari gas field",t:"green"}],
+    scores:{"Financial health":{v:9},"Macro environment":{v:6},"Growth outlook":{v:7},"Risk level":{v:8}},overall:7.5,
+    odesc:"Highest quality E&P on PSX — premium priced but every rupee is earned",
+    factors:[{i:"💎",t:"Mari gas field — irreplaceable asset",d:"MARI's flagship field is one of Pakistan's largest producing fields. It supplies gas to fertiliser plants and power stations, making MARI strategically essential."},{i:"📈",t:"Exceptional financial quality",d:"31% ROE with zero debt is exceptionally rare on the PSX. The company generates strong free cash flow and has consistently grown its dividend."},{i:"⚖️",t:"Valuation is the constraint",d:"MARI trades at a premium to peers — justifiably so, but it limits upside. A re-rating would require either a major new discovery or earnings surprise."}]},
+
+  APL:{name:"Attock Petroleum Ltd",sector:"Oil Marketing Company",price:"612",chg:"+1.2",dir:"up",
+    insights:[{icon:"💰",value:"11.2% Yield",label:"One of highest yields on entire PSX",color:"green"},{icon:"🏦",value:"Zero Debt",label:"Completely self-funded operations",color:"green"},{icon:"📉",value:"Volume Risk",label:"Declining fuel volumes long-term",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"7.1×",c:"green",ctx:"Good value"},"Div Yield":{v:"11.2%",c:"green",ctx:"Exceptional yield"},"Debt/Equity":{v:"0.0",c:"green",ctx:"Zero debt"},"ROE":{v:"24.8%",c:"green",ctx:"Excellent"},"Current Ratio":{v:"1.9×",c:"green",ctx:"Healthy"},"Gross Margin":{v:"4.1%",c:"amber",ctx:"Thin OMC margin"}},
+    sigs:[{l:"Exceptional yield",t:"green"},{l:"Zero debt",t:"green"},{l:"Family-run",t:"purple"},{l:"Efficient OMC",t:"green"},{l:"Volume risk",t:"amber"}],
+    scores:{"Financial health":{v:9},"Macro environment":{v:5},"Growth outlook":{v:5},"Risk level":{v:7}},overall:6.5,
+    odesc:"Best income stock in OMC — exceptional yield with zero debt",
+    factors:[{i:"💸",t:"11%+ dividend yield is exceptional",d:"APL consistently pays out most of its earnings as dividends. At current prices, the yield exceeds SBP's policy rate — compelling for income investors."},{i:"🏗️",t:"Attock Group backing",d:"The Pharaon family's Attock Group provides strategic backing and keeps the business conservatively run. Zero debt policy is a deliberate management choice."},{i:"⛽",t:"OMC margins are structurally thin",d:"Oil marketing is a thin-margin business. APL compensates with high volume and zero financing costs, but any margin compression hits earnings quickly."}]},
+
+  HASCOL:{name:"Hascol Petroleum Ltd",sector:"Oil Marketing Company",price:"24",chg:"-1.4",dir:"dn",
+    insights:[{icon:"🚨",value:"Restructuring",label:"Under debt restructuring — high risk",color:"red"},{icon:"📉",value:"Loss-making",label:"No dividend paid in years",color:"red"},{icon:"🎲",value:"Turnaround?",label:"Deep distress — risk tolerant only",color:"red"}],
+    ratios:{"P/E Ratio":{v:"N/A",c:"red",ctx:"Loss-making"},"Debt/Equity":{v:"8.4",c:"red",ctx:"Dangerously high"},"Current Ratio":{v:"0.4×",c:"red",ctx:"Severe liquidity"},"ROE":{v:"-ve",c:"red",ctx:"Loss-making"},"Gross Margin":{v:"1.1%",c:"red",ctx:"Barely positive"},"Div Yield":{v:"0%",c:"red",ctx:"No dividend"}},
+    sigs:[{l:"Debt crisis",t:"red"},{l:"Loss-making",t:"red"},{l:"Restructuring",t:"amber"},{l:"Speculative",t:"amber"}],
+    scores:{"Financial health":{v:1},"Macro environment":{v:3},"Growth outlook":{v:2},"Risk level":{v:1}},overall:2.0,
+    odesc:"Distressed — only for speculators comfortable with potential total loss",
+    factors:[{i:"💥",t:"Debt crisis is severe",d:"HASCOL accumulated massive debt during aggressive expansion. The restructuring process has been ongoing and outcome remains uncertain."},{i:"🔄",t:"Turnaround is possible but difficult",d:"New management has been working on restructuring the balance sheet. Any successful debt resolution would be a significant positive catalyst."},{i:"⚠️",t:"Not suitable for most investors",d:"This is highly speculative. The stock can move violently on rumours. Only investors who fully understand the risks and can afford total loss should consider it."}]},
+
+  // ── BANKING (6) ───────────────────────────────────────────
+  HBL:{name:"Habib Bank Ltd",sector:"Commercial Banking",price:"168",chg:"+1.1",dir:"up",
+    insights:[{icon:"🏦",value:"Rs. 4tn+",label:"Largest bank in Pakistan by assets",color:"green"},{icon:"💰",value:"9.2% Yield",label:"Attractive consistent dividend",color:"green"},{icon:"📉",value:"NIM Risk",label:"Rate cuts will compress margins",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"5.8×",c:"green",ctx:"Cheap vs peers"},"Div Yield":{v:"9.2%",c:"green",ctx:"Strong income"},"ROE":{v:"22%",c:"green",ctx:"Strong returns"},"P/B Ratio":{v:"0.9×",c:"green",ctx:"Below book"},"NPL Ratio":{v:"6.2%",c:"amber",ctx:"Manageable"},"CASA Ratio":{v:"78%",c:"green",ctx:"Strong funding"}},
+    sigs:[{l:"Largest bank",t:"purple"},{l:"High dividend",t:"green"},{l:"Rate cut risk",t:"amber"},{l:"Below book",t:"green"},{l:"International",t:"purple"}],
+    scores:{"Financial health":{v:7},"Macro environment":{v:5},"Growth outlook":{v:6},"Risk level":{v:6}},overall:6.0,
+    odesc:"Pakistan's largest bank — compelling income play but rate cuts are a headwind",
+    factors:[{i:"🏛️",t:"Scale advantage is enormous",d:"HBL's asset base, branch network, and international presence give it a structural competitive advantage that smaller banks simply cannot match."},{i:"📉",t:"Rate cuts will hurt NIMs",d:"Banks earn the spread between lending and deposit rates. As SBP cuts from 22% to 10.5%, this spread compresses — interest income will decline."},{i:"🌍",t:"International operations add value",d:"HBL's operations in GCC, UK and USA provide diversification. Remittance flows through HBL are a significant and growing revenue stream."}]},
+
+  MCB:{name:"MCB Bank Ltd",sector:"Commercial Banking",price:"212",chg:"+0.8",dir:"up",
+    insights:[{icon:"✨",value:"92% CASA",label:"Highest current account ratio — cheapest funding",color:"green"},{icon:"💰",value:"8.8% Yield",label:"Consistent high dividend — market favourite",color:"green"},{icon:"📊",value:"26% ROE",label:"Best return on equity in sector",color:"green"}],
+    ratios:{"P/E Ratio":{v:"6.2×",c:"amber",ctx:"Fair value"},"Div Yield":{v:"8.8%",c:"green",ctx:"Market favourite"},"ROE":{v:"26%",c:"green",ctx:"Best in sector"},"P/B Ratio":{v:"1.2×",c:"amber",ctx:"Slight premium"},"CASA Ratio":{v:"92%",c:"green",ctx:"Best in class"},"NPL Ratio":{v:"4.1%",c:"green",ctx:"Low NPLs"}},
+    sigs:[{l:"Best quality bank",t:"green"},{l:"High CASA",t:"green"},{l:"Consistent dividend",t:"green"},{l:"Conservative mgmt",t:"purple"}],
+    scores:{"Financial health":{v:9},"Macro environment":{v:6},"Growth outlook":{v:6},"Risk level":{v:8}},overall:7.0,
+    odesc:"Highest quality Pakistani bank — best CASA and consistently superior returns",
+    factors:[{i:"💳",t:"CASA ratio is MCB's superpower",d:"MCB's 92% CASA ratio means it funds itself with near-zero cost deposits. This is a massive competitive advantage that protects margins even as rates fall."},{i:"📈",t:"ROE consistently above 25%",d:"MCB has maintained returns on equity above 25% for years, reflecting exceptional efficiency and disciplined credit standards."},{i:"🔄",t:"Rate cuts are the main risk",d:"Lower interest rates reduce the value of MCB's massive CASA advantage. The stock faces near-term pressure as the SBP easing cycle continues."}]},
+
+  UBL:{name:"United Bank Ltd",sector:"Commercial Banking",price:"196",chg:"+0.5",dir:"up",
+    insights:[{icon:"🌍",value:"GCC Focus",label:"Strong Middle East presence — remittance leader",color:"green"},{icon:"💰",value:"9.5% Yield",label:"High dividend with international support",color:"green"},{icon:"⚖️",value:"NPL Watch",label:"NPL ratio needs monitoring",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"5.4×",c:"green",ctx:"Good value"},"Div Yield":{v:"9.5%",c:"green",ctx:"Attractive yield"},"ROE":{v:"21%",c:"green",ctx:"Strong returns"},"P/B Ratio":{v:"0.9×",c:"green",ctx:"Below book"},"CASA Ratio":{v:"76%",c:"green",ctx:"Strong funding"},"NPL Ratio":{v:"7.8%",c:"amber",ctx:"Watch closely"}},
+    sigs:[{l:"International ops",t:"purple"},{l:"High dividend",t:"green"},{l:"GCC remittance",t:"green"},{l:"NPL concern",t:"amber"},{l:"Below book",t:"green"}],
+    scores:{"Financial health":{v:7},"Macro environment":{v:6},"Growth outlook":{v:6},"Risk level":{v:6}},overall:6.2,
+    odesc:"Strong international franchise — GCC operations provide earnings diversification",
+    factors:[{i:"🌍",t:"GCC operations are key differentiator",d:"UBL's Middle East presence gives it access to Pakistani expatriate remittances — a resilient revenue stream regardless of domestic conditions."},{i:"💵",t:"Dollar earnings provide PKR hedge",d:"International operations generate USD revenues that translate into more PKR as the rupee weakens — a natural hedge against Pakistan macro risks."},{i:"📋",t:"NPL ratio needs improvement",d:"UBL carries a slightly higher NPL ratio than MCB. Progress on legacy NPL cleanup is the key metric to watch each quarter."}]},
+
+  NBP:{name:"National Bank of Pakistan",sector:"Commercial Banking",price:"52",chg:"+0.4",dir:"up",
+    insights:[{icon:"🏛️",value:"State-owned",label:"Full government backing — systemic bank",color:"purple"},{icon:"📊",value:"2.8× P/E",label:"Extremely cheap — deep value",color:"green"},{icon:"⚠️",value:"NPL Risk",label:"Legacy NPL book is the key concern",color:"red"}],
+    ratios:{"P/E Ratio":{v:"2.8×",c:"green",ctx:"Deep value"},"Div Yield":{v:"6.2%",c:"green",ctx:"Decent income"},"ROE":{v:"14%",c:"amber",ctx:"Below peers"},"P/B Ratio":{v:"0.4×",c:"green",ctx:"Well below book"},"NPL Ratio":{v:"18%",c:"red",ctx:"High NPLs"},"CASA Ratio":{v:"73%",c:"amber",ctx:"Adequate"}},
+    sigs:[{l:"State-owned",t:"purple"},{l:"Deep value",t:"green"},{l:"High NPLs",t:"red"},{l:"Legacy issues",t:"red"},{l:"Cannot fail",t:"purple"}],
+    scores:{"Financial health":{v:4},"Macro environment":{v:5},"Growth outlook":{v:4},"Risk level":{v:4}},overall:4.2,
+    odesc:"Deep value but deep problems — government backing is the only real comfort",
+    factors:[{i:"🏛️",t:"Too big and too political to fail",d:"NBP is the government's primary banker. No administration will allow it to fail — but this implicit guarantee doesn't translate into shareholder returns."},{i:"📋",t:"NPL book is a legacy problem",d:"NBP carries one of the highest NPL ratios in the banking sector. Years of directed lending have created a loan book that requires sustained cleanup."},{i:"📈",t:"Valuation is the argument",d:"At 0.4x book, NBP is priced for disaster. Any meaningful NPL resolution or earnings recovery could trigger a significant re-rating from these levels."}]},
+
+  ABL:{name:"Allied Bank Ltd",sector:"Commercial Banking",price:"118",chg:"+0.6",dir:"up",
+    insights:[{icon:"💻",value:"Digital Leader",label:"Best digital banking platform in Pakistan",color:"green"},{icon:"💰",value:"7.4% Yield",label:"Solid consistent dividend payer",color:"green"},{icon:"📊",value:"5.1× P/E",label:"Reasonable value vs quality peers",color:"green"}],
+    ratios:{"P/E Ratio":{v:"5.1×",c:"green",ctx:"Good value"},"Div Yield":{v:"7.4%",c:"green",ctx:"Solid income"},"ROE":{v:"20%",c:"green",ctx:"Strong returns"},"P/B Ratio":{v:"1.0×",c:"green",ctx:"At book value"},"CASA Ratio":{v:"82%",c:"green",ctx:"Strong funding"},"NPL Ratio":{v:"4.8%",c:"green",ctx:"Well managed"}},
+    sigs:[{l:"Digital leader",t:"green"},{l:"Good dividend",t:"green"},{l:"Strong CASA",t:"green"},{l:"Ibrahim Group",t:"purple"},{l:"Rate cut risk",t:"amber"}],
+    scores:{"Financial health":{v:8},"Macro environment":{v:6},"Growth outlook":{v:7},"Risk level":{v:7}},overall:6.8,
+    odesc:"High quality mid-tier bank — digital leadership gives long-term structural advantage",
+    factors:[{i:"💻",t:"Digital platform is best in class",d:"ABL's digital banking capabilities are widely regarded as the most advanced among Pakistani banks. This drives lower cost acquisition and higher retention."},{i:"🏦",t:"Ibrahim Group ownership brings stability",d:"The Ibrahim Group's long-term orientation and conservative management style have kept ABL focused on quality over growth at any cost."},{i:"📱",t:"Digital banking is the future",d:"Pakistan's young demographic and rising smartphone penetration strongly favour digitally-positioned banks. ABL is better positioned than most peers."}]},
+
+  BAFL:{name:"Bank Al Falah Ltd",sector:"Commercial Banking",price:"82",chg:"+0.9",dir:"up",
+    insights:[{icon:"🌙",value:"Islamic Leader",label:"Fastest growing Islamic banking franchise",color:"green"},{icon:"💰",value:"6.8% Yield",label:"Growing dividend — payout improving",color:"green"},{icon:"🏗️",value:"Branch Expansion",label:"Aggressive network expansion underway",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"5.8×",c:"green",ctx:"Decent value"},"Div Yield":{v:"6.8%",c:"green",ctx:"Growing payout"},"ROE":{v:"18%",c:"green",ctx:"Good returns"},"P/B Ratio":{v:"0.9×",c:"green",ctx:"Below book"},"CASA Ratio":{v:"71%",c:"amber",ctx:"Adequate"},"NPL Ratio":{v:"5.2%",c:"amber",ctx:"Manageable"}},
+    sigs:[{l:"Islamic banking",t:"green"},{l:"Growing dividend",t:"green"},{l:"Abu Dhabi Group",t:"purple"},{l:"Expansion mode",t:"amber"},{l:"Improving metrics",t:"green"}],
+    scores:{"Financial health":{v:7},"Macro environment":{v:6},"Growth outlook":{v:7},"Risk level":{v:6}},overall:6.4,
+    odesc:"Strong growth trajectory — Islamic banking franchise is a key differentiator",
+    factors:[{i:"🌙",t:"Islamic banking franchise is growing fast",d:"BAFL's Islamic banking window is one of the fastest growing in Pakistan, tapping into rising demand for Shariah-compliant financial products."},{i:"🏢",t:"Abu Dhabi Group provides strategic depth",d:"Strong international parentage gives BAFL access to capital, technology, and strategic relationships that domestic-only banks cannot match."},{i:"🌐",t:"Expansion is a double-edged sword",d:"Aggressive branch expansion builds long-term franchise value but pressures short-term returns. The payoff requires patience over a 3-5 year horizon."}]},
+
+  // ── FERTILISER (4) ────────────────────────────────────────
+  ENGRO:{name:"Engro Corporation",sector:"Diversified Conglomerate",price:"292",chg:"+1.4",dir:"up",
+    insights:[{icon:"🏭",value:"Diversified",label:"Fertiliser, LNG, telecom, foods portfolio",color:"green"},{icon:"💰",value:"6.8% Yield",label:"Strong holding company dividend",color:"green"},{icon:"📊",value:"11.2× P/E",label:"Premium justified by quality assets",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"11.2×",c:"amber",ctx:"Premium valuation"},"Div Yield":{v:"6.8%",c:"green",ctx:"Strong payout"},"ROE":{v:"19%",c:"green",ctx:"Strong returns"},"Debt/Equity":{v:"0.6",c:"amber",ctx:"Moderate leverage"},"Gross Margin":{v:"28%",c:"green",ctx:"Good margins"},"P/B Ratio":{v:"1.8×",c:"amber",ctx:"Premium to book"}},
+    sigs:[{l:"Conglomerate",t:"purple"},{l:"LNG terminal",t:"green"},{l:"Gas risk",t:"amber"},{l:"Strong brand",t:"green"},{l:"EFERT upside",t:"green"}],
+    scores:{"Financial health":{v:7},"Macro environment":{v:6},"Growth outlook":{v:7},"Risk level":{v:7}},overall:6.8,
+    odesc:"Pakistan's best conglomerate — quality assets across multiple sectors",
+    factors:[{i:"🏭",t:"Portfolio of quality businesses",d:"ENGRO owns stakes in fertiliser (EFERT), LNG infrastructure, telecom towers, and foods. Diversification reduces single-sector risk significantly."},{i:"⛽",t:"Gas availability is the key variable",d:"Fertiliser and LNG operations depend heavily on gas supply. Government gas allocation decisions directly impact ENGRO's earnings capacity."},{i:"📡",t:"Telecom infrastructure is the hidden gem",d:"ENGRO's tower infrastructure business has recurring revenue and significant long-term value not fully appreciated in the current market price."}]},
+
+  FFC:{name:"Fauji Fertiliser Co.",sector:"Fertiliser",price:"118",chg:"+0.7",dir:"up",
+    insights:[{icon:"💰",value:"12.4% Yield",label:"One of the highest yields on PSX",color:"green"},{icon:"🌾",value:"Urea Leader",label:"Largest urea producer — essential for agriculture",color:"green"},{icon:"⛽",value:"Gas Risk",label:"Gas price and availability hit margins",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"7.2×",c:"green",ctx:"Good value"},"Div Yield":{v:"12.4%",c:"green",ctx:"Exceptional yield"},"ROE":{v:"28%",c:"green",ctx:"Excellent returns"},"Debt/Equity":{v:"0.3",c:"green",ctx:"Low leverage"},"Gross Margin":{v:"34%",c:"green",ctx:"Solid margins"},"Current Ratio":{v:"1.6×",c:"green",ctx:"Healthy"}},
+    sigs:[{l:"12%+ yield",t:"green"},{l:"Urea leader",t:"green"},{l:"Gas risk",t:"amber"},{l:"Fauji Group",t:"purple"},{l:"Agriculture play",t:"green"}],
+    scores:{"Financial health":{v:8},"Macro environment":{v:5},"Growth outlook":{v:5},"Risk level":{v:7}},overall:6.2,
+    odesc:"Exceptional income stock — 12%+ yield backed by Pakistan's essential urea production",
+    factors:[{i:"🌾",t:"Urea is non-negotiable for Pakistan",d:"Pakistan's agricultural sector requires urea fertiliser to maintain crop yields. FFC as the largest producer has a captive domestic market."},{i:"⛽",t:"Gas price is the earnings lever",d:"Fertiliser production requires natural gas as feedstock. Government-set gas prices directly determine FFC's input costs and profitability margins."},{i:"🏛️",t:"Fauji Foundation provides stability",d:"The Fauji Group backing ensures strategic support and disciplined management with a track record of maintaining high dividend payouts."}]},
+
+  EFERT:{name:"Engro Fertilisers Ltd",sector:"Fertiliser",price:"88",chg:"+0.5",dir:"up",
+    insights:[{icon:"🏭",value:"Enven Plant",label:"Largest single urea plant in Pakistan",color:"green"},{icon:"💰",value:"10.8% Yield",label:"Very high dividend yield — income play",color:"green"},{icon:"⛽",value:"Gas Dependent",label:"Enven plant fully dependent on gas supply",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"6.8×",c:"green",ctx:"Good value"},"Div Yield":{v:"10.8%",c:"green",ctx:"High income"},"ROE":{v:"24%",c:"green",ctx:"Strong returns"},"Debt/Equity":{v:"0.45",c:"green",ctx:"Manageable"},"Gross Margin":{v:"31%",c:"green",ctx:"Good margins"},"Current Ratio":{v:"1.3×",c:"amber",ctx:"Adequate"}},
+    sigs:[{l:"High yield",t:"green"},{l:"ENGRO subsidiary",t:"purple"},{l:"Gas risk",t:"amber"},{l:"Enven capacity",t:"green"},{l:"Urea demand",t:"green"}],
+    scores:{"Financial health":{v:7},"Macro environment":{v:5},"Growth outlook":{v:5},"Risk level":{v:6}},overall:5.8,
+    odesc:"High yield fertiliser play — strong operations but gas supply is the critical risk",
+    factors:[{i:"🏭",t:"Enven plant is world-class",d:"EFERT's Enven urea plant is one of the most modern and efficient in the region. When gas is available, it produces at very competitive costs."},{i:"⛽",t:"Gas curtailment is the existential risk",d:"During periods of gas shortage, EFERT's plant runs at reduced capacity or shuts down. This directly impacts earnings and dividend sustainability."},{i:"🏢",t:"ENGRO parentage provides quality floor",d:"Being an ENGRO subsidiary means access to management expertise, corporate governance standards, and strategic support from a quality parent."}]},
+
+  FFBL:{name:"Fauji Fertiliser Bin Qasim",sector:"Fertiliser",price:"28",chg:"-0.3",dir:"dn",
+    insights:[{icon:"🔄",value:"Restructuring",label:"Working through a difficult turnaround",color:"amber"},{icon:"📊",value:"NP Plant",label:"Unique NP fertiliser — niche market position",color:"purple"},{icon:"⚠️",value:"Loss History",label:"Recent loss-making quarters — watch closely",color:"red"}],
+    ratios:{"P/E Ratio":{v:"N/A",c:"amber",ctx:"Inconsistent earnings"},"Div Yield":{v:"0%",c:"red",ctx:"Dividend suspended"},"ROE":{v:"5%",c:"red",ctx:"Low returns"},"Debt/Equity":{v:"1.2",c:"red",ctx:"High leverage"},"Gross Margin":{v:"12%",c:"amber",ctx:"Under pressure"},"Current Ratio":{v:"0.8×",c:"red",ctx:"Below 1"}},
+    sigs:[{l:"NP fertiliser niche",t:"purple"},{l:"Fauji Group",t:"purple"},{l:"High leverage",t:"red"},{l:"Dividend paused",t:"red"},{l:"Turnaround play",t:"amber"}],
+    scores:{"Financial health":{v:3},"Macro environment":{v:4},"Growth outlook":{v:4},"Risk level":{v:3}},overall:3.5,
+    odesc:"Turnaround play — niche NP fertiliser position but financial health is a concern",
+    factors:[{i:"🧪",t:"NP fertiliser is a differentiated product",d:"FFBL produces NP (nitrogen-phosphorus) fertiliser which has different demand dynamics than urea. This niche positioning can be an advantage in certain crop cycles."},{i:"💸",t:"Debt burden is the key problem",d:"High leverage combined with inconsistent earnings has forced dividend suspension. Balance sheet repair is the priority before any investor returns story emerges."},{i:"🏛️",t:"Fauji Group unlikely to abandon it",d:"The strategic importance of the Fauji Group's investment means FFBL is unlikely to be left to fail. Group support is the key downside protection."}]},
+
+  // ── CEMENT (4) ────────────────────────────────────────────
+  LUCK:{name:"Lucky Cement Ltd",sector:"Cement",price:"1080",chg:"+1.6",dir:"up",
+    insights:[{icon:"🏆",value:"Best in Sector",label:"Lowest cost producer in Pakistan cement",color:"green"},{icon:"🌍",value:"Iraq & DRC",label:"International operations — revenue diversification",color:"green"},{icon:"🏗️",value:"Capacity",label:"Aggressive expansion — watching demand",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"9.4×",c:"amber",ctx:"Fair value"},"ROE":{v:"16%",c:"green",ctx:"Good returns"},"Debt/Equity":{v:"0.3",c:"green",ctx:"Low leverage"},"Gross Margin":{v:"22%",c:"green",ctx:"Best in sector"},"Current Ratio":{v:"1.8×",c:"green",ctx:"Healthy"},"Div Yield":{v:"2.8%",c:"amber",ctx:"Modest yield"}},
+    sigs:[{l:"Cost leader",t:"green"},{l:"International ops",t:"green"},{l:"Yunus Brothers",t:"purple"},{l:"Low leverage",t:"green"},{l:"Sector cyclical",t:"amber"}],
+    scores:{"Financial health":{v:8},"Macro environment":{v:6},"Growth outlook":{v:7},"Risk level":{v:7}},overall:7.0,
+    odesc:"Best quality cement stock — international diversification and lowest cost position",
+    factors:[{i:"🏭",t:"Cost leadership is structural",d:"LUCK's integrated operations, captive power, and scale give it the lowest cost per bag in Pakistan. This advantage compounds over time and through cycles."},{i:"🌍",t:"Iraq and DRC operations de-risk Pakistan",d:"International cement plants provide earnings in USD and exposure to faster-growing markets. This diversification is unique among PSX cement companies."},{i:"🏗️",t:"Construction sector drives demand",d:"Cement demand in Pakistan is driven by real estate, infrastructure, and CPEC-related construction. Rate cuts should support construction activity going forward."}]},
+
+  MLCF:{name:"Maple Leaf Cement",sector:"Cement",price:"42",chg:"+0.8",dir:"up",
+    insights:[{icon:"📊",value:"4.2× P/E",label:"Cheap cement stock — cyclical value",color:"green"},{icon:"⚡",value:"Coal Risk",label:"Coal price volatility hits input costs",color:"amber"},{icon:"🏗️",value:"Capacity",label:"Large capacity — needs strong demand",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"4.2×",c:"green",ctx:"Cheap value"},"ROE":{v:"12%",c:"amber",ctx:"Moderate"},"Debt/Equity":{v:"0.8",c:"amber",ctx:"Manageable"},"Gross Margin":{v:"16%",c:"amber",ctx:"Below LUCK"},"Current Ratio":{v:"1.1×",c:"amber",ctx:"Tight"},"Div Yield":{v:"3.2%",c:"amber",ctx:"Moderate yield"}},
+    sigs:[{l:"Cheap valuation",t:"green"},{l:"Coal cost risk",t:"amber"},{l:"Cyclical play",t:"amber"},{l:"Large capacity",t:"purple"},{l:"Rate cut upside",t:"green"}],
+    scores:{"Financial health":{v:6},"Macro environment":{v:6},"Growth outlook":{v:6},"Risk level":{v:5}},overall:5.5,
+    odesc:"Cheap cement cyclical — rate cuts and construction recovery are the catalysts",
+    factors:[{i:"🔄",t:"Classic cement cycle play",d:"MLCF is a leveraged play on the Pakistan construction cycle. Rate cuts and housing activity drive both demand and pricing — the setup is improving."},{i:"⚡",t:"Coal price is the key input cost",d:"Cement production is energy-intensive. Coal price spikes significantly impact margins. Domestic coal usage and efficiency investments help but don't eliminate this risk."},{i:"🏗️",t:"Capacity utilisation is the swing factor",d:"When industry utilisation is high, pricing power improves and margins expand. Current utilisation rates and their trajectory are the key metric to watch."}]},
+
+  CHCC:{name:"Cherat Cement Co.",sector:"Cement",price:"162",chg:"+1.1",dir:"up",
+    insights:[{icon:"💰",value:"4.8% Yield",label:"Better yield than most cement peers",color:"green"},{icon:"📊",value:"7.1× P/E",label:"Reasonably valued mid-size cement",color:"green"},{icon:"🏭",value:"Single Plant",label:"Concentration risk — one facility",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"7.1×",c:"green",ctx:"Reasonable"},"Div Yield":{v:"4.8%",c:"green",ctx:"Good for cement"},"ROE":{v:"14%",c:"amber",ctx:"Moderate"},"Debt/Equity":{v:"0.5",c:"amber",ctx:"Moderate"},"Gross Margin":{v:"19%",c:"green",ctx:"Good margins"},"Current Ratio":{v:"1.4×",c:"amber",ctx:"Adequate"}},
+    sigs:[{l:"Ghulam Faruque Group",t:"purple"},{l:"Good dividend",t:"green"},{l:"Single plant",t:"amber"},{l:"North market",t:"purple"},{l:"Reasonable value",t:"green"}],
+    scores:{"Financial health":{v:6},"Macro environment":{v:6},"Growth outlook":{v:5},"Risk level":{v:6}},overall:5.8,
+    odesc:"Solid mid-size cement with decent yield — single plant is the key risk",
+    factors:[{i:"🏭",t:"Single plant creates concentration risk",d:"Unlike LUCK which has multiple plants, CHCC operates one facility. Any extended maintenance, disruption, or disaster has an outsized impact on production."},{i:"📍",t:"North Pakistan market dynamics",d:"CHCC's plant location gives it access to northern markets. Regional infrastructure development, particularly in KPK, is a positive demand driver."},{i:"💰",t:"Dividend track record is solid",d:"CHCC has maintained a reasonably consistent dividend relative to cement sector peers. This makes it attractive for income-seeking investors in the sector."}]},
+
+  DGKC:{name:"D.G. Khan Cement",sector:"Cement",price:"98",chg:"+0.7",dir:"up",
+    insights:[{icon:"🏭",value:"Two Plants",label:"Hub and DG Khan — geographic spread",color:"green"},{icon:"📊",value:"5.2× P/E",label:"Cheap cement — Nishat Group quality",color:"green"},{icon:"💸",value:"High Debt",label:"Expansion debt still being worked down",color:"amber"}],
+    ratios:{"P/E Ratio":{v:"5.2×",c:"green",ctx:"Good value"},"ROE":{v:"11%",c:"amber",ctx:"Moderate"},"Debt/Equity":{v:"0.9",c:"amber",ctx:"Elevated"},"Gross Margin":{v:"18%",c:"amber",ctx:"Adequate"},"Current Ratio":{v:"1.2×",c:"amber",ctx:"Adequate"},"Div Yield":{v:"3.5%",c:"amber",ctx:"Moderate"}},
+    sigs:[{l:"Nishat Group",t:"purple"},{l:"Two plants",t:"green"},{l:"Elevated debt",t:"amber"},{l:"Cheap valuation",t:"green"},{l:"Cyclical upside",t:"green"}],
+    scores:{"Financial health":{v:6},"Macro environment":{v:6},"Growth outlook":{v:6},"Risk level":{v:5}},overall:5.8,
+    odesc:"Nishat Group quality at a cheap price — debt is manageable and falling",
+    factors:[{i:"🏛️",t:"Nishat Group backing is a quality signal",d:"Mian Mansha's Nishat Group has a track record of building quality businesses. DGKC benefits from group synergies and conservative financial management."},{i:"🏭",t:"Two plants provide geographic coverage",d:"Plants in DG Khan and Hub give DGKC exposure to both northern and southern markets, reducing regional demand concentration risk."},{i:"📉",t:"Debt paydown is the earnings story",d:"As expansion debt is retired, interest costs fall and free cash flow improves. Investors patient enough to hold through this phase should see the payoff."}]}
 };
 
-const ALL_TICKERS = Object.values(POPULAR).flat();
+const SECTORS = {
+  'Energy & Oil': ['OGDC','PPL','PSO','MARI','APL','HASCOL'],
+  'Banking':      ['HBL','MCB','UBL','NBP','ABL','BAFL'],
+  'Fertiliser':   ['ENGRO','FFC','EFERT','FFBL'],
+  'Cement':       ['LUCK','MLCF','CHCC','DGKC']
+};
+
+const ALL_TICKERS = Object.values(SECTORS).flat();
 
 // ── STATE ──────────────────────────────────────────────────
 let cur = 'OGDC';
 let tab = 'overview';
-let stockCache = {};      // stockData per ticker
-let verdictCache = {};    // AI verdict per ticker
-let livePrices = {};      // live prices from prices.js
+let verdicts = {};
+let livePrices = {};
 
-// ── MACRO CONTEXT (static, updated periodically) ──────────
+// ── MACRO CONTEXT ─────────────────────────────────────────
 const MACRO = [
-  "SBP Policy Rate: 10.50% p.a. | Ceiling: 11.50% | Floor: 9.50%",
-  "Monetary policy: Aggressive easing cycle from 22% peak to 10.50%",
+  "SBP Policy Rate: 10.50% p.a. (down from 22% peak — aggressive easing cycle)",
   "IMF EFF programme: Active — energy reforms, circular debt reduction, DISCO privatisation",
   "PKR/USD: ~278-282, relatively stable after 2023 depreciation",
   "Inflation CPI: ~8-10%, down sharply from 38% peak",
-  "Circular debt: Rs. 2.3tn+ in power sector",
+  "Circular debt: Rs. 2.3tn+ in power sector — ongoing structural problem",
   "Iran-US tensions: elevated — Strait of Hormuz oil supply risk",
-  "Current account: near-balanced, FX reserves recovering",
+  "Current account: near-balanced, FX reserves recovering to ~$11bn",
   "PSX KSE-100: at record highs — market re-rating on macro stabilisation",
-  "Key risks: oil price spike, IMF slippage, political instability"
+  "Construction sector: recovering — rate cuts supporting housing and infrastructure",
+  "Key risks: oil price spike, IMF slippage, political instability, gas curtailment"
 ].join(". ");
 
 // ── COLOUR HELPERS ─────────────────────────────────────────
@@ -499,10 +662,10 @@ function gaugeArc(score) {
     const y = cy + R * Math.sin(angle);
     const lit = t <= pct;
     const col = t < 0.42 ? '#ff4444' : t < 0.58 ? '#ffaa00' : '#00e87a';
-    const r = lit ? 5 : 4;
+    const r2 = lit ? 5 : 4;
     const op = lit ? '1' : '0.13';
     const glow = lit ? ` filter="url(#${id}-glow)"` : '';
-    dots += `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${r}" fill="${col}" opacity="${op}"${glow}/>`;
+    dots += `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${r2}" fill="${col}" opacity="${op}"${glow}/>`;
   }
   const na = Math.PI + pct * Math.PI;
   const nx = (cx + 36 * Math.cos(na)).toFixed(2);
@@ -523,89 +686,77 @@ function gaugeArc(score) {
 }
 
 // ── RENDER ─────────────────────────────────────────────────
-function render(ticker, stockData, verdict) {
+function render(ticker, verdict) {
+  const s = DATA[ticker];
   const lp = livePrices[ticker];
-  const price   = lp?.price || stockData?.price || '—';
-  const change  = lp?.change || stockData?.change || '0';
-  const dir     = lp?.dir || stockData?.dir || 'up';
-  const name    = stockData?.name || ticker;
-  const sector  = stockData?.sector || 'Pakistan Stock Exchange';
-  const vtype   = verdict?.verdict || 'Neutral';
-  const vscore  = verdict?.score || 5;
-  const insights = verdict?.insights || [];
-  const signals  = verdict?.signals || [];
-  const scores   = verdict?.scores || {};
-  const factors  = verdict?.factors || [];
-  const ratios   = stockData ? buildRatios(stockData) : {};
+  const price = lp?.price || s.price;
+  const chg   = lp?.change || s.chg;
+  const dir   = lp?.dir || s.dir;
+  const vtype  = verdict?.verdict || 'Neutral';
+  const vscore = verdict?.score   || s.overall || 5;
 
   document.getElementById('root').innerHTML = `
   <div class="hero">
-    <div class="hero-meta">${name}</div>
+    <div class="hero-meta">${s.name}</div>
     <div class="hero-row">
       <div>
         <div class="hero-ticker gx-white">${ticker}</div>
-        <div class="hero-sector"><div class="hero-sector-dot"></div>${sector}</div>
+        <div class="hero-sector"><div class="hero-sector-dot"></div>${s.sector}</div>
       </div>
       <div class="hero-r">
         <div class="hero-cur">PKR</div>
         <div class="hero-price gx-white" id="live-price">${price}</div>
-        <div class="hero-chg ${dir === 'up' ? 'up' : 'dn'}" id="live-chg">${dir === 'up' ? '+' : ''}${change}% today</div>
+        <div class="hero-chg ${dir==='up'?'up':'dn'}" id="live-chg">${dir==='up'?'+':''}${chg}% today</div>
       </div>
     </div>
   </div>
-
   <div class="tabs">
     <div class="tab ${tab==='overview'?'on':''}" onclick="setTab('overview')">Overview</div>
     <div class="tab ${tab==='financials'?'on':''}" onclick="setTab('financials')">Financials</div>
     <div class="tab ${tab==='factors'?'on':''}" onclick="setTab('factors')">Key factors</div>
   </div>
-
   <div class="tcontent ${tab==='overview'?'on':''}" id="tc-overview">
-    <div class="sc-wrap">
-      <div class="sc">
-        <div class="sc-top">
-          <div class="sc-eyebrow">Wall-Trade suggestion</div>
-          <div class="sc-verdict-row">
-            <div class="sc-verdict ${vGrad(vtype)}">${vtype}</div>
-            ${gaugeArc(vscore)}
-          </div>
-          <div class="insights">
-            ${insights.map(ins => {
-              const borderMap = {green:'var(--gb)',amber:'var(--aa)',red:'var(--ra)',purple:'var(--pb)',blue:'var(--bb)'};
-              const gradMap   = {green:'linear-gradient(130deg,#5fffc0,#22d98a)',amber:'linear-gradient(130deg,#fbbf24,#d97706)',red:'linear-gradient(130deg,#ff8080,#ef4444)',purple:'linear-gradient(130deg,#c4b5fd,#8b5cf6)',blue:'linear-gradient(130deg,#93c5fd,#3b82f6)'};
-              return `<div class="insight-card" style="border-left-color:${borderMap[ins.color]||borderMap.purple}">
-                <div class="insight-icon-wrap">${ins.icon}</div>
-                <div class="insight-right">
-                  <div class="insight-value" style="background:${gradMap[ins.color]||gradMap.purple};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${ins.value}</div>
-                  <div class="insight-label">${ins.label}</div>
-                </div>
-              </div>`;
-            }).join('')}
-          </div>
+    <div class="sc-wrap"><div class="sc">
+      <div class="sc-top">
+        <div class="sc-eyebrow">Wall-Trade suggestion</div>
+        <div class="sc-verdict-row">
+          <div class="sc-verdict ${vGrad(vtype)}">${vtype}</div>
+          ${gaugeArc(vscore)}
         </div>
-        <div class="sc-sep"></div>
-        <div class="sc-bot">
-          <div class="ai-row"><div class="ai-orb"></div>AI verdict</div>
-          ${verdict
-            ? `<div class="ai-headline">${verdict.headline}</div><div class="ai-body">${verdict.body}</div>`
-            : `<div class="ai-loading"><div class="spin"></div>Analysing ${ticker} with live Pakistan market data…</div>`}
+        <div class="insights">
+          ${(verdict?.insights||s.insights||[]).map(ins=>{
+            const bm={green:'var(--gb)',amber:'var(--aa)',red:'var(--ra)',purple:'var(--pb)',blue:'var(--bb)'};
+            const gm={green:'linear-gradient(130deg,#5fffc0,#22d98a)',amber:'linear-gradient(130deg,#fbbf24,#d97706)',red:'linear-gradient(130deg,#ff8080,#ef4444)',purple:'linear-gradient(130deg,#c4b5fd,#8b5cf6)',blue:'linear-gradient(130deg,#93c5fd,#3b82f6)'};
+            return `<div class="insight-card" style="border-left-color:${bm[ins.color]||bm.purple}">
+              <div class="insight-icon-wrap">${ins.icon}</div>
+              <div class="insight-right">
+                <div class="insight-value" style="background:${gm[ins.color]||gm.purple};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${ins.value}</div>
+                <div class="insight-label">${ins.label}</div>
+              </div>
+            </div>`;
+          }).join('')}
         </div>
       </div>
-    </div>
-    ${signals.length ? `
+      <div class="sc-sep"></div>
+      <div class="sc-bot">
+        <div class="ai-row"><div class="ai-orb"></div>AI verdict</div>
+        ${verdict
+          ? `<div class="ai-headline">${verdict.headline}</div><div class="ai-body">${verdict.body}</div>`
+          : `<div class="ai-loading"><div class="spin"></div>Analysing ${ticker} with live Pakistan market data…</div>`}
+      </div>
+    </div></div>
     <div class="sigs-wrap">
       <div class="sec-lbl">Key signals</div>
       <div class="sigs">
-        ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
+        ${(verdict?.signals||s.sigs||[]).map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type||sg.t)}"></div>${sg.label||sg.l}</div>`).join('')}
       </div>
-    </div>` : ''}
+    </div>
   </div>
-
   <div class="tcontent ${tab==='financials'?'on':''}" id="tc-financials">
     <div class="ratio-wrap" style="padding-top:22px;">
       <div class="sec-lbl">Financial ratios</div>
       <div class="rgrid">
-        ${Object.entries(ratios).map(([n,r])=>`
+        ${Object.entries(s.ratios).map(([n,r])=>`
           <div class="rcard">
             <div class="rlbl">${n}</div>
             <div class="rval ${rTG(r.c)}">${r.v}</div>
@@ -613,16 +764,12 @@ function render(ticker, stockData, verdict) {
           </div>`).join('')}
       </div>
     </div>
-    ${Object.keys(scores).length ? `
     <div class="scores-wrap">
       <div class="sec-lbl">Score breakdown</div>
-      ${Object.entries(scores).map(([n,v])=>`
+      ${Object.entries(verdict?.scores||s.scores).map(([n,sc])=>`
         <div class="score-item">
-          <div class="score-top">
-            <span class="score-name">${n}</span>
-            <span class="score-num ${scTG(v)}">${v} / 10</span>
-          </div>
-          <div class="strack"><div class="sfill" style="width:${v*10}%;background:${scGrad(v)}"></div></div>
+          <div class="score-top"><span class="score-name">${n}</span><span class="score-num ${scTG(sc.v||sc)}">${sc.v||sc} / 10</span></div>
+          <div class="strack"><div class="sfill" style="width:${(sc.v||sc)*10}%;background:${scGrad(sc.v||sc)}"></div></div>
         </div>`).join('')}
     </div>
     <div class="overall-wrap">
@@ -633,21 +780,19 @@ function render(ticker, stockData, verdict) {
         </div>
         <div class="oright">
           <div class="o-eye">Summary</div>
-          <div class="o-desc">${verdict?.summary || 'Analysis loading...'}</div>
+          <div class="o-desc">${verdict?.summary||s.odesc}</div>
         </div>
       </div>
-    </div>` : ''}
+    </div>
   </div>
-
   <div class="tcontent ${tab==='factors'?'on':''}" id="tc-factors">
     <div class="factors-wrap" style="padding-top:22px;">
-      ${factors.map(f=>`<div class="fi">
-        <div class="fi-icon">${f.icon}</div>
-        <div><div class="fi-title">${f.title}</div><div class="fi-desc">${f.detail}</div></div>
+      ${(verdict?.factors||s.factors||[]).map(f=>`<div class="fi">
+        <div class="fi-icon">${f.icon||f.i}</div>
+        <div><div class="fi-title">${f.title||f.t}</div><div class="fi-desc">${f.detail||f.d}</div></div>
       </div>`).join('')}
     </div>
   </div>
-
   <div class="ans-wrap" id="ans-wrap">
     <div class="ans-lbl"><div class="ai-orb"></div>AI answer</div>
     <div class="ans-card" id="ans-card"></div>
@@ -658,308 +803,145 @@ function render(ticker, stockData, verdict) {
       <button class="ask-btn" id="ask-btn" onclick="doAsk()">Ask</button>
     </div>
   </div>
-  <div class="disc">Wall-Trade provides financial information and analysis for educational purposes only. Not investment advice. Not SECP registered. Signals (Positive / Neutral / Caution) are analytical indicators, not instructions to buy or sell.</div>
+  <div class="disc">Wall-Trade provides financial information and analysis for educational purposes only. Not investment advice. Not SECP registered.</div>
   `;
-  document.getElementById('ask-in').addEventListener('keydown', e => { if(e.key==='Enter') doAsk(); });
+  document.getElementById('ask-in').addEventListener('keydown', e=>{if(e.key==='Enter')doAsk();});
 }
 
-// ── BUILD RATIOS FROM STOCK DATA ───────────────────────────
-function buildRatios(s) {
-  const ratios = {};
-  if (s.pe && s.pe !== 'N/A')          ratios['P/E Ratio']     = { v: s.pe + '×',    c: parseFloat(s.pe) < 15 ? 'green' : parseFloat(s.pe) < 25 ? 'amber' : 'red', ctx: 'Price to earnings' };
-  if (s.pb && s.pb !== 'N/A')          ratios['P/B Ratio']     = { v: s.pb + '×',    c: parseFloat(s.pb) < 2 ? 'green' : parseFloat(s.pb) < 4 ? 'amber' : 'red',    ctx: 'Price to book value' };
-  if (s.divYield && s.divYield !== 'N/A') ratios['Div Yield']  = { v: s.divYield,    c: parseFloat(s.divYield) > 5 ? 'green' : 'amber',                               ctx: 'Annual dividend yield' };
-  if (s.roe && s.roe !== 'N/A')        ratios['ROE']           = { v: s.roe,         c: parseFloat(s.roe) > 15 ? 'green' : parseFloat(s.roe) > 8 ? 'amber' : 'red',  ctx: 'Return on equity' };
-  if (s.netMargin && s.netMargin !== 'N/A') ratios['Net Margin'] = { v: s.netMargin, c: parseFloat(s.netMargin) > 15 ? 'green' : parseFloat(s.netMargin) > 5 ? 'amber' : 'red', ctx: 'Net profit margin' };
-  if (s.currentRatio && s.currentRatio !== 'N/A') ratios['Current Ratio'] = { v: s.currentRatio + '×', c: parseFloat(s.currentRatio) > 1.5 ? 'green' : parseFloat(s.currentRatio) > 1 ? 'amber' : 'red', ctx: 'Short-term liquidity' };
-  if (s.debtToEquity && s.debtToEquity !== 'N/A') ratios['Debt / Equity'] = { v: s.debtToEquity, c: parseFloat(s.debtToEquity) < 0.5 ? 'green' : parseFloat(s.debtToEquity) < 1.5 ? 'amber' : 'red', ctx: 'Financial leverage' };
-  if (s.grossMargin && s.grossMargin !== 'N/A') ratios['Gross Margin'] = { v: s.grossMargin, c: parseFloat(s.grossMargin) > 30 ? 'green' : parseFloat(s.grossMargin) > 10 ? 'amber' : 'red', ctx: 'Gross profit margin' };
-  return ratios;
-}
-
-// ── SHOW LOADING STATE ─────────────────────────────────────
-function renderLoading(ticker) {
-  document.getElementById('root').innerHTML = `
-  <div class="hero">
-    <div class="hero-meta">Loading ${ticker}...</div>
-    <div class="hero-row">
-      <div><div class="hero-ticker gx-white">${ticker}</div></div>
-      <div class="hero-r"><div class="hero-cur">PKR</div><div class="hero-price gx-white" style="color:var(--t3)">—</div></div>
-    </div>
-  </div>
-  <div style="padding:40px 20px;text-align:center">
-    <div class="ai-loading"><div class="spin"></div>Fetching live data for ${ticker}…</div>
-  </div>`;
-}
-
-// ── SHOW ERROR STATE ───────────────────────────────────────
-function renderError(ticker, message) {
-  document.getElementById('root').innerHTML = `
-  <div style="padding:40px 20px;text-align:center">
-    <div style="font-size:32px;margin-bottom:16px">⚠️</div>
-    <div style="font-size:15px;font-weight:600;color:var(--t1);margin-bottom:8px">Could not load ${ticker}</div>
-    <div style="font-size:12px;color:var(--t3);line-height:1.6">${message || 'This ticker may not be listed on PSX or data is temporarily unavailable.'}</div>
-    <div style="margin-top:20px;font-size:11px;color:var(--t3)">Try: OGDC, PPL, HBL, MCB, ENGRO, LUCK</div>
-  </div>`;
-}
-
-// ── LOAD STOCK DYNAMICALLY ─────────────────────────────────
-async function loadStock(ticker) {
-  // Check cache first
-  if (stockCache[ticker] && verdictCache[ticker]) {
-    render(ticker, stockCache[ticker], verdictCache[ticker]);
-    return;
-  }
-
-  renderLoading(ticker);
-
-  try {
-    const res = await fetch('/.netlify/functions/stock', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker, macroContext: MACRO })
-    });
-
-    if (res.status === 404) {
-      const err = await res.json();
-      renderError(ticker, err.error);
-      return;
-    }
-
-    if (!res.ok) throw new Error('Server error');
-
-    const data = await res.json();
-    stockCache[ticker]  = data.stockData;
-    verdictCache[ticker] = data.verdict;
-    render(ticker, data.stockData, data.verdict);
-
-    // Update pill with latest price
-    if (data.stockData?.price) {
-      livePrices[ticker] = {
-        price:  data.stockData.price,
-        change: data.stockData.change,
-        dir:    data.stockData.dir
-      };
-    }
-  } catch(e) {
-    renderError(ticker, 'Unable to connect. Please check your connection and try again.');
-  }
-}
-
-// ── ASK QUESTION ──────────────────────────────────────────
-async function doAsk() {
-  const inp = document.getElementById('ask-in'), btn = document.getElementById('ask-btn');
-  const q = inp.value.trim(); if (!q) return;
-  btn.disabled = true; btn.textContent = '…';
-  const aw = document.getElementById('ans-wrap'), ac = document.getElementById('ans-card');
-  aw.classList.add('on'); ac.textContent = 'Thinking…';
-  const s = stockCache[cur];
+// ── LOAD AI VERDICT ───────────────────────────────────────
+async function loadVerdict(ticker) {
+  const s  = DATA[ticker];
+  const lp = livePrices[ticker];
+  const livePrice  = lp?.price  || s.price;
+  const liveChange = lp?.change || s.chg;
   try {
     const res = await fetch('/.netlify/functions/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        type: 'question', ticker: cur, question: q,
-        ratios: s ? Object.entries(buildRatios(s)).map(([k,v])=>`${k}: ${v.v}`).join(', ') : '',
-        macro: MACRO
+        type: 'verdict', ticker,
+        ratios: Object.entries(s.ratios).map(([k,v])=>`${k}: ${v.v} (${v.ctx})`).join(', '),
+        macro: MACRO, livePrice, liveChange
       })
     });
-    if (res.status === 429) { ac.textContent = 'Usage limit reached. Please try again in an hour.'; btn.disabled = false; btn.textContent = 'Ask'; return; }
+    if (res.status === 429) return;
     const data = await res.json();
-    ac.textContent = data.content?.map(i => i.text||'').join('') || 'Could not get a response.';
-  } catch(e) { ac.textContent = 'Could not connect — please try again.'; }
-  btn.disabled = false; btn.textContent = 'Ask'; inp.value = '';
-}
-
-// ── TAB SWITCHING ──────────────────────────────────────────
-function setTab(t) {
-  tab = t;
-  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('on', el.textContent.toLowerCase().replace(/\s/g,'') === t.replace(/\s/,'')));
-  document.querySelectorAll('.tcontent').forEach(el => el.classList.toggle('on', el.id === 'tc-' + t));
-}
-
-// ── SHEET (STOCK PICKER) ──────────────────────────────────
-function buildSheet() {
-  const list = document.getElementById('sheet-list');
-  list.innerHTML = '';
-
-  // Search box
-  const searchDiv = document.createElement('div');
-  searchDiv.style.cssText = 'padding:12px 20px 4px';
-  searchDiv.innerHTML = `<input id="sheet-search" type="text" placeholder="Search any PSX ticker (e.g. HBL, LUCK)…" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#eeedf8;font-size:13px;padding:10px 14px;outline:none;font-family:inherit">`;
-  list.appendChild(searchDiv);
-
-  // Sector groups
-  Object.entries(POPULAR).forEach(([sector, tickers]) => {
-    const secDiv = document.createElement('div');
-    secDiv.innerHTML = `<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(238,237,248,0.25);padding:14px 20px 6px">${sector}</div>`;
-    list.appendChild(secDiv);
-
-    tickers.forEach(ticker => {
-      const d = document.createElement('div');
-      d.className = 'si' + (ticker === cur ? ' on' : '');
-      d.dataset.ticker = ticker;
-      const lp = livePrices[ticker];
-      const priceDisplay = lp ? `PKR ${lp.price}` : '—';
-      const chgDisplay   = lp ? `${lp.dir==='up'?'+':''}${lp.change}%` : '';
-      const chgClass     = lp ? (lp.dir==='up'?'up':'dn') : '';
-      d.innerHTML = `<div class="si-l"><div class="si-av">${ticker.slice(0,3)}</div><div><div class="si-tick">${ticker}</div><div class="si-name">${getShortName(ticker)}</div></div></div><div><div class="si-pr">${priceDisplay}</div><div class="si-ch ${chgClass}">${chgDisplay}</div></div>`;
-      const handler = (e) => { e.preventDefault(); e.stopPropagation(); select(ticker); };
-      d.addEventListener('click', handler);
-      d.addEventListener('touchend', handler, { passive: false });
-      list.appendChild(d);
-    });
-  });
-
-  // Search functionality
-  setTimeout(() => {
-    const searchInput = document.getElementById('sheet-search');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        const q = e.target.value.toUpperCase().trim();
-        if (!q) {
-          list.querySelectorAll('.si').forEach(el => el.style.display = '');
-          list.querySelectorAll('[style*="font-size:9px"]').forEach(el => el.style.display = '');
-          return;
-        }
-        list.querySelectorAll('.si').forEach(el => {
-          el.style.display = el.dataset.ticker?.includes(q) ? '' : 'none';
-        });
-        list.querySelectorAll('[style*="font-size:9px"]').forEach(el => el.style.display = 'none');
-
-        // If not in popular list, show "Search PSX" option
-        const found = list.querySelectorAll('.si:not([style*="none"])').length;
-        let customEl = document.getElementById('custom-search-item');
-        if (!found && q.length >= 2) {
-          if (!customEl) {
-            customEl = document.createElement('div');
-            customEl.id = 'custom-search-item';
-            customEl.className = 'si';
-            list.appendChild(customEl);
-          }
-          customEl.innerHTML = `<div class="si-l"><div class="si-av" style="background:rgba(139,92,246,0.15);color:#8b5cf6">PSX</div><div><div class="si-tick">${q}</div><div class="si-name">Search PSX for ${q}</div></div></div><div style="font-size:10px;color:rgba(238,237,248,0.3)">↵ Search</div>`;
-          customEl.style.display = '';
-          const handler = (e) => { e.preventDefault(); select(q); };
-          customEl.onclick = handler;
-          customEl.ontouchend = handler;
-        } else if (customEl) {
-          customEl.style.display = 'none';
-        }
-      });
-    }
-  }, 50);
-}
-
-function getShortName(ticker) {
-  const names = {
-    OGDC:'Oil & Gas Dev Co',PPL:'Pakistan Petroleum',PSO:'Pakistan State Oil',
-    MARI:'Mari Petroleum',APL:'Attock Petroleum',HASCOL:'Hascol Petroleum',
-    SNGP:'Sui Northern Gas',SSGC:'Sui Southern Gas',
-    HBL:'Habib Bank Ltd',MCB:'MCB Bank',UBL:'United Bank',NBP:'National Bank',
-    ABL:'Allied Bank',BAFL:'Bank Al Falah',BAHL:'Bank Al Habib',
-    MEBL:'Meezan Bank',FABL:'Faysal Bank',
-    ENGRO:'Engro Corporation',FFBL:'Fauji Fertiliser Bin Qasim',
-    FFC:'Fauji Fertiliser Co',EFERT:'Engro Fertilisers',
-    LUCK:'Lucky Cement',MLCF:'Maple Leaf Cement',CHCC:'Cherat Cement',
-    DGKC:'D.G. Khan Cement',PIOC:'Pioneer Cement',FCCL:'Fauji Cement',
-    TRG:'TRG Pakistan',SYS:'Systems Ltd',NETSOL:'NetSol Technologies',
-    PAKT:'Pakistan Tobacco',PNSC:'Pakistan Natl Shipping'
-  };
-  return names[ticker] || ticker;
-}
-
-function openSheet() {
-  buildSheet();
-  document.getElementById('overlay').classList.add('on');
-  document.getElementById('sheet').style.display = 'block';
-  setTimeout(() => {
-    const si = document.getElementById('sheet-search');
-    if (si) si.focus();
-  }, 100);
-}
-
-function closeSheet() {
-  document.getElementById('overlay').classList.remove('on');
-  document.getElementById('sheet').style.display = 'none';
-}
-
-function select(ticker) {
-  closeSheet();
-  cur = ticker.toUpperCase(); tab = 'overview';
-  document.getElementById('pill-av').textContent = cur.slice(0,3);
-  document.getElementById('pill-lbl').textContent = cur;
-  loadStock(cur);
-}
-
-// ── LIVE PRICES TICKER ─────────────────────────────────────
-async function fetchLivePrices() {
-  try {
-    const res = await fetch('/.netlify/functions/prices', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tickers: ALL_TICKERS })
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    if (data.prices) {
-      Object.assign(livePrices, data.prices);
-      updateTickerBar(data.prices, data.kse100);
-      if (livePrices[cur]) renderLivePrice(cur);
-    }
+    const raw = data.content?.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim();
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (m) { verdicts[ticker] = JSON.parse(m[0]); if (cur===ticker) render(ticker, verdicts[ticker]); }
   } catch(e) {}
 }
 
-function renderLivePrice(ticker) {
-  const lp = livePrices[ticker];
-  if (!lp) return;
-  const priceEl = document.getElementById('live-price');
-  const chgEl   = document.getElementById('live-chg');
-  if (priceEl) priceEl.textContent = lp.price;
-  if (chgEl) {
-    chgEl.textContent = `${lp.dir==='up'?'+':''}${lp.change}% today`;
-    chgEl.className = `hero-chg ${lp.dir==='up'?'up':'dn'}`;
-  }
+// ── ASK ───────────────────────────────────────────────────
+async function doAsk() {
+  const inp=document.getElementById('ask-in'), btn=document.getElementById('ask-btn');
+  const q=inp.value.trim(); if(!q)return;
+  btn.disabled=true; btn.textContent='…';
+  const aw=document.getElementById('ans-wrap'), ac=document.getElementById('ans-card');
+  aw.classList.add('on'); ac.textContent='Thinking…';
+  const s=DATA[cur];
+  try {
+    const res=await fetch('/.netlify/functions/analyze',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({type:'question',ticker:cur,question:q,
+        ratios:Object.entries(s.ratios).map(([k,v])=>`${k}: ${v.v}`).join(', '),macro:MACRO})
+    });
+    if(res.status===429){ac.textContent='Usage limit reached. Try again in an hour.';btn.disabled=false;btn.textContent='Ask';return;}
+    const data=await res.json();
+    ac.textContent=data.content?.map(i=>i.text||'').join('')||'Could not get a response.';
+  } catch(e){ac.textContent='Could not connect — please try again.';}
+  btn.disabled=false; btn.textContent='Ask'; inp.value='';
 }
 
-function updateTickerBar(prices, kse100) {
-  if (kse100) {
-    const kseVal = document.getElementById('kse-val');
-    const kseChg = document.getElementById('kse-chg');
-    if (kseVal) kseVal.textContent = kse100.price;
-    if (kseChg) {
-      kseChg.textContent = `${parseFloat(kse100.change)>=0?'+':''}${kse100.change}%`;
-      kseChg.className = `ticker-chg ${kse100.dir==='up'?'up':'dn'}`;
+// ── TABS ──────────────────────────────────────────────────
+function setTab(t) {
+  tab=t;
+  document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('on',el.textContent.toLowerCase().replace(/\s/g,'')===(t.replace(/\s/,''))));
+  document.querySelectorAll('.tcontent').forEach(el=>el.classList.toggle('on',el.id==='tc-'+t));
+}
+
+// ── SHEET ─────────────────────────────────────────────────
+function buildSheet() {
+  const list=document.getElementById('sheet-list'); list.innerHTML='';
+  Object.entries(SECTORS).forEach(([sector,tickers])=>{
+    const sec=document.createElement('div');
+    sec.innerHTML=`<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(238,237,248,0.25);padding:14px 20px 6px">${sector}</div>`;
+    list.appendChild(sec);
+    tickers.forEach(ticker=>{
+      const s=DATA[ticker]; if(!s)return;
+      const d=document.createElement('div');
+      d.className='si'+(ticker===cur?' on':'');
+      d.dataset.ticker=ticker;
+      const lp=livePrices[ticker];
+      const priceDisplay=lp?`PKR ${lp.price}`:`PKR ${s.price}`;
+      const chgDisplay=lp?`${lp.dir==='up'?'+':''}${lp.change}%`:s.chg+'%';
+      const chgClass=(lp?.dir||s.dir)==='up'?'up':'dn';
+      d.innerHTML=`<div class="si-l"><div class="si-av">${ticker.slice(0,3)}</div><div><div class="si-tick">${ticker}</div><div class="si-name">${s.name.split(' ').slice(0,3).join(' ')}</div></div></div><div><div class="si-pr">${priceDisplay}</div><div class="si-ch ${chgClass}">${chgDisplay}</div></div>`;
+      const handler=(e)=>{e.preventDefault();e.stopPropagation();select(ticker);};
+      d.addEventListener('click',handler);
+      d.addEventListener('touchend',handler,{passive:false});
+      list.appendChild(d);
+    });
+  });
+}
+
+function openSheet(){buildSheet();document.getElementById('overlay').classList.add('on');document.getElementById('sheet').style.display='block';}
+function closeSheet(){document.getElementById('overlay').classList.remove('on');document.getElementById('sheet').style.display='none';}
+function select(ticker){
+  closeSheet(); cur=ticker; tab='overview';
+  document.getElementById('pill-av').textContent=ticker.slice(0,3);
+  document.getElementById('pill-lbl').textContent=ticker;
+  render(ticker, verdicts[ticker]||null);
+  if(!verdicts[ticker]) loadVerdict(ticker);
+  if(livePrices[ticker]) renderLivePrice(ticker);
+}
+
+// ── LIVE PRICES ───────────────────────────────────────────
+async function fetchLivePrices() {
+  try {
+    const res=await fetch('/.netlify/functions/prices',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({tickers:ALL_TICKERS})
+    });
+    if(!res.ok) return;
+    const data=await res.json();
+    if(data.prices){
+      Object.assign(livePrices,data.prices);
+      updateTickerBar(data.prices,data.kse100);
+      if(livePrices[cur]) renderLivePrice(cur);
     }
+  } catch(e){}
+}
+
+function renderLivePrice(ticker){
+  const lp=livePrices[ticker]; if(!lp)return;
+  const pe=document.getElementById('live-price');
+  const ce=document.getElementById('live-chg');
+  if(pe) pe.textContent=lp.price;
+  if(ce){ce.textContent=`${lp.dir==='up'?'+':''}${lp.change}% today`;ce.className=`hero-chg ${lp.dir==='up'?'up':'dn'}`;}
+}
+
+function updateTickerBar(prices,kse100){
+  if(kse100){
+    const kv=document.getElementById('kse-val'), kc=document.getElementById('kse-chg');
+    if(kv) kv.textContent=kse100.price;
+    if(kc){kc.textContent=`${parseFloat(kse100.change)>=0?'+':''}${kse100.change}%`;kc.className=`ticker-chg ${kse100.dir==='up'?'up':'dn'}`;}
   }
-
-  const track = document.getElementById('ticker-track');
-  if (!track) return;
-
-  const items = ALL_TICKERS.map(ticker => {
-    const lp = prices[ticker];
-    if (!lp) return '';
-    const isUp = lp.dir === 'up';
-    return `<div class="ticker-item" onclick="select('${ticker}')">
-      <div class="ticker-dot" style="background:${isUp?'var(--gb)':'var(--ra)'}"></div>
-      <span class="ticker-name">${ticker}</span>
+  const track=document.getElementById('ticker-track'); if(!track)return;
+  const items=ALL_TICKERS.map(t=>{
+    const lp=prices[t]; if(!lp)return '';
+    const up=lp.dir==='up';
+    return `<div class="ticker-item" onclick="select('${t}')">
+      <div class="ticker-dot" style="background:${up?'var(--gb)':'var(--ra)'}"></div>
+      <span class="ticker-name">${t}</span>
       <span class="ticker-price">PKR ${lp.price}</span>
-      <span class="ticker-chg ${isUp?'up':'dn'}">${isUp?'+':''}${lp.change}%</span>
+      <span class="ticker-chg ${up?'up':'dn'}">${up?'+':''}${lp.change}%</span>
     </div>`;
   }).filter(Boolean).join('');
-
-  const kseHtml = kse100 ? `<div class="kse-badge"><span class="kse-label">KSE-100</span><span class="kse-value" id="kse-val">${kse100.price}</span><span class="ticker-chg ${kse100.dir==='up'?'up':'dn'}" id="kse-chg">${parseFloat(kse100.change)>=0?'+':''}${kse100.change}%</span></div>` : '';
-
-  track.innerHTML = kseHtml + items + items;
+  const kseHtml=kse100?`<div class="kse-badge"><span class="kse-label">KSE-100</span><span class="kse-value" id="kse-val">${kse100.price}</span><span class="ticker-chg ${kse100.dir==='up'?'up':'dn'}" id="kse-chg">${parseFloat(kse100.change)>=0?'+':''}${kse100.change}%</span></div>`:'';
+  track.innerHTML=kseHtml+items+items;
 }
 
-// ── SHEET TITLE UPDATE ─────────────────────────────────────
-function updateSheetTitle() {
-  const el = document.querySelector('.sheet-ttl');
-  if (el) el.textContent = 'Select a stock · PSX';
-}
-
-// ── INIT ──────────────────────────────────────────────────
-updateSheetTitle();
+// ── INIT ─────────────────────────────────────────────────
 fetchLivePrices();
 setInterval(fetchLivePrices, 60000);
 select('OGDC');
