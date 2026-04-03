@@ -647,19 +647,19 @@ function render(ticker, verdict) {
 async function loadVerdict(ticker) {
   const s=DATA[ticker];
   try {
-    const res=await fetch('https://corsproxy.io/?https://api.anthropic.com/v1/messages',{
+    const res=await fetch('/.netlify/functions/analyze',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':CFG.k,'anthropic-version':'2023-06-01'},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-haiku-4-5-20251001', max_tokens:500,
-        messages:[{role:'user',content:`Pakistan stock analyst writing for retail investors without finance knowledge.
-Analyse ${ticker} (${s.name}).
-Ratios: ${Object.entries(s.ratios).map(([k,v])=>`${k}: ${v.v} (${v.ctx})`).join(', ')}
-${MACRO}
-Return ONLY valid JSON (no markdown backticks):
-{"headline":"One punchy sentence max 12 words","body":"2-3 plain-English sentences — why Positive, Neutral or Caution right now, mention macro context, no jargon, like explaining to a smart friend."}`}]
+        type:'verdict', ticker,
+        ratios:Object.entries(s.ratios).map(([k,v])=>`${k}: ${v.v} (${v.ctx})`).join(', '),
+        macro:MACRO
       })
     });
+    if(res.status===429){
+      verdicts[ticker]={headline:'Daily limit reached',body:'You have reached the free usage limit. Please try again in an hour.'};
+      if(cur===ticker) render(ticker,verdicts[ticker]); return;
+    }
     const data=await res.json();
     const raw=data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim();
     verdicts[ticker]=JSON.parse(raw);
@@ -678,18 +678,16 @@ async function doAsk() {
   aw.classList.add('on'); ac.textContent='Thinking…';
   const s=DATA[cur];
   try {
-    const res=await fetch('https://corsproxy.io/?https://api.anthropic.com/v1/messages',{
+    const res=await fetch('/.netlify/functions/analyze',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':CFG.k,'anthropic-version':'2023-06-01'},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-haiku-4-5-20251001', max_tokens:500,
-        messages:[{role:'user',content:`Pakistan stock analyst explaining to a retail investor.
-Stock: ${cur} (${s.name}). Ratios: ${Object.entries(s.ratios).map(([k,v])=>`${k}: ${v.v}`).join(', ')}
-${MACRO}
-Question: "${q}"
-Answer in 2-4 plain-English sentences. Direct, no jargon. Facts only, no buy/sell advice.`}]
+        type:'question', ticker:cur, question:q,
+        ratios:Object.entries(s.ratios).map(([k,v])=>`${k}: ${v.v}`).join(', '),
+        macro:MACRO
       })
     });
+    if(res.status===429){ac.textContent='Usage limit reached. Please try again in an hour.'; btn.disabled=false; btn.textContent='Ask'; return;}
     const data=await res.json();
     ac.textContent=data.content.map(i=>i.text||'').join('');
   } catch(e){ac.textContent='Could not connect — please try again.';}
