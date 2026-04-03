@@ -113,6 +113,59 @@ body {
 .pill-lbl { font-size: 12px; font-weight: 600; color: var(--t1); letter-spacing: -0.01em; }
 .pill-arrow { font-size: 9px; color: var(--t3); }
 
+
+/* ── LIVE TICKER BAR ── */
+.ticker-bar {
+  width: 100%; overflow: hidden;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--rim);
+  padding: 7px 0;
+  position: relative;
+}
+.ticker-bar::before, .ticker-bar::after {
+  content: '';
+  position: absolute; top: 0; width: 40px; height: 100%; z-index: 2;
+  pointer-events: none;
+}
+.ticker-bar::before { left: 0; background: linear-gradient(to right, var(--bg1), transparent); }
+.ticker-bar::after  { right: 0; background: linear-gradient(to left, var(--bg1), transparent); }
+.ticker-track {
+  display: flex; gap: 0;
+  animation: tickerScroll 30s linear infinite;
+  width: max-content;
+}
+.ticker-track:hover { animation-play-state: paused; }
+@keyframes tickerScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 20px; white-space: nowrap;
+  font-size: 11px; font-weight: 600; letter-spacing: -0.01em;
+  cursor: pointer;
+  border-right: 1px solid var(--rim);
+}
+.ticker-item:hover { background: rgba(255,255,255,0.03); }
+.ticker-name { color: var(--t2); }
+.ticker-price { color: var(--t1); }
+.ticker-chg { font-size: 10px; font-weight: 700; }
+.ticker-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  animation: tickerPulse 1.5s ease-in-out infinite;
+}
+@keyframes tickerPulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* KSE-100 badge */
+.kse-badge {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 16px 0 20px; white-space: nowrap;
+  font-size: 11px; font-weight: 700;
+  border-right: 1px solid var(--rim);
+}
+.kse-label { color: var(--t3); letter-spacing: 0.05em; font-size: 9px; text-transform: uppercase; }
+.kse-value { color: var(--t1); }
+
 /* ── OVERLAY / SHEET ── */
 .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; backdrop-filter: blur(8px); }
 .overlay.on { display: block; }
@@ -380,6 +433,8 @@ body {
   </div>
 </header>
 
+<div class="ticker-bar" id="ticker-bar"><div class="ticker-track" id="ticker-track"><div class="kse-badge"><span class="kse-label">KSE-100</span><span class="kse-value" id="kse-val">—</span><span class="ticker-chg up" id="kse-chg"></span></div></div></div>
+
 <div class="overlay" id="overlay" onclick="closeSheet()"></div>
 <div class="sheet" id="sheet">
   <div class="sheet-bar"></div>
@@ -534,8 +589,8 @@ function render(ticker, verdict) {
       </div>
       <div class="hero-r">
         <div class="hero-cur">PKR</div>
-        <div class="hero-price gx-white">${s.price}</div>
-        <div class="hero-chg ${s.dir==='up'?'up':'dn'}">${s.chg} today</div>
+        <div class="hero-price gx-white" id="live-price">PKR ${livePrices[ticker] ? livePrices[ticker].price : s.price}</div>
+        <div class="hero-chg ${livePrices[ticker] ? (livePrices[ticker].change >= 0 ? 'up' : 'dn') : (s.dir==='up'?'up':'dn')}" id="live-chg">${livePrices[ticker] ? (livePrices[ticker].change >= 0 ? '+' : '') + livePrices[ticker].change + '% today' : s.chg + ' today'}</div>
       </div>
     </div>
   </div>
@@ -723,6 +778,74 @@ function closeSheet(){
   document.getElementById('overlay').classList.remove('on');
   document.getElementById('sheet').style.display='none';
 }
+// Live price cache
+const livePrices = {};
+
+async function fetchLivePrices() {
+  try {
+    const tickers = Object.keys(DATA);
+    const res = await fetch('/.netlify/functions/prices', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({tickers})
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.prices) {
+      Object.assign(livePrices, data.prices);
+      updateTickerBar(data.prices, data.kse100);
+      // Update current stock display if price changed
+      if (livePrices[cur]) renderLivePrice(cur);
+    }
+  } catch(e) {}
+}
+
+function renderLivePrice(ticker) {
+  const lp = livePrices[ticker];
+  if (!lp) return;
+  const priceEl = document.getElementById('live-price');
+  const chgEl   = document.getElementById('live-chg');
+  if (priceEl) priceEl.textContent = 'PKR ' + lp.price;
+  if (chgEl)   {
+    chgEl.textContent = (lp.change > 0 ? '+' : '') + lp.change + '% today';
+    chgEl.className = 'hero-chg ' + (lp.change >= 0 ? 'up' : 'dn');
+  }
+}
+
+function updateTickerBar(prices, kse100) {
+  // Update KSE-100
+  if (kse100) {
+    const kseVal = document.getElementById('kse-val');
+    const kseChg = document.getElementById('kse-chg');
+    if (kseVal) kseVal.textContent = Number(kse100.price).toLocaleString();
+    if (kseChg) {
+      const chg = parseFloat(kse100.change);
+      kseChg.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+      kseChg.className = 'ticker-chg ' + (chg >= 0 ? 'up' : 'dn');
+    }
+  }
+
+  // Build scrolling ticker items (doubled for seamless loop)
+  const track = document.getElementById('ticker-track');
+  if (!track) return;
+
+  const items = Object.entries(DATA).map(([ticker, s]) => {
+    const lp = prices[ticker];
+    const price  = lp ? 'PKR ' + lp.price : 'PKR ' + s.price;
+    const change = lp ? lp.change : parseFloat(s.chg);
+    const isUp   = change >= 0;
+    return `<div class="ticker-item" onclick="select('${ticker}')">
+      <div class="ticker-dot" style="background:${isUp ? 'var(--gb)' : 'var(--ra)'}"></div>
+      <span class="ticker-name">${ticker}</span>
+      <span class="ticker-price">${price}</span>
+      <span class="ticker-chg ${isUp ? 'up' : 'dn'}">${isUp ? '+' : ''}${change}%</span>
+    </div>`;
+  }).join('');
+
+  // Double items for seamless infinite scroll
+  track.innerHTML = `<div class="kse-badge"><span class="kse-label">KSE-100</span><span class="kse-value" id="kse-val">${kse100 ? Number(kse100.price).toLocaleString() : '—'}</span><span class="ticker-chg ${kse100 && parseFloat(kse100.change) >= 0 ? 'up' : 'dn'}" id="kse-chg">${kse100 ? (parseFloat(kse100.change) >= 0 ? '+' : '') + parseFloat(kse100.change).toFixed(2) + '%' : ''}</span></div>${items}${items}`;
+}
+
 function select(ticker){
   closeSheet();
   cur=ticker; tab='overview';
@@ -730,7 +853,14 @@ function select(ticker){
   document.getElementById('pill-lbl').textContent=ticker;
   render(ticker,verdicts[ticker]||null);
   if(!verdicts[ticker]) loadVerdict(ticker);
+  // Show live price if available
+  if(livePrices[ticker]) renderLivePrice(ticker);
 }
+
+// Fetch live prices on load, then every 60 seconds
+fetchLivePrices();
+setInterval(fetchLivePrices, 60000);
+
 select('OGDC');
 </script>
 </body>
