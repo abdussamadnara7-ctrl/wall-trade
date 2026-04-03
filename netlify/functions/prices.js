@@ -25,30 +25,33 @@ function fetchJSON(url, timeoutMs = 8000) {
 // ── PSX TERMINAL — single stock tick ──────────────────────────
 async function getPSXTick(ticker) {
   try {
-    const data = await fetchJSON(`https://psxterminal.com/api/ticks/REG/${ticker}`);
-    if (!data) return null;
+    const resp = await fetchJSON(`https://psxterminal.com/api/ticks/REG/${ticker}`);
+    if (!resp) return null;
 
-    // PSX Terminal wraps response in {success, data}
-    const d = data.success ? (Array.isArray(data.data) ? data.data[0] : data.data) 
-                           : (Array.isArray(data) ? data[0] : data);
-    if (!d) return null;
+    // Response: {success:true, data:{market,st,symbol,price,...}, timestamp}
+    const d = resp.data ?? resp;
+    if (!d || typeof d !== 'object') return null;
 
-    const price        = d.price ?? d.currentPrice ?? d.close ?? d.last ?? d.ltp;
-    const change       = d.change ?? d.priceChange ?? 0;
-    const changePercent= d.changePercent ?? d.pctChange ?? d.changePct ?? 0;
-    const high         = d.high ?? d.dayHigh;
-    const low          = d.low  ?? d.dayLow;
-    const volume       = d.volume ?? d.totalVolume;
+    const price  = d.price;
+    const ldcp   = d.ldcp   ?? d.previousClose ?? d.prevClose;
+    const change = d.change ?? (price && ldcp ? price - ldcp : 0);
+    const pct    = d.changePercent ?? (ldcp ? (change / ldcp * 100) : 0);
+    const high   = d.high;
+    const low    = d.low;
+    const volume = d.volume ?? d.totalVolume;
 
-    if (!price) return null;
+    if (price == null) {
+      console.log(`${ticker}: price is null, data keys: ${Object.keys(d).join(',')}`);
+      return null;
+    }
 
     return {
       price:  Number(price).toFixed(2),
-      change: Number(changePercent * (Math.abs(changePercent) > 1 ? 1 : 100)).toFixed(2),
+      change: Number(pct).toFixed(2),
       high:   high   ? Number(high).toFixed(2)   : null,
       low:    low    ? Number(low).toFixed(2)     : null,
       volume: volume ? Number(volume).toLocaleString() : null,
-      dir:    Number(changePercent) >= 0 ? 'up' : 'dn'
+      dir:    Number(pct) >= 0 ? 'up' : 'dn'
     };
   } catch(e) {
     console.error(`Tick error ${ticker}:`, e.message);
