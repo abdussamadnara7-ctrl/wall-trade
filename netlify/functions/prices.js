@@ -15,111 +15,57 @@ function fetchJSON(url, timeoutMs = 8000) {
       res.on('data', c => body += c);
       res.on('end', () => {
         clearTimeout(timer);
-        try { resolve(JSON.parse(body)); }
-        catch(e) { resolve(null); }
+        try { resolve(JSON.parse(body)); } catch(e) { resolve(null); }
       });
     }).on('error', () => { clearTimeout(timer); resolve(null); });
   });
 }
 
-// ── PSX TERMINAL — single stock tick ──────────────────────────
+// ── PSX TERMINAL — single stock ───────────────────────────────
 async function getPSXTick(ticker) {
   try {
     const resp = await fetchJSON(`https://psxterminal.com/api/ticks/REG/${ticker}`);
     if (!resp) return null;
 
-    // Response: {success:true, data:{market,st,symbol,price,...}, timestamp}
+    // Structure: {success:true, data:{market,st,symbol,price,ldcp,high,low,volume,change,changePercent}, timestamp}
     const d = resp.data ?? resp;
-    if (!d || typeof d !== 'object') return null;
+    if (!d || typeof d !== 'object' || Array.isArray(d)) return null;
 
-    const price  = d.price;
-    const ldcp   = d.ldcp   ?? d.previousClose ?? d.prevClose;
-    const change = d.change ?? (price && ldcp ? price - ldcp : 0);
-    const pct    = d.changePercent ?? (ldcp ? (change / ldcp * 100) : 0);
+    const price  = d.price ?? d.currentPrice ?? d.close;
+    const ldcp   = d.ldcp  ?? d.previousClose ?? d.prevClose;
     const high   = d.high;
     const low    = d.low;
     const volume = d.volume ?? d.totalVolume;
 
-    if (price == null) {
-      console.log(`${ticker}: price is null, data keys: ${Object.keys(d).join(',')}`);
-      return null;
-    }
+    if (price == null) return null;
+
+    const pNum   = Number(price);
+    const ldcpN  = ldcp != null ? Number(ldcp) : null;
+    const change = d.change != null ? Number(d.change) : (ldcpN ? pNum - ldcpN : 0);
+    const pct    = d.changePercent != null ? Number(d.changePercent)
+                 : (ldcpN && ldcpN !== 0 ? (change / ldcpN * 100) : 0);
 
     return {
-      price:  Number(price).toFixed(2),
-      change: Number(pct).toFixed(2),
+      price:  pNum.toFixed(2),
+      change: pct.toFixed(2),
       high:   high   ? Number(high).toFixed(2)   : null,
       low:    low    ? Number(low).toFixed(2)     : null,
       volume: volume ? Number(volume).toLocaleString() : null,
-      dir:    Number(pct) >= 0 ? 'up' : 'dn'
+      ldcp:   ldcpN  ? ldcpN.toFixed(2)           : null,
+      status: d.st   ?? 'OPEN',
+      dir:    pct >= 0 ? 'up' : 'dn'
     };
   } catch(e) {
-    console.error(`Tick error ${ticker}:`, e.message);
     return null;
   }
 }
 
-// ── PSX TERMINAL — batch all symbols via market data ──────────
-async function getAllPSXPrices(tickers) {
-  try {
-    // Try to get all market data in one call
-    const data = await fetchJSON('https://psxterminal.com/api/ticks/REG');
-    if (!data) return {};
-
-    const list = data.success ? data.data : (Array.isArray(data) ? data : null);
-    if (!list || !Array.isArray(list)) return {};
-
-    console.log(`Market data: ${list.length} symbols`);
-
-    const prices = {};
-    list.forEach(d => {
-      const sym = d.symbol ?? d.ticker ?? d.code;
-      if (!sym || !tickers.includes(sym)) return;
-
-      const price        = d.price ?? d.currentPrice ?? d.close ?? d.last;
-      const changePercent= d.changePercent ?? d.pctChange ?? d.changePct ?? 0;
-
-      if (!price) return;
-
-      prices[sym] = {
-        price:  Number(price).toFixed(2),
-        change: Number(changePercent * (Math.abs(changePercent) > 1 ? 1 : 100)).toFixed(2),
-        high:   d.high   ? Number(d.high).toFixed(2)   : null,
-        low:    d.low    ? Number(d.low).toFixed(2)     : null,
-        volume: d.volume ? Number(d.volume).toLocaleString() : null,
-        dir:    Number(changePercent) >= 0 ? 'up' : 'dn'
-      };
-    });
-
-    return prices;
-  } catch(e) {
-    console.error('Batch error:', e.message);
-    return {};
-  }
-}
-
-// ── KSE-100 INDEX ─────────────────────────────────────────────
+// ── KSE-100 via Yahoo Finance ─────────────────────────────────
 async function getKSE100() {
   try {
-    // Try PSX Terminal first
-    const data = await fetchJSON('https://psxterminal.com/api/ticks/REG/KSE100');
-    if (data) {
-      const d = data.success ? data.data : data;
-      const dd = Array.isArray(d) ? d[0] : d;
-      if (dd) {
-        const price = dd.price ?? dd.currentPrice ?? dd.close;
-        const chg   = dd.changePercent ?? dd.pctChange ?? 0;
-        if (price) return {
-          price:  Math.round(Number(price)).toLocaleString(),
-          change: Number(chg * (Math.abs(chg) > 1 ? 1 : 100)).toFixed(2),
-          dir:    Number(chg) >= 0 ? 'up' : 'dn'
-        };
-      }
-    }
-    // Fallback to Yahoo Finance
-    const ydata = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/%5EKSE?interval=1d&range=2d');
-    if (!ydata?.chart?.result?.[0]) return null;
-    const closes = ydata.chart.result[0].indicators?.quote?.[0]?.close?.filter(v => v != null);
+    const data = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/%5EKSE?interval=1d&range=2d');
+    if (!data?.chart?.result?.[0]) return null;
+    const closes = data.chart.result[0].indicators?.quote?.[0]?.close?.filter(v => v != null);
     if (!closes || closes.length < 2) return null;
     const cur  = closes[closes.length - 1];
     const prev = closes[closes.length - 2];
@@ -166,37 +112,31 @@ exports.handler = async (event) => {
   let payload = {};
   try { payload = JSON.parse(event.body || '{}'); } catch(e) {}
 
-  const ALLOWED = [
+  const ALL_TICKERS = [
+    // Energy & Oil (6)
     'OGDC','PPL','PSO','MARI','APL','HASCOL',
-    'HBL','MCB','UBL','NBP','ABL','BAFL','BAHL','MEBL','FABL',
+    // Banking (6)
+    'HBL','MCB','UBL','NBP','ABL','BAFL',
+    // Fertiliser (4)
     'ENGRO','FFBL','FFC','EFERT',
-    'LUCK','MLCF','CHCC','DGKC','PIOC','FCCL',
-    'TRG','SYS','NETSOL','PAKT','PNSC','SNGP','SSGC'
+    // Cement (4)
+    'LUCK','MLCF','CHCC','DGKC'
   ];
 
-  const tickers = (payload.tickers || ALLOWED).filter(t => ALLOWED.includes(t));
+  const tickers = (payload.tickers || ALL_TICKERS).filter(t => ALL_TICKERS.includes(t));
 
-  // Try batch first, fall back to individual
-  const [batchPrices, kse100, commodities, pkrusd] = await Promise.all([
-    getAllPSXPrices(tickers),
+  // Fetch all in parallel
+  const [priceResults, kse100, commodities, pkrusd] = await Promise.all([
+    Promise.all(tickers.map(async ticker => ({ ticker, data: await getPSXTick(ticker) }))),
     getKSE100(),
     getCommodities(),
     getPKRUSD()
   ]);
 
-  // For any missing tickers, try individual calls
-  const missingTickers = tickers.filter(t => !batchPrices[t]);
-  let prices = { ...batchPrices };
-
-  if (missingTickers.length > 0) {
-    console.log(`Batch got ${Object.keys(batchPrices).length}, fetching ${missingTickers.length} individually`);
-    const individualResults = await Promise.all(
-      missingTickers.map(async ticker => ({ ticker, data: await getPSXTick(ticker) }))
-    );
-    individualResults.forEach(({ ticker, data }) => {
-      if (data) prices[ticker] = data;
-    });
-  }
+  const prices = {};
+  priceResults.forEach(({ ticker, data }) => {
+    if (data) prices[ticker] = data;
+  });
 
   console.log(`Prices fetched: ${Object.keys(prices).length}/${tickers.length} tickers`);
 
