@@ -428,6 +428,15 @@ body{padding-bottom:72px}
 }
 .insight-label { font-size: 11px; color: var(--t2); line-height: 1.45; font-weight: 400; }
 </style>
+
+<script>
+// Unregister any existing service workers to prevent stale cache
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+}
+</script>
 </head>
 <body>
 
@@ -553,7 +562,7 @@ const DATA = {
     factors:[{i:"🌙",t:"Islamic banking franchise is growing fast",d:"BAFL's Islamic banking window is one of the fastest growing in Pakistan, tapping into rising demand for Shariah-compliant financial products."},{i:"🏢",t:"Abu Dhabi Group provides strategic depth",d:"Strong international parentage gives BAFL access to capital, technology, and strategic relationships that domestic-only banks cannot match."},{i:"🌐",t:"Expansion is a double-edged sword",d:"Aggressive branch expansion builds long-term franchise value but pressures short-term returns. The payoff requires patience over a 3-5 year horizon."}]},
 
   // ── FERTILISER (4) ────────────────────────────────────────
-  ENGRO:{name:"Engro Corporation",sector:"Diversified Conglomerate",price:"292",chg:"+1.4",dir:"up",
+  ENGROH:{name:"Engro Holdings Ltd",sector:"Diversified Conglomerate",price:"292",chg:"+1.4",dir:"up",
     insights:[{icon:"🏭",value:"Diversified",label:"Fertiliser, LNG, telecom, foods portfolio",color:"green"},{icon:"💰",value:"6.8% Yield",label:"Strong holding company dividend",color:"green"},{icon:"📊",value:"11.2× P/E",label:"Premium justified by quality assets",color:"amber"}],
     ratios:{"P/E Ratio":{v:"11.2×",c:"amber",ctx:"Premium valuation"},"Div Yield":{v:"6.8%",c:"green",ctx:"Strong payout"},"ROE":{v:"19%",c:"green",ctx:"Strong returns"},"Debt/Equity":{v:"0.6",c:"amber",ctx:"Moderate leverage"},"Gross Margin":{v:"28%",c:"green",ctx:"Good margins"},"P/B Ratio":{v:"1.8×",c:"amber",ctx:"Premium to book"}},
     sigs:[{l:"Conglomerate",t:"purple"},{l:"LNG terminal",t:"green"},{l:"Gas risk",t:"amber"},{l:"Strong brand",t:"green"},{l:"EFERT upside",t:"green"}],
@@ -577,13 +586,7 @@ const DATA = {
     odesc:"High yield fertiliser play — strong operations but gas supply is the critical risk",
     factors:[{i:"🏭",t:"Enven plant is world-class",d:"EFERT's Enven urea plant is one of the most modern and efficient in the region. When gas is available, it produces at very competitive costs."},{i:"⛽",t:"Gas curtailment is the existential risk",d:"During periods of gas shortage, EFERT's plant runs at reduced capacity or shuts down. This directly impacts earnings and dividend sustainability."},{i:"🏢",t:"ENGRO parentage provides quality floor",d:"Being an ENGRO subsidiary means access to management expertise, corporate governance standards, and strategic support from a quality parent."}]},
 
-  FFBL:{name:"Fauji Fertiliser Bin Qasim",sector:"Fertiliser",price:"28",chg:"-0.3",dir:"dn",
-    insights:[{icon:"🔄",value:"Restructuring",label:"Working through a difficult turnaround",color:"amber"},{icon:"📊",value:"NP Plant",label:"Unique NP fertiliser — niche market position",color:"purple"},{icon:"⚠️",value:"Loss History",label:"Recent loss-making quarters — watch closely",color:"red"}],
-    ratios:{"P/E Ratio":{v:"N/A",c:"amber",ctx:"Inconsistent earnings"},"Div Yield":{v:"0%",c:"red",ctx:"Dividend suspended"},"ROE":{v:"5%",c:"red",ctx:"Low returns"},"Debt/Equity":{v:"1.2",c:"red",ctx:"High leverage"},"Gross Margin":{v:"12%",c:"amber",ctx:"Under pressure"},"Current Ratio":{v:"0.8×",c:"red",ctx:"Below 1"}},
-    sigs:[{l:"NP fertiliser niche",t:"purple"},{l:"Fauji Group",t:"purple"},{l:"High leverage",t:"red"},{l:"Dividend paused",t:"red"},{l:"Turnaround play",t:"amber"}],
-    scores:{"Financial health":{v:3},"Macro environment":{v:4},"Growth outlook":{v:4},"Risk level":{v:3}},overall:3.5,
-    odesc:"Turnaround play — niche NP fertiliser position but financial health is a concern",
-    factors:[{i:"🧪",t:"NP fertiliser is a differentiated product",d:"FFBL produces NP (nitrogen-phosphorus) fertiliser which has different demand dynamics than urea. This niche positioning can be an advantage in certain crop cycles."},{i:"💸",t:"Debt burden is the key problem",d:"High leverage combined with inconsistent earnings has forced dividend suspension. Balance sheet repair is the priority before any investor returns story emerges."},{i:"🏛️",t:"Fauji Group unlikely to abandon it",d:"The strategic importance of the Fauji Group's investment means FFBL is unlikely to be left to fail. Group support is the key downside protection."}]},
+
 
   // ── CEMENT (4) ────────────────────────────────────────────
   LUCK:{name:"Lucky Cement Ltd",sector:"Cement",price:"1080",chg:"+1.6",dir:"up",
@@ -622,7 +625,7 @@ const DATA = {
 const SECTORS = {
   'Energy & Oil': ['OGDC','PPL','PSO','MARI','APL','HASCOL'],
   'Banking':      ['HBL','MCB','UBL','NBP','ABL','BAFL'],
-  'Fertiliser':   ['ENGRO','FFC','EFERT','FFBL'],
+  'Fertiliser':   ['ENGROH','FFC','EFERT'],
   'Cement':       ['LUCK','MLCF','CHCC','DGKC']
 };
 
