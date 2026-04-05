@@ -392,6 +392,12 @@ body {
 .ask-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .disc { font-size: 10px; color: var(--t3); text-align: center; padding: 6px 20px 28px; line-height: 1.7; }
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(9,9,15,0.94);backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,0.06);display:flex;z-index:90;padding:8px 0 max(8px,env(safe-area-inset-bottom))}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;cursor:pointer;font-size:9px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:rgba(238,237,248,0.3);text-decoration:none;transition:color 0.15s}
+.bnav-item.on{color:#22d98a}
+.bnav-icon{font-size:18px;line-height:1}
+body{padding-bottom:72px}
 
 /* ── GAUGE ── */
 .gauge-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -944,7 +950,16 @@ function updateTickerBar(prices,kse100){
 // ── INIT ─────────────────────────────────────────────────
 fetchLivePrices();
 setInterval(fetchLivePrices, 60000);
-select('OGDC');
+// Check URL param for stock
+const urlStock = new URLSearchParams(window.location.search).get('stock');
+const startStock = (urlStock && DATA[urlStock.toUpperCase()]) ? urlStock.toUpperCase() : 'OGDC';
+select(startStock);
 </script>
+<nav class="bnav">
+  <a href="/" class="bnav-item"><div class="bnav-icon">🏠</div>Home</a>
+  <a href="/app.html" class="bnav-item on"><div class="bnav-icon">📊</div>Stocks</a>
+  <a href="/#crypto" class="bnav-item"><div class="bnav-icon">₿</div>Crypto</a>
+  <a href="/#fx" class="bnav-item"><div class="bnav-icon">💱</div>FX</a>
+</nav>
 </body>
 </html>
