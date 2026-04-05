@@ -2,487 +2,479 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wall-Trade — The PSX, finally decoded for you</title>
-<meta name="description" content="AI-powered stock analysis for Pakistan's retail investors. Pick a stock, get the verdict — no spreadsheets, no jargon, no guesswork.">
-<meta name="theme-color" content="#09090f">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Wall-Trade — AI Markets Intelligence</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg:  #09090f;
-  --bg1: #0f0f18;
-  --bg2: #141420;
-  --rim: rgba(255,255,255,0.07);
-  --t1:  #eeedf8;
-  --t2:  rgba(238,237,248,0.5);
-  --t3:  rgba(238,237,248,0.25);
-  --ga:  #5fffc0; --gb: #22d98a;
-  --pa:  #c4b5fd; --pb: #8b5cf6;
-  --ra:  #ff8080; --rb: #ef4444;
-}
-html { background: var(--bg); scroll-behavior: smooth; }
-body {
-  background: var(--bg); color: var(--t1);
-  font-family: 'Geist', system-ui, sans-serif;
-  font-size: 15px; line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
-::-webkit-scrollbar { width: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#0a0a14;color:#f0eff8;font-family:'Geist',-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+body{max-width:430px;margin:0 auto;padding-bottom:76px}
+::-webkit-scrollbar{width:0}
 
-/* ── NAV ── */
-nav {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 24px; max-width: 1100px; margin: 0 auto;
-  position: sticky; top: 0; z-index: 50;
-  background: rgba(9,9,15,0.85); backdrop-filter: blur(20px);
+/* Gradient text — cross-browser + iOS Safari safe */
+.grad-logo{
+  background-image:linear-gradient(90deg,#5fffc0 0%,#38bdf8 50%,#c4b5fd 100%);
+  background-clip:text;-webkit-background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+  display:inline-block;background-size:100% 100%;
 }
-.nav-logo {
-  font-size: 20px; font-weight: 700; letter-spacing: -0.04em;
-  background: linear-gradient(130deg, var(--ga), var(--pa));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+.grad-headline{
+  background-image:linear-gradient(90deg,#f472b6 0%,#fb923c 50%,#fbbf24 100%);
+  background-clip:text;-webkit-background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+  display:inline-block;background-size:100% 100%;
 }
-.nav-cta {
-  background: linear-gradient(130deg, var(--gb), var(--pb));
-  color: #fff; font-family: inherit; font-size: 13px; font-weight: 700;
-  padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer;
-  text-decoration: none; display: inline-block;
-  box-shadow: 0 2px 16px rgba(139,92,246,0.3);
-  transition: opacity 0.15s;
-}
-.nav-cta:hover { opacity: 0.85; }
 
-/* ── HERO ── */
-.hero {
-  max-width: 680px; margin: 0 auto;
-  padding: 80px 24px 60px;
-  text-align: center;
-}
-.hero-badge {
-  display: inline-flex; align-items: center; gap: 7px;
-  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--gb); background: rgba(34,217,138,0.1);
-  border: 1px solid rgba(34,217,138,0.2);
-  padding: 5px 14px; border-radius: 50px; margin-bottom: 28px;
-}
-.hero-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gb); animation: pulse 2s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-.hero-h1 {
-  font-size: clamp(36px, 8vw, 58px);
-  font-weight: 700; letter-spacing: -0.04em; line-height: 1.1;
-  margin-bottom: 20px;
-}
-.hero-h1 span {
-  background: linear-gradient(130deg, var(--ga) 0%, var(--pa) 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-.hero-sub {
-  font-size: 18px; color: var(--t2); line-height: 1.7;
-  max-width: 520px; margin: 0 auto 36px; font-weight: 300;
-}
-.hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.btn-primary {
-  background: linear-gradient(130deg, var(--gb), var(--pb));
-  color: #fff; font-family: inherit; font-size: 15px; font-weight: 700;
-  padding: 14px 32px; border-radius: 13px; border: none; cursor: pointer;
-  text-decoration: none; display: inline-block;
-  box-shadow: 0 4px 24px rgba(139,92,246,0.35);
-  transition: opacity 0.15s, transform 0.1s;
-}
-.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
-.btn-ghost {
-  color: var(--t2); font-family: inherit; font-size: 15px; font-weight: 500;
-  padding: 14px 28px; border-radius: 13px; border: 1px solid var(--rim);
-  cursor: pointer; text-decoration: none; display: inline-block;
-  background: var(--bg1);
-  transition: background 0.15s, color 0.15s;
-}
-.btn-ghost:hover { background: var(--bg2); color: var(--t1); }
+/* HEADER */
+.hdr{position:sticky;top:0;z-index:80;display:flex;align-items:center;justify-content:space-between;padding:15px 20px;background:rgba(10,10,20,0.95);backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,0.07)}
 
-/* ── MOCK APP PREVIEW ── */
-.preview-wrap {
-  max-width: 420px; margin: 64px auto 0;
-  background: var(--bg1); border: 1px solid var(--rim);
-  border-radius: 28px; overflow: hidden;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 40px 80px rgba(0,0,0,0.6);
-}
-.preview-bar {
-  background: var(--bg); border-bottom: 1px solid var(--rim);
-  padding: 14px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.preview-logo { font-size: 16px; font-weight: 700; letter-spacing: -0.04em; background: linear-gradient(130deg,var(--ga),var(--pa)); -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
-.preview-pill { background: var(--bg2); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; padding: 5px 11px 5px 8px; display:flex;align-items:center;gap:6px; }
-.preview-pill-av { width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,rgba(95,255,192,0.2),rgba(139,92,246,0.2));display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:700;color:var(--pa); }
-.preview-pill-lbl { font-size:11px;font-weight:600;color:var(--t1); }
-.preview-body { padding: 22px 20px; }
-.preview-company { font-size:10px;color:var(--t3);letter-spacing:0.02em;margin-bottom:10px; }
-.preview-ticker-row { display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px; }
-.preview-ticker { font-size:40px;font-weight:700;letter-spacing:-0.05em;line-height:1; background:linear-gradient(130deg,#fff 30%,rgba(238,237,248,0.5));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
-.preview-price-block { text-align:right; }
-.preview-cur { font-size:10px;color:var(--t3);margin-bottom:2px; }
-.preview-price { font-size:28px;font-weight:600;letter-spacing:-0.04em; background:linear-gradient(130deg,#fff 30%,rgba(238,237,248,0.5));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
-.preview-chg { font-size:11px;font-weight:600;color:var(--gb);margin-top:4px; }
-.preview-card { background:var(--bg2);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px; }
-.preview-eyebrow { font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--t3);margin-bottom:12px; }
-.preview-verdict-row { display:flex;align-items:center;justify-content:space-between;margin-bottom:14px; }
-.preview-verdict { font-size:40px;font-weight:700;letter-spacing:-0.03em;line-height:1; background:linear-gradient(130deg,var(--ga),var(--gb));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
-.preview-insights { display:flex;flex-direction:column;gap:7px; }
-.preview-insight { background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px; }
-.preview-insight-icon { width:26px;height:26px;border-radius:7px;background:rgba(34,217,138,0.1);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0; }
-.preview-insight-val { font-size:13px;font-weight:700;letter-spacing:-0.02em;background:linear-gradient(130deg,var(--ga),var(--gb));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:1px; }
-.preview-insight-lbl { font-size:10px;color:var(--t3); }
+/* TICKER */
+.ticker-bar{width:100%;overflow:hidden;background:#101018;border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;position:relative}
+.ticker-bar::before,.ticker-bar::after{content:'';position:absolute;top:0;width:40px;height:100%;z-index:2;pointer-events:none}
+.ticker-bar::before{left:0;background:linear-gradient(to right,#101018,transparent)}
+.ticker-bar::after{right:0;background:linear-gradient(to left,#101018,transparent)}
+.ticker-track{display:flex;gap:0;animation:tickerScroll 45s linear infinite;width:max-content}
+.ticker-track:hover{animation-play-state:paused}
+@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.t-item{display:inline-flex;align-items:center;gap:5px;padding:0 14px;white-space:nowrap;font-size:11px;font-weight:600;border-right:1px solid rgba(255,255,255,0.07);cursor:pointer}
+.t-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.t-name{color:rgba(240,239,248,0.45)}
+.t-price{color:#f0eff8}
+.t-chg{font-size:10px;font-weight:700}
+.kse-pill{display:inline-flex;align-items:center;gap:7px;padding:0 16px;border-right:1px solid rgba(255,255,255,0.07)}
+.kse-lbl{font-size:8px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(240,239,248,0.3)}
+.kse-val{font-size:12px;font-weight:700;color:#f0eff8}
+.up{color:#34d399}.dn{color:#f87171}
 
-/* ── FEATURES ── */
-.features {
-  max-width: 1000px; margin: 100px auto 0;
-  padding: 0 24px;
-}
-.section-tag {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--pb); margin-bottom: 14px;
-}
-.section-h2 {
-  font-size: clamp(28px, 5vw, 40px); font-weight: 700;
-  letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 12px;
-}
-.section-sub { font-size: 16px; color: var(--t2); font-weight: 300; max-width: 520px; }
-.feat-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px; margin-top: 48px;
-}
-.feat-card {
-  background: var(--bg1); border: 1px solid var(--rim);
-  border-radius: 18px; padding: 24px;
-  transition: border-color 0.2s;
-}
-.feat-card:hover { border-color: rgba(139,92,246,0.3); }
-.feat-icon {
-  width: 44px; height: 44px; border-radius: 12px; margin-bottom: 16px;
-  display: flex; align-items: center; justify-content: center; font-size: 20px;
-}
-.feat-title { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 8px; }
-.feat-desc { font-size: 13px; color: var(--t2); line-height: 1.7; }
+/* HERO */
+.hero{padding:26px 20px 22px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:6px;padding:4px 10px;margin-bottom:16px}
+.hero-badge-dot{width:5px;height:5px;border-radius:50%;background:#818cf8}
+.hero-badge-txt{font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#a5b4fc}
+.hero-h{font-size:30px;font-weight:700;letter-spacing:-0.03em;line-height:1.1;margin-bottom:12px}
+.hero-sub{font-size:12px;color:rgba(240,239,248,0.45);line-height:1.75;margin-bottom:22px}
+.hero-cta{display:flex;gap:10px}
+.btn-primary{background:linear-gradient(130deg,#6366f1,#8b5cf6);color:#fff;font-weight:700;font-size:12px;padding:12px 20px;border-radius:10px;box-shadow:0 4px 20px rgba(99,102,241,0.4);cursor:pointer;border:none;font-family:inherit;letter-spacing:-0.01em}
+.btn-secondary{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(240,239,248,0.75);font-weight:600;font-size:12px;padding:12px 16px;border-radius:10px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center}
 
-/* ── HOW IT WORKS ── */
-.how { max-width: 700px; margin: 100px auto 0; padding: 0 24px; text-align: center; }
-.steps { display: flex; flex-direction: column; gap: 0; margin-top: 48px; text-align: left; }
-.step { display: flex; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--rim); }
-.step:last-child { border-bottom: none; }
-.step-num {
-  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(95,255,192,0.15), rgba(139,92,246,0.2));
-  border: 1px solid rgba(139,92,246,0.25);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700;
-  background-clip: unset;
-  color: var(--pa);
-}
-.step-title { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 5px; }
-.step-desc { font-size: 13px; color: var(--t2); line-height: 1.7; }
+/* SECTION */
+.sec-hdr{font-size:8px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,239,248,0.25);margin-bottom:12px}
 
-/* ── DISCLAIMER SECTION ── */
-.legal {
-  max-width: 700px; margin: 80px auto 0; padding: 0 24px;
-  background: var(--bg1); border: 1px solid var(--rim);
-  border-radius: 18px; padding: 24px 28px;
-}
-.legal-title { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t3); margin-bottom: 10px; }
-.legal-text { font-size: 12px; color: var(--t3); line-height: 1.8; }
+/* MACRO CARDS */
+.macro-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0 20px 20px}
+.mcard{border-radius:14px;padding:14px;cursor:pointer}
+.mcard-lbl{font-size:8px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px}
+.mcard-price{font-size:20px;font-weight:700;letter-spacing:-0.03em;color:#f0eff8;line-height:1;margin-bottom:5px}
+.mcard-chg{font-size:12px;font-weight:700}
+.mcard-sub{font-size:9px;color:rgba(240,239,248,0.3);margin-top:4px}
 
-/* ── CTA BAND ── */
-.cta-band {
-  max-width: 600px; margin: 80px auto 0; padding: 0 24px;
-  text-align: center;
-}
-.cta-band h2 {
-  font-size: clamp(28px, 5vw, 40px); font-weight: 700;
-  letter-spacing: -0.03em; margin-bottom: 14px;
-}
-.cta-band p { font-size: 16px; color: var(--t2); margin-bottom: 32px; font-weight: 300; }
+/* ASSET TABS */
+.atabs{border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);display:flex;padding:0 20px;overflow-x:auto}
+.atabs::-webkit-scrollbar{display:none}
+.atab{font-size:12px;font-weight:600;padding:11px 14px;border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer;color:rgba(240,239,248,0.3);transition:color 0.15s}
+.atab.on{color:#34d399;border-bottom-color:#34d399}
 
-/* ── FOOTER ── */
-footer {
-  max-width: 1100px; margin: 80px auto 0;
-  padding: 28px 24px;
-  border-top: 1px solid var(--rim);
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 12px;
-}
-.footer-logo { font-size: 16px; font-weight: 700; letter-spacing: -0.04em; background: linear-gradient(130deg,var(--ga),var(--pa)); -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
-.footer-text { font-size: 11px; color: var(--t3); }
+/* STOCK ROWS */
+.slist{padding:4px 0 0;display:none}
+.slist.on{display:block}
+.sec-group-lbl{font-size:8px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,239,248,0.2);padding:12px 20px 4px}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;cursor:pointer;text-decoration:none}
+.srow:hover{background:rgba(255,255,255,0.03)}
+.srow-l{display:flex;align-items:center;gap:12px}
+.srow-av{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0}
+.srow-tick{font-size:13px;font-weight:600;color:#f0eff8}
+.srow-name{font-size:10px;color:rgba(240,239,248,0.35);margin-top:1px}
+.srow-price{font-size:13px;font-weight:600;color:#f0eff8;text-align:right}
+.srow-chg{font-size:10px;font-weight:700;margin-top:2px;text-align:right}
+.sdiv{height:1px;background:rgba(255,255,255,0.05);margin:4px 20px}
 
-/* ── LIVE TICKER ── */
-.live-ticker {
-  width: 100%; overflow: hidden;
-  background: rgba(15,15,24,0.95);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  padding: 7px 0;
-  position: relative;
-}
-.live-ticker::before, .live-ticker::after {
-  content: ''; position: absolute; top: 0; width: 48px; height: 100%; z-index: 2; pointer-events: none;
-}
-.live-ticker::before { left: 0; background: linear-gradient(to right, rgba(15,15,24,0.95), transparent); }
-.live-ticker::after  { right: 0; background: linear-gradient(to left, rgba(15,15,24,0.95), transparent); }
-.ticker-scroll {
-  display: flex; align-items: center;
-  animation: tickerMove 22s linear infinite;
-  width: max-content;
-}
-.ticker-scroll:hover { animation-play-state: paused; }
-@keyframes tickerMove { 0%{ transform:translateX(0) } 100%{ transform:translateX(-50%) } }
-.t-kse {
-  display: flex; align-items: center; gap: 7px;
-  padding: 0 18px 0 22px;
-  border-right: 1px solid rgba(255,255,255,0.07);
-  white-space: nowrap;
-}
-.t-kse-lbl { font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(238,237,248,0.3); }
-.t-kse-val { font-size: 11px; font-weight: 700; color: #eeedf8; }
-.t-kse-chg { font-size: 10px; font-weight: 700; }
-.t-item {
-  display: flex; align-items: center; gap: 6px;
-  padding: 0 16px;
-  border-right: 1px solid rgba(255,255,255,0.06);
-  white-space: nowrap; cursor: pointer; text-decoration: none;
-}
-.t-item:hover { background: rgba(255,255,255,0.03); }
-.t-dot { width: 4px; height: 4px; border-radius: 50%; animation: tdot 1.5s ease-in-out infinite; }
-@keyframes tdot { 0%,100%{opacity:1} 50%{opacity:0.2} }
-.t-name { font-size: 10px; font-weight: 700; color: rgba(238,237,248,0.5); letter-spacing: 0.02em; }
-.t-price { font-size: 11px; font-weight: 600; color: #eeedf8; }
-.t-chg { font-size: 10px; font-weight: 700; }
-.t-up { color: #22d98a; }
-.t-dn { color: #ff8080; }
+/* CRYPTO ROWS */
+.crow-av{width:38px;height:38px;border-radius:10px;background:#1c1208;border:1px solid #5a3a00;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fbbf24;flex-shrink:0}
 
+/* NEWS */
+.news-section{border-top:1px solid rgba(255,255,255,0.06);padding:16px 20px 12px}
+.news-item{padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer}
+.news-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.news-meta{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.news-src{font-size:8px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:rgba(240,239,248,0.3)}
+.news-tag{font-size:8px;font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid}
+.news-title{font-size:13px;font-weight:500;color:#f0eff8;line-height:1.55;margin-bottom:4px}
+.news-time{font-size:10px;color:rgba(240,239,248,0.25)}
+
+/* LOADING */
+.loading{display:flex;align-items:center;gap:8px;padding:20px;color:rgba(240,239,248,0.3);font-size:12px}
+.spin{width:12px;height:12px;border:1.5px solid rgba(255,255,255,0.1);border-top-color:#6366f1;border-radius:50%;animation:rot 0.7s linear infinite;flex-shrink:0}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(10,10,20,0.97);backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,0.07);display:flex;z-index:90;padding:10px 0 max(20px,env(safe-area-inset-bottom))}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;text-decoration:none}
+.bnav-icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.bnav-icon.on{background:#0e1f1a;border:1px solid #1a4d3a}
+.bnav-lbl{font-size:8px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase}
 </style>
 </head>
 <body>
 
-<!-- NAV -->
-<nav>
-  <div class="nav-logo">Wall-Trade</div>
-  <a href="/app.html" class="nav-cta">Open App →</a>
-</nav>
+<!-- HEADER -->
+<header class="hdr">
+  <div>
+    <div class="grad-logo" style="font-size:20px;font-weight:700;letter-spacing:-0.04em">Wall-Trade</div>
+    <div style="font-size:8px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,239,248,0.3);margin-top:2px">AI Markets Intelligence</div>
+  </div>
+  <a href="/app.html" style="background:linear-gradient(130deg,#6366f1,#8b5cf6);color:#fff;font-size:11px;font-weight:700;padding:8px 16px;border-radius:10px;box-shadow:0 4px 14px rgba(99,102,241,0.4);text-decoration:none;letter-spacing:-0.01em">Analyse ↗</a>
+</header>
 
-
-<!-- LIVE TICKER -->
-<div class="live-ticker">
-  <div class="ticker-scroll" id="hp-ticker"></div>
+<!-- TICKER -->
+<div class="ticker-bar">
+  <div class="ticker-track" id="ticker-track">
+    <div class="kse-pill">
+      <span class="kse-lbl">KSE-100</span>
+      <span class="kse-val" id="kse-val">—</span>
+      <span class="t-chg" id="kse-chg"></span>
+    </div>
+  </div>
 </div>
 
 <!-- HERO -->
-<section class="hero">
-  <div class="hero-badge"><div class="hero-badge-dot"></div>Pakistan Stock Exchange · AI-Powered</div>
-  <h1 class="hero-h1">The PSX, finally <span>decoded for you.</span></h1>
-  <p class="hero-sub">Stop drowning in charts and financial reports. Wall-Trade cuts through the noise and tells you exactly what matters about any stock — in seconds.</p>
-  <div class="hero-btns">
-    <a href="/app.html" class="btn-primary">Analyse a stock →</a>
-    <a href="#how" class="btn-ghost">How it works</a>
+<div class="hero">
+  <div class="hero-badge">
+    <div class="hero-badge-dot"></div>
+    <span class="hero-badge-txt">Live · PSX + Global Markets</span>
   </div>
-
-  <!-- MOCK PREVIEW -->
-  <div class="preview-wrap">
-    <div class="preview-bar">
-      <div class="preview-logo">Wall-Trade</div>
-      <div class="preview-pill">
-        <div class="preview-pill-av">MAR</div>
-        <span class="preview-pill-lbl">MARI</span>
-        <span style="font-size:8px;color:rgba(238,237,248,0.25);margin-left:2px;">▾</span>
-      </div>
-    </div>
-    <div class="preview-body">
-      <div class="preview-company">Mari Petroleum Co. Ltd · Exploration & Production</div>
-      <div class="preview-ticker-row">
-        <div class="preview-ticker">MARI</div>
-        <div class="preview-price-block">
-          <div class="preview-cur">PKR</div>
-          <div class="preview-price">2,310</div>
-          <div class="preview-chg">+2.1% today</div>
-        </div>
-      </div>
-      <div class="preview-card">
-        <div class="preview-eyebrow">Wall-Trade suggestion</div>
-        <div class="preview-verdict-row">
-          <div class="preview-verdict">Positive</div>
-          <!-- mini gauge SVG -->
-          <svg width="100" height="58" viewBox="0 0 100 58" fill="none">
-            <defs>
-              <filter id="pg"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-            </defs>
-            <script></script>
-          </svg>
-        </div>
-        <div class="preview-insights">
-          <div class="preview-insight">
-            <div class="preview-insight-icon">🏆</div>
-            <div>
-              <div class="preview-insight-val">31.4% ROE</div>
-              <div class="preview-insight-lbl">Best return on equity in E&P sector</div>
-            </div>
-          </div>
-          <div class="preview-insight">
-            <div class="preview-insight-icon" style="background:rgba(139,92,246,0.1);">🛡️</div>
-            <div>
-              <div class="preview-insight-val" style="background:linear-gradient(130deg,#c4b5fd,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">0.04 D/E</div>
-              <div class="preview-insight-lbl">Essentially debt-free balance sheet</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="hero-h">
+    <span style="color:#f0eff8;display:block">Pakistan's AI</span>
+    <span class="grad-headline" style="font-size:30px;font-weight:700;letter-spacing:-0.03em">markets intelligence</span>
   </div>
-</section>
-
-<!-- FEATURES -->
-<section class="features" id="features">
-  <div class="section-tag">Why Wall-Trade</div>
-  <h2 class="section-h2" style="background:linear-gradient(130deg,#eeedf8 30%,#8b5cf6 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Built for Pakistan's retail investor</h2>
-  <p class="section-sub">Not for fund managers. Not for analysts. For anyone who wants to understand what they're investing in.</p>
-  <div class="feat-grid">
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(34,217,138,0.1);">🧠</div>
-      <div class="feat-title">AI verdicts, not raw data</div>
-      <div class="feat-desc">Our AI reads the financial ratios and the current Pakistan macro environment — IMF programme, interest rates, circular debt — and tells you what it means for that stock.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(139,92,246,0.1);">📖</div>
-      <div class="feat-title">Zero jargon</div>
-      <div class="feat-desc">P/E ratio, ROE, current ratio — we explain every number in plain Urdu-friendly English. No finance degree required, ever.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(255,128,128,0.1);">🇵🇰</div>
-      <div class="feat-title">Pakistan-specific context</div>
-      <div class="feat-desc">Generic stock apps don't understand circular debt, PSDP cuts, or SBP policy rates. We do. Every analysis is grounded in what's actually happening in Pakistan's economy.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(251,191,36,0.1);">💬</div>
-      <div class="feat-title">Ask anything</div>
-      <div class="feat-desc">"Why is PSO risky?" "What does a 0.9x current ratio mean?" "Should I be worried about the SBP rate?" Ask in plain English and get a plain English answer.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(96,165,250,0.1);">📱</div>
-      <div class="feat-title">Installs like an app</div>
-      <div class="feat-desc">Add to your home screen on iPhone or Android. Opens fullscreen, works offline for cached stocks, no App Store needed.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(34,217,138,0.08);">🔒</div>
-      <div class="feat-title">Your data stays private</div>
-      <div class="feat-desc">No account required. No tracking. No selling your data. Wall-Trade is a tool, not a surveillance product.</div>
-    </div>
+  <div class="hero-sub">Deep AI analysis on PSX stocks, live global macro, crypto and FX. Built for serious market watchers.</div>
+  <div class="hero-cta">
+    <a href="/app.html" class="btn-primary">📊 Analyse Stocks</a>
+    <a href="#markets" class="btn-secondary">View Markets</a>
   </div>
-</section>
-
-<!-- HOW IT WORKS -->
-<section class="how" id="how">
-  <div class="section-tag">How it works</div>
-  <h2 class="section-h2" style="background:linear-gradient(130deg,#c4b5fd 0%,#eeedf8 60%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Three steps to understanding any stock</h2>
-  <div class="steps">
-    <div class="step">
-      <div class="step-num">1</div>
-      <div>
-        <div class="step-title">Pick a stock</div>
-        <div class="step-desc">Tap the ticker at the top and choose from our growing list of PSX stocks across Energy, Banking, Cement, Fertiliser and more.</div>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div>
-        <div class="step-title">Read the verdict</div>
-        <div class="step-desc">Our AI analyses the company's financial health, Pakistan's current macro environment, and key risks — then gives you a plain-English summary in seconds.</div>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div>
-        <div class="step-title">Ask your own questions</div>
-        <div class="step-desc">Not sure about something? Type any question about the stock and get a direct, jargon-free answer. Like having a finance friend on speed dial.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- LEGAL -->
-<div class="legal" style="max-width:800px;margin:80px auto 0;">
-  <div class="legal-title">Important — please read</div>
-  <div class="legal-text">Wall-Trade provides financial information and AI-generated analysis for educational and informational purposes only. It does not constitute investment advice and is not registered with the Securities and Exchange Commission of Pakistan (SECP). Signals labelled Positive, Neutral, or Caution are algorithmic indicators based on publicly available financial data — they are not instructions to buy or sell any security. Past performance is not indicative of future results. Always consult a licensed financial advisor before making any investment decisions. Wall-Trade accepts no liability for investment decisions made based on information provided by this platform.</div>
 </div>
 
-<!-- CTA BAND -->
-<div class="cta-band">
-  <h2 style="background:linear-gradient(130deg,#5fffc0 0%,#eeedf8 60%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Your edge in Pakistan's market.</h2>
-  <p>Real analysis. No finance degree needed. Works on any device.</p>
-  <a href="/app.html" class="btn-primary" style="font-size:16px;padding:16px 40px;">Open Wall-Trade →</a>
+<!-- MACRO CARDS -->
+<div id="markets" style="padding:16px 20px 0">
+  <div class="sec-hdr">Live markets</div>
+</div>
+<div class="macro-grid">
+  <div class="mcard" style="background:#0e1f1a;border:1px solid #1a4d3a" onclick="location.href='/app.html'">
+    <div class="mcard-lbl" style="color:#34d399">🇵🇰 KSE-100</div>
+    <div class="mcard-price" id="mc-kse">—</div>
+    <div class="mcard-chg" id="mc-kse-chg"></div>
+    <div class="mcard-sub">Pakistan Stock Exchange</div>
+  </div>
+  <div class="mcard" style="background:#0f1024;border:1px solid #2d3080">
+    <div class="mcard-lbl" style="color:#818cf8">🇺🇸 S&amp;P 500</div>
+    <div class="mcard-price" id="mc-sp">—</div>
+    <div class="mcard-chg" id="mc-sp-chg"></div>
+    <div class="mcard-sub">SPY ETF · US Markets</div>
+  </div>
+  <div class="mcard" style="background:#1e1208;border:1px solid #5c3a10">
+    <div class="mcard-lbl" style="color:#fb923c">🛢️ Brent Crude</div>
+    <div class="mcard-price" id="mc-brent">—</div>
+    <div class="mcard-chg" id="mc-brent-chg"></div>
+    <div class="mcard-sub">USD per barrel</div>
+  </div>
+  <div class="mcard" style="background:#1c1800;border:1px solid #5c4d00">
+    <div class="mcard-lbl" style="color:#fbbf24">💛 Gold</div>
+    <div class="mcard-price" id="mc-gold">—</div>
+    <div class="mcard-chg" id="mc-gold-chg"></div>
+    <div class="mcard-sub">USD per troy oz</div>
+  </div>
+  <div class="mcard" style="background:#1f0d16;border:1px solid #6b2040">
+    <div class="mcard-lbl" style="color:#f472b6">💱 PKR / USD</div>
+    <div class="mcard-price" id="mc-pkr">—</div>
+    <div class="mcard-chg" style="color:rgba(240,239,248,0.3);font-size:11px">Exchange rate</div>
+    <div class="mcard-sub">Pakistani Rupee</div>
+  </div>
+  <div class="mcard" style="background:#130c22;border:1px solid #4a2d7a">
+    <div class="mcard-lbl" style="color:#a78bfa">₿ Bitcoin</div>
+    <div class="mcard-price" id="mc-btc">—</div>
+    <div class="mcard-chg" id="mc-btc-chg"></div>
+    <div class="mcard-sub">BTC · USD</div>
+  </div>
 </div>
 
-<!-- FOOTER -->
-<footer>
-  <div class="footer-logo">Wall-Trade</div>
-  <div class="footer-text">For informational purposes only · Not SECP registered · Not investment advice</div>
-</footer>
+<!-- ASSET TABS -->
+<div class="atabs">
+  <div class="atab on" onclick="showTab('psx',this)">PSX Stocks</div>
+  <div class="atab" onclick="showTab('crypto',this)">Crypto</div>
+  <div class="atab" onclick="showTab('fx',this)">Currency</div>
+</div>
+
+<!-- PSX LIST -->
+<div class="slist on" id="tab-psx">
+  <div class="loading"><div class="spin"></div>Loading PSX prices…</div>
+</div>
+
+<!-- CRYPTO LIST -->
+<div class="slist" id="tab-crypto">
+  <div class="loading"><div class="spin"></div>Loading crypto prices…</div>
+</div>
+
+<!-- FX LIST -->
+<div class="slist" id="tab-fx">
+  <div class="loading"><div class="spin"></div>Loading exchange rates…</div>
+</div>
+
+<!-- NEWS -->
+<div class="news-section">
+  <div class="sec-hdr">Market intelligence</div>
+  <div id="news-list"><div class="loading"><div class="spin"></div>Loading news…</div></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <a href="/" class="bnav-item">
+    <div class="bnav-icon on">🏠</div>
+    <span class="bnav-lbl" style="color:#34d399">Home</span>
+  </a>
+  <a href="/app.html" class="bnav-item">
+    <div class="bnav-icon">📊</div>
+    <span class="bnav-lbl" style="color:rgba(240,239,248,0.3)">Stocks</span>
+  </a>
+  <a href="#tab-crypto" class="bnav-item" onclick="showTab('crypto',null)">
+    <div class="bnav-icon">₿</div>
+    <span class="bnav-lbl" style="color:rgba(240,239,248,0.3)">Crypto</span>
+  </a>
+  <a href="#tab-fx" class="bnav-item" onclick="showTab('fx',null)">
+    <div class="bnav-icon">💱</div>
+    <span class="bnav-lbl" style="color:rgba(240,239,248,0.3)">FX</span>
+  </a>
+</nav>
 
 <script>
+// ── DATA ──────────────────────────────────────────────────
+const PSX = [
+  {t:'OGDC',n:'Oil & Gas Dev Co',s:'Energy & Oil',bg:'#1e1208',bd:'#5c3a10',c:'#fb923c'},
+  {t:'PPL', n:'Pakistan Petroleum',s:'Energy & Oil',bg:'#0e1f1a',bd:'#1a4d3a',c:'#34d399'},
+  {t:'PSO', n:'Pakistan State Oil',s:'Energy & Oil',bg:'#1f0d0d',bd:'#6b2020',c:'#f87171'},
+  {t:'MARI',n:'Mari Petroleum',s:'Energy & Oil',bg:'#0e1f1a',bd:'#1a4d3a',c:'#34d399'},
+  {t:'APL', n:'Attock Petroleum',s:'Energy & Oil',bg:'#1e1208',bd:'#5c3a10',c:'#fb923c'},
+  {t:'HASCOL',n:'Hascol Petroleum',s:'Energy & Oil',bg:'#1f0d0d',bd:'#6b2020',c:'#f87171'},
+  {t:'HBL', n:'Habib Bank Ltd',s:'Banking',bg:'#0a1826',bd:'#1a4a6b',c:'#38bdf8'},
+  {t:'MCB', n:'MCB Bank',s:'Banking',bg:'#0f1024',bd:'#2d3080',c:'#818cf8'},
+  {t:'UBL', n:'United Bank',s:'Banking',bg:'#130c22',bd:'#4a2d7a',c:'#a78bfa'},
+  {t:'NBP', n:'National Bank',s:'Banking',bg:'#0e1f1a',bd:'#1a4d3a',c:'#34d399'},
+  {t:'ABL', n:'Allied Bank',s:'Banking',bg:'#0a1826',bd:'#1a4a6b',c:'#38bdf8'},
+  {t:'BAFL',n:'Bank Al Falah',s:'Banking',bg:'#0f1024',bd:'#2d3080',c:'#818cf8'},
+  {t:'ENGRO',n:'Engro Corporation',s:'Fertiliser',bg:'#1c1800',bd:'#5c4d00',c:'#fbbf24'},
+  {t:'FFC', n:'Fauji Fertiliser',s:'Fertiliser',bg:'#1e1208',bd:'#5c3a10',c:'#fb923c'},
+  {t:'EFERT',n:'Engro Fertilisers',s:'Fertiliser',bg:'#1c1800',bd:'#5c4d00',c:'#fbbf24'},
+  {t:'FFBL',n:'Fauji Fert Bin Qasim',s:'Fertiliser',bg:'#1f0d0d',bd:'#6b2020',c:'#f87171'},
+  {t:'LUCK',n:'Lucky Cement',s:'Cement',bg:'#0e1f1a',bd:'#1a4d3a',c:'#34d399'},
+  {t:'MLCF',n:'Maple Leaf Cement',s:'Cement',bg:'#130c22',bd:'#4a2d7a',c:'#a78bfa'},
+  {t:'CHCC',n:'Cherat Cement',s:'Cement',bg:'#0a1826',bd:'#1a4a6b',c:'#38bdf8'},
+  {t:'DGKC',n:'DG Khan Cement',s:'Cement',bg:'#1e1208',bd:'#5c3a10',c:'#fb923c'}
+];
 
-// Homepage live ticker
-(function() {
-  const stocks = [
-    { t:'KSE-100', p:'115,842', c:'+0.82%', up:true,  kse:true },
-    { t:'OGDC',    p:'191.45',  c:'+2.4%',  up:true  },
-    { t:'PPL',     p:'134.20',  c:'+1.6%',  up:true  },
-    { t:'PSO',     p:'381.00',  c:'-1.3%',  up:false },
-    { t:'MARI',    p:'2,348',   c:'+1.6%',  up:true  },
-    { t:'APL',     p:'731.50',  c:'+1.0%',  up:true  },
-    { t:'HASCOL',  p:'27.30',   c:'-2.5%',  up:false },
-  ];
+const CRYPTO_NAMES = {BTC:'Bitcoin',ETH:'Ethereum',BNB:'BNB',SOL:'Solana',XRP:'XRP',ADA:'Cardano',AVAX:'Avalanche',DOT:'Polkadot',MATIC:'Polygon',LINK:'Chainlink'};
+const FX_LABELS = {USDPKR:'USD → PKR',EURUSD:'EUR → USD',GBPUSD:'GBP → USD',USDJPY:'USD → JPY',USDSAR:'USD → SAR',USDAED:'USD → AED'};
 
-  function buildItems() {
-    return stocks.map(s => {
-      if (s.kse) return `<div class="t-kse"><span class="t-kse-lbl">KSE-100</span><span class="t-kse-val">${s.p}</span><span class="t-kse-chg t-up">${s.c}</span></div>`;
-      return `<a href="/app.html" class="t-item"><div class="t-dot" style="background:${s.up?'#22d98a':'#ff8080'}"></div><span class="t-name">${s.t}</span><span class="t-price">PKR ${s.p}</span><span class="t-chg ${s.up?'t-up':'t-dn'}">${s.c}</span></a>`;
-    }).join('');
-  }
-
-  const track = document.getElementById('hp-ticker');
-  if (track) {
-    const items = buildItems();
-    track.innerHTML = items + items;
-  }
-
-  // Try to fetch live prices
-  fetch('/.netlify/functions/prices', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({tickers:['OGDC','PPL','PSO','MARI','APL','HASCOL']})
-  }).then(r=>r.json()).then(data=>{
-    if (!data.prices || !track) return;
-    const liveStocks = stocks.map(s => {
-      if (s.kse) {
-        if (data.kse100) {
-          const chg = parseFloat(data.kse100.change);
-          return { ...s, p: Number(data.kse100.price).toLocaleString(), c:(chg>=0?'+':'')+chg.toFixed(2)+'%', up:chg>=0 };
-        }
-        return s;
-      }
-      const lp = data.prices[s.t];
-      if (!lp) return s;
-      const chg = parseFloat(lp.change);
-      return { ...s, p: lp.price, c:(chg>=0?'+':'')+chg.toFixed(2)+'%', up:chg>=0 };
-    });
-    // Rebuild with live data
-    const liveItems = liveStocks.map(s => {
-      if (s.kse) return `<div class="t-kse"><span class="t-kse-lbl">KSE-100</span><span class="t-kse-val">${s.p}</span><span class="t-kse-chg ${s.up?'t-up':'t-dn'}">${s.c}</span></div>`;
-      return `<a href="/app.html" class="t-item"><div class="t-dot" style="background:${s.up?'#22d98a':'#ff8080'}"></div><span class="t-name">${s.t}</span><span class="t-price">PKR ${s.p}</span><span class="t-chg ${s.up?'t-up':'t-dn'}">${s.c}</span></a>`;
-    }).join('');
-    track.innerHTML = liveItems + liveItems;
-  }).catch(()=>{});
-})();
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {});
+// ── TABS ──────────────────────────────────────────────────
+function showTab(id, el) {
+  document.querySelectorAll('.slist').forEach(e => e.classList.remove('on'));
+  document.querySelectorAll('.atab').forEach(e => e.classList.remove('on'));
+  document.getElementById('tab-' + id).classList.add('on');
+  if (el) el.classList.add('on');
 }
+
+// ── RENDER PSX ────────────────────────────────────────────
+function renderPSX(prices) {
+  const el = document.getElementById('tab-psx');
+  if (!prices || !Object.keys(prices).length) {
+    el.innerHTML = '<div style="padding:20px;color:rgba(240,239,248,0.3);font-size:12px">Prices unavailable — market may be closed</div>';
+    return;
+  }
+  let html = '', lastSector = '';
+  PSX.forEach(({t,n,s,bg,bd,c}) => {
+    const p = prices[t]; if (!p) return;
+    if (s !== lastSector) {
+      if (lastSector) html += '<div class="sdiv"></div>';
+      html += `<div class="sec-group-lbl">${s}</div>`;
+      lastSector = s;
+    }
+    const up = p.dir === 'up';
+    html += `<a class="srow" href="/app.html?stock=${t}">
+      <div class="srow-l">
+        <div class="srow-av" style="background:${bg};border:1px solid ${bd};color:${c}">${t.slice(0,3)}</div>
+        <div><div class="srow-tick">${t}</div><div class="srow-name">${n}</div></div>
+      </div>
+      <div>
+        <div class="srow-price">PKR ${p.price}</div>
+        <div class="srow-chg ${up?'up':'dn'}">${up?'+':''}${p.change}%</div>
+      </div>
+    </a>`;
+  });
+  el.innerHTML = html || '<div style="padding:20px;color:rgba(240,239,248,0.3);font-size:12px">No data available</div>';
+}
+
+// ── RENDER CRYPTO ─────────────────────────────────────────
+function renderCrypto(crypto) {
+  const el = document.getElementById('tab-crypto');
+  if (!crypto || !crypto.length) {
+    el.innerHTML = '<div style="padding:20px;color:rgba(240,239,248,0.3);font-size:12px">Crypto prices unavailable</div>';
+    return;
+  }
+  el.innerHTML = crypto.map(c => {
+    const sym = c.symbol;
+    const name = CRYPTO_NAMES[sym] || sym;
+    const up = c.dir === 'up';
+    return `<div class="srow">
+      <div class="srow-l">
+        <div class="srow-av" style="background:#1c1208;border:1px solid #5a3a00;color:#fbbf24">${sym.slice(0,3)}</div>
+        <div><div class="srow-tick">${sym}</div><div class="srow-name">${name}</div></div>
+      </div>
+      <div>
+        <div class="srow-price">$${Number(c.price).toLocaleString()}</div>
+        <div class="srow-chg ${up?'up':'dn'}">${up?'+':''}${c.change}%</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── RENDER FX ─────────────────────────────────────────────
+function renderFX(fx) {
+  const el = document.getElementById('tab-fx');
+  if (!fx || !Object.keys(fx).length) {
+    el.innerHTML = '<div style="padding:20px;color:rgba(240,239,248,0.3);font-size:12px">Exchange rates unavailable</div>';
+    return;
+  }
+  el.innerHTML = Object.entries(fx).map(([pair, d]) => {
+    const label = FX_LABELS[pair] || pair;
+    const up = d.dir === 'up';
+    return `<div class="srow">
+      <div class="srow-l">
+        <div class="srow-av" style="background:#1f0d16;border:1px solid #6b2040;color:#f472b6">FX</div>
+        <div><div class="srow-tick">${label}</div><div class="srow-name">Live exchange rate</div></div>
+      </div>
+      <div>
+        <div class="srow-price">${d.rate}</div>
+        ${d.change ? `<div class="srow-chg ${up?'up':'dn'}">${up?'+':''}${d.change}%</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── RENDER NEWS ───────────────────────────────────────────
+function renderNews(items) {
+  const el = document.getElementById('news-list');
+  if (!items || !items.length) { el.innerHTML = ''; return; }
+  el.innerHTML = items.map(h => `
+    <div class="news-item" onclick="window.open('${h.url||'#'}','_blank')">
+      <div class="news-meta">
+        <span class="news-src">${h.source}</span>
+        ${h.tag ? `<span class="news-tag" style="color:${h.tagColor};background:${h.tagBg};border-color:${h.tagBorder}">${h.tag}</span>` : ''}
+      </div>
+      <div class="news-title">${h.title}</div>
+      <div class="news-time">${h.time}</div>
+    </div>`).join('');
+}
+
+// ── UPDATE MACRO CARDS ────────────────────────────────────
+function setCard(priceId, price, chgId, chg, dir) {
+  const pe = document.getElementById(priceId);
+  const ce = chgId ? document.getElementById(chgId) : null;
+  if (pe && price) pe.textContent = price;
+  if (ce && chg) {
+    const n = parseFloat(chg);
+    ce.textContent = `${n>=0?'+':''}${n.toFixed(2)}%`;
+    ce.className = `mcard-chg ${dir||(n>=0?'up':'dn')}`;
+  }
+}
+
+// ── UPDATE TICKER ─────────────────────────────────────────
+function updateTicker(prices, kse100) {
+  if (kse100) {
+    const kv = document.getElementById('kse-val');
+    const kc = document.getElementById('kse-chg');
+    if (kv) kv.textContent = kse100.price;
+    if (kc) { kc.textContent = `${parseFloat(kse100.change)>=0?'+':''}${kse100.change}%`; kc.className = `t-chg ${kse100.dir}`; }
+  }
+  const track = document.getElementById('ticker-track'); if (!track) return;
+  const items = PSX.map(({t}) => {
+    const p = prices?.[t]; if (!p) return '';
+    const up = p.dir === 'up';
+    return `<div class="t-item" onclick="location.href='/app.html?stock=${t}'">
+      <div class="t-dot" style="background:${up?'#34d399':'#f87171'}"></div>
+      <span class="t-name">${t}</span>
+      <span class="t-price">PKR ${p.price}</span>
+      <span class="t-chg ${up?'up':'dn'}">${up?'+':''}${p.change}%</span>
+    </div>`;
+  }).filter(Boolean).join('');
+  const kseHtml = kse100 ? `<div class="kse-pill"><span class="kse-lbl">KSE-100</span><span class="kse-val">${kse100.price}</span><span class="t-chg ${kse100.dir}">${parseFloat(kse100.change)>=0?'+':''}${kse100.change}%</span></div>` : '';
+  track.innerHTML = kseHtml + items + items;
+}
+
+// ── LOAD MARKETS ──────────────────────────────────────────
+async function loadMarkets() {
+  try {
+    const res = await fetch('/.netlify/functions/prices', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({tickers: PSX.map(s=>s.t)})
+    });
+    if (!res.ok) return;
+    const d = await res.json();
+
+    if (d.kse100) {
+      setCard('mc-kse', d.kse100.price, 'mc-kse-chg', d.kse100.change, d.kse100.dir);
+      updateTicker(d.prices, d.kse100);
+    }
+    if (d.sp500)  setCard('mc-sp',    `$${d.sp500.price}`,  'mc-sp-chg',    d.sp500.change,   d.sp500.dir);
+    if (d.commodities?.brent) setCard('mc-brent', `$${d.commodities.brent.price}`, 'mc-brent-chg', d.commodities.brent.change, d.commodities.brent.dir);
+    if (d.commodities?.gold)  setCard('mc-gold',  `$${d.commodities.gold.price}`,  'mc-gold-chg',  d.commodities.gold.change,  d.commodities.gold.dir);
+    if (d.fx?.USDPKR) { const el = document.getElementById('mc-pkr'); if (el) el.textContent = d.fx.USDPKR.rate; }
+    if (d.crypto?.length) {
+      const btc = d.crypto.find(c => c.symbol === 'BTC');
+      if (btc) setCard('mc-btc', `$${Number(btc.price).toLocaleString()}`, 'mc-btc-chg', btc.change, btc.dir);
+    }
+
+    renderPSX(d.prices);
+    renderCrypto(d.crypto);
+    renderFX(d.fx);
+
+    const upd = document.getElementById('last-upd');
+    if (upd) upd.textContent = `Updated ${new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'})}`;
+  } catch(e) { console.error(e); }
+}
+
+// ── LOAD NEWS ─────────────────────────────────────────────
+async function loadNews() {
+  const FEEDS = [
+    {url:'https://api.rss2json.com/v1/api.json?rss_url=https://www.dawn.com/feeds/business&count=4', src:'Dawn Business', tag:'PSX', tagColor:'#34d399', tagBg:'rgba(52,211,153,0.1)', tagBorder:'rgba(52,211,153,0.25)'},
+    {url:'https://api.rss2json.com/v1/api.json?rss_url=https://www.brecorder.com/feed&count=4',       src:'Business Recorder', tag:'KSE-100', tagColor:'#818cf8', tagBg:'rgba(99,102,241,0.1)', tagBorder:'rgba(99,102,241,0.25)'},
+    {url:'https://api.rss2json.com/v1/api.json?rss_url=https://thenews.com.pk/rss/2/5&count=3',      src:'The News', tag:'IMF', tagColor:'#fb923c', tagBg:'rgba(251,146,60,0.1)', tagBorder:'rgba(251,146,60,0.25)'}
+  ];
+  try {
+    const results = await Promise.allSettled(FEEDS.map(f => fetch(f.url).then(r=>r.json()).then(d=>({...f,items:d.items}))));
+    const headlines = [];
+    results.forEach(r => {
+      if (r.status !== 'fulfilled' || !r.value?.items) return;
+      const f = r.value;
+      f.items.slice(0,3).forEach(item => {
+        headlines.push({
+          title: item.title,
+          url: item.link,
+          source: f.src,
+          tag: f.tag,
+          tagColor: f.tagColor,
+          tagBg: f.tagBg,
+          tagBorder: f.tagBorder,
+          time: item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-PK',{day:'numeric',month:'short',year:'numeric'}) : ''
+        });
+      });
+    });
+    renderNews(headlines.slice(0,8));
+  } catch(e) { renderNews([]); }
+}
+
+// ── INIT ─────────────────────────────────────────────────
+loadMarkets();
+loadNews();
+setInterval(loadMarkets, 60000);
 </script>
 </body>
 </html>
