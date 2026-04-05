@@ -115,6 +115,15 @@ body{max-width:430px;margin:0 auto;padding-bottom:76px}
 .bnav-icon.on{background:#0e1f1a;border:1px solid #1a4d3a}
 .bnav-lbl{font-size:8px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase}
 </style>
+
+<script>
+// Unregister any existing service workers to prevent stale cache
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+}
+</script>
 </head>
 <body>
 
@@ -236,11 +245,11 @@ body{max-width:430px;margin:0 auto;padding-bottom:76px}
     <div class="bnav-icon">📊</div>
     <span class="bnav-lbl" style="color:rgba(240,239,248,0.3)">Stocks</span>
   </a>
-  <a href="#tab-crypto" class="bnav-item" onclick="showTab('crypto',null)">
+  <a href="/crypto.html" class="bnav-item">
     <div class="bnav-icon">₿</div>
     <span class="bnav-lbl" style="color:rgba(240,239,248,0.3)">Crypto</span>
   </a>
-  <a href="#tab-fx" class="bnav-item" onclick="showTab('fx',null)">
+  <a href="/app.html" class="bnav-item">
     <div class="bnav-icon">💱</div>
     <span class="bnav-lbl" style="color:rgba(240,239,248,0.3)">FX</span>
   </a>
