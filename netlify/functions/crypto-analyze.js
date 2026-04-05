@@ -26,16 +26,20 @@ function callAnthropic(body) {
 
 function fetchFMP(path, timeoutMs = 7000) {
   const key = process.env.FMP_API_KEY;
-  if (!key) return Promise.resolve(null);
+  if (!key) { console.log('NO FMP KEY'); return Promise.resolve(null); }
   const sep = path.includes('?') ? '&' : '?';
   const url = `https://financialmodelingprep.com/stable/${path}${sep}apikey=${key}`;
   return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve(null), timeoutMs);
-    require('https').get(url, { headers: { 'Accept': 'application/json' } }, res => {
+    const timer = setTimeout(() => { console.log('FMP timeout:', path); resolve(null); }, timeoutMs);
+    https.get(url, { headers: { 'Accept': 'application/json' } }, res => {
       let body = '';
       res.on('data', c => body += c);
-      res.on('end', () => { clearTimeout(timer); try { resolve(JSON.parse(body)); } catch(e) { resolve(null); } });
-    }).on('error', () => { clearTimeout(timer); resolve(null); });
+      res.on('end', () => {
+        clearTimeout(timer);
+        console.log(`FMP ${path.slice(0,40)} → ${res.statusCode}`);
+        try { resolve(JSON.parse(body)); } catch(e) { resolve(null); }
+      });
+    }).on('error', (e) => { clearTimeout(timer); console.log('FMP error:', e.message); resolve(null); });
   });
 }
 
@@ -52,9 +56,12 @@ exports.handler = async (event) => {
   };
 
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+  if (!['POST','GET'].includes(event.httpMethod)) return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+
+  console.log('crypto-analyze called:', event.httpMethod, event.body?.slice(0,100));
 
   let payload;
-  try { payload = JSON.parse(event.body); }
+  try { payload = JSON.parse(event.body || '{}'); }
   catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request' }) }; }
 
   const { symbol, price, change, question } = payload;
@@ -66,17 +73,8 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers, body: JSON.stringify(cached.data) };
   }
 
-  // Get additional FMP data for this crypto
-  let extraData = {};
-  try {
-    const hist = await fetchFMP(`historical-price-eod/light?symbol=${symbol}USD&limit=7`);
-    if (Array.isArray(hist) && hist.length > 0) {
-      const prices = hist.map(h => h.close).filter(Boolean);
-      const weekHigh = Math.max(...prices).toFixed(2);
-      const weekLow  = Math.min(...prices).toFixed(2);
-      extraData = { weekHigh, weekLow, weekPrices: prices };
-    }
-  } catch(e) {}
+  // Skip historical fetch (not on Starter plan)
+  const extraData = {};
 
   const PAKISTAN_CRYPTO_CONTEXT = `Pakistan context: PKR/USD ~278, SBP has not banned crypto but it's in a grey area. Many Pakistanis use crypto for remittances and as USD hedge. P2P trading is common. Binance and other exchanges accessible. Young population (median age 22) driving adoption. Global context: Fed policy, US dollar strength, Bitcoin ETF flows, and institutional adoption all affect crypto prices significantly.`;
 
