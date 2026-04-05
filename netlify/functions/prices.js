@@ -1,260 +1,210 @@
 const https = require('https');
 
-function get(url, extraHeaders = {}, ms = 9000) {
+function get(url, extraHeaders = {}, ms = 8000) {
   return new Promise(resolve => {
-    const t = setTimeout(() => { console.log(`TIMEOUT: ${url.slice(0,80)}`); resolve(null); }, ms);
-    const opts = {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'application/json, */*',
-        ...extraHeaders
-      }
-    };
-    https.get(url, opts, res => {
+    const t = setTimeout(() => { console.log(`TIMEOUT: ${url.slice(0,70)}`); resolve(null); }, ms);
+    https.get(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Accept': 'application/json', ...extraHeaders }
+    }, res => {
       let b = '';
       res.on('data', c => b += c);
       res.on('end', () => {
         clearTimeout(t);
-        console.log(`${url.slice(0,60)} → status ${res.statusCode}, len ${b.length}`);
         try { resolve(JSON.parse(b)); } catch { resolve(null); }
       });
-    }).on('error', e => { clearTimeout(t); console.log(`ERROR ${url.slice(0,60)}: ${e.message}`); resolve(null); });
+    }).on('error', e => { clearTimeout(t); console.log(`ERR ${url.slice(0,60)}: ${e.message}`); resolve(null); });
   });
 }
 
-function fmp(path, ms = 9000) {
+// FMP — single symbol only (comma-separated fails on Starter)
+function fmp(path) {
   const key = process.env.FMP_API_KEY;
-  if (!key) { console.log('NO FMP KEY'); return Promise.resolve(null); }
+  if (!key) return Promise.resolve(null);
   const sep = path.includes('?') ? '&' : '?';
-  const url = `https://financialmodelingprep.com/stable/${path}${sep}apikey=${key}`;
-  return get(url, {}, ms);
+  return get(`https://financialmodelingprep.com/stable/${path}${sep}apikey=${key}`);
 }
 
-const PSX_HEADERS = { 'Origin': 'https://psxterminal.com', 'Referer': 'https://psxterminal.com/' };
+const PSX_H = { 'Origin': 'https://psxterminal.com', 'Referer': 'https://psxterminal.com/' };
 
-// ── GET ALL PSX PRICES AT ONCE via market stats + individual ticks ──
-async function getAllPSXPrices(tickers) {
+// ── PSX ticks in batches of 5 with 300ms delay ────────────────
+async function batchedTicks(tickers) {
   const prices = {};
-
-  // Step 1: Get all market data from stats (gives us gainers/losers prices)
-  try {
-    const stats = await get('https://psxterminal.com/api/stats/REG', PSX_HEADERS);
-    if (stats?.success && stats.data) {
-      const allItems = [
-        ...(stats.data.topGainers || []),
-        ...(stats.data.topLosers || [])
-      ];
-      allItems.forEach(item => {
-        if (!item.symbol || !item.price) return;
-        if (tickers.includes(item.symbol)) {
-          prices[item.symbol] = {
-            price:  Number(item.price).toFixed(2),
-            change: Number(item.changePercent * 100).toFixed(2),
-            dir:    (item.changePercent || 0) >= 0 ? 'up' : 'dn',
-            high:   null, low: null, volume: item.volume ? Number(item.volume).toLocaleString() : null
-          };
-        }
-      });
-      console.log(`Stats gave us prices for: ${Object.keys(prices).join(', ') || 'none'}`);
-    }
-  } catch(e) { console.log('Stats error:', e.message); }
-
-  // Step 2: Fetch individual ticks for remaining tickers
-  const missing = tickers.filter(t => !prices[t]);
-  console.log(`Fetching individual ticks for ${missing.length} missing: ${missing.join(',')}`);
-
-  if (missing.length > 0) {
+  const BATCH = 5;
+  for (let i = 0; i < tickers.length; i += BATCH) {
+    const batch = tickers.slice(i, i + BATCH);
     const results = await Promise.all(
-      missing.map(ticker => get(`https://psxterminal.com/api/ticks/REG/${ticker}`, PSX_HEADERS))
+      batch.map(ticker => get(`https://psxterminal.com/api/ticks/REG/${ticker}`, PSX_H, 6000))
     );
-
-    results.forEach((resp, i) => {
-      const ticker = missing[i];
-      if (!resp) { console.log(`${ticker}: null response`); return; }
-
-      // PSX Terminal wraps in {success, data, timestamp}
+    results.forEach((resp, j) => {
+      const ticker = batch[j];
+      if (!resp) return;
       const d = resp.data ?? resp;
-      if (!d || typeof d !== 'object') { console.log(`${ticker}: bad data type`); return; }
-
-      // Log first ticker's keys so we can debug field names
-      if (i === 0) console.log(`${ticker} keys: ${Object.keys(d).join(',')}`);
-
-      const price = d.price ?? d.currentPrice ?? d.close ?? d.lastTradedPrice;
-      if (price == null) { console.log(`${ticker}: no price field, keys: ${Object.keys(d).join(',')}`); return; }
-
-      const pNum = Number(price);
-      // changePercent from PSX Terminal is decimal (0.018 = 1.8%) OR already percentage
-      let pct = 0;
-      if (d.changePercent != null) {
-        const raw = Number(d.changePercent);
-        // If absolute value < 1, it's decimal format (multiply by 100)
-        pct = Math.abs(raw) < 1 ? raw * 100 : raw;
-      } else if (d.change != null && d.ldcp != null) {
-        const ldcp = Number(d.ldcp);
-        if (ldcp !== 0) pct = (Number(d.change) / ldcp) * 100;
-      }
-
-      prices[ticker] = {
-        price:  pNum.toFixed(2),
-        change: pct.toFixed(2),
-        high:   d.high   ? Number(d.high).toFixed(2)   : null,
-        low:    d.low    ? Number(d.low).toFixed(2)     : null,
-        volume: d.volume ? Number(d.volume).toLocaleString() : null,
-        dir:    pct >= 0 ? 'up' : 'dn'
-      };
+      if (!d || typeof d !== 'object' || !d.price) return;
+      const pNum = Number(d.price);
+      const rawPct = d.changePercent ?? 0;
+      const pct = Math.abs(Number(rawPct)) < 1 ? Number(rawPct) * 100 : Number(rawPct);
+      prices[ticker] = { price: pNum.toFixed(2), change: pct.toFixed(2), dir: pct >= 0 ? 'up' : 'dn', volume: d.volume ? Number(d.volume).toLocaleString() : null };
       console.log(`${ticker}: PKR ${pNum.toFixed(2)} (${pct.toFixed(2)}%)`);
     });
+    // Wait 300ms between batches to avoid 503
+    if (i + BATCH < tickers.length) await new Promise(r => setTimeout(r, 300));
   }
-
   return prices;
 }
 
-// ── KSE-100 ────────────────────────────────────────────────────
+// ── KSE-100: try multiple PSX Terminal index endpoints ─────────
 async function getKSE100() {
-  // Try PSX Terminal KSE100 tick
-  try {
-    const resp = await get('https://psxterminal.com/api/ticks/REG/KSE100', PSX_HEADERS);
-    if (resp) {
-      const d = resp.data ?? resp;
-      const price = d.price ?? d.currentPrice ?? d.close;
-      if (price) {
-        let pct = 0;
-        if (d.changePercent != null) {
-          const raw = Number(d.changePercent);
-          pct = Math.abs(raw) < 1 ? raw * 100 : raw;
-        }
-        console.log(`KSE100 from tick: ${price} (${pct}%)`);
-        return { price: Math.round(Number(price)).toLocaleString(), change: pct.toFixed(2), dir: pct >= 0 ? 'up' : 'dn' };
-      }
+  const attempts = [
+    'ticks/IDX/KSE100',
+    'ticks/IDX/KSE-100',
+    'index/KSE100',
+    'market/index/KSE100',
+    'ticks/REG/KSE-100'
+  ];
+  for (const path of attempts) {
+    const resp = await get(`https://psxterminal.com/api/${path}`, PSX_H, 5000);
+    if (!resp) continue;
+    const d = resp.data ?? resp;
+    const price = d?.price ?? d?.value ?? d?.close ?? d?.currentPrice;
+    if (price && Number(price) > 10000) { // KSE-100 is always above 10,000
+      const rawPct = d.changePercent ?? 0;
+      const pct = Math.abs(Number(rawPct)) < 1 ? Number(rawPct) * 100 : Number(rawPct);
+      console.log(`KSE100 via ${path}: ${price} (${pct}%)`);
+      return { price: Math.round(Number(price)).toLocaleString(), change: pct.toFixed(2), dir: pct >= 0 ? 'up' : 'dn' };
     }
-  } catch(e) { console.log('KSE100 tick error:', e.message); }
-
-  // Try ALLSHR (all shares index) as proxy
-  try {
-    const resp = await get('https://psxterminal.com/api/ticks/REG/ALLSHR', PSX_HEADERS);
-    if (resp) {
-      const d = resp.data ?? resp;
-      const price = d.price ?? d.currentPrice;
-      if (price) {
-        let pct = d.changePercent != null ? Number(d.changePercent) : 0;
-        if (Math.abs(pct) < 1) pct = pct * 100;
-        return { price: Math.round(Number(price)).toLocaleString(), change: pct.toFixed(2), dir: pct >= 0 ? 'up' : 'dn' };
-      }
-    }
-  } catch(e) {}
-
+  }
+  console.log('KSE100: all endpoints failed');
   return null;
 }
 
-// ── COMMODITIES via FMP ────────────────────────────────────────
-async function getCommodities() {
-  const result = {};
-  try {
-    const d = await fmp('quote?symbol=GCUSD,BZUSD');
-    console.log('Commodities raw:', JSON.stringify(d)?.slice(0, 200));
-    const arr = Array.isArray(d) ? d : (d ? [d] : []);
-    arr.forEach(q => {
-      if (!q?.price) return;
-      const item = { price: q.symbol === 'GCUSD' ? Math.round(q.price).toString() : Number(q.price).toFixed(2), change: (q.changesPercentage ?? 0).toFixed(2), dir: (q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn' };
-      if (q.symbol === 'GCUSD') { result.gold = item; console.log('Gold:', item.price); }
-      if (q.symbol === 'BZUSD') { result.brent = item; console.log('Brent:', item.price); }
-    });
-  } catch(e) { console.log('Commodities error:', e.message); }
-  return result;
+// ── GOLD via FMP — try multiple symbol formats ─────────────────
+async function getGold() {
+  // Try each symbol separately — comma-separated returns [] on Starter
+  const symbols = ['GCUSD', 'XAUUSD', 'GC=F', 'GOLD'];
+  for (const sym of symbols) {
+    const d = await fmp(`quote?symbol=${sym}`);
+    const q = Array.isArray(d) ? d[0] : d;
+    if (q?.price && q.price > 100) { // Gold is always > $100
+      console.log(`Gold via ${sym}: ${q.price}`);
+      return { price: Math.round(q.price).toString(), change: (q.changesPercentage ?? 0).toFixed(2), dir: (q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn' };
+    }
+  }
+  // Try commodities endpoint
+  const d = await fmp('commodities-prices?');
+  if (Array.isArray(d)) {
+    const gold = d.find(c => c.symbol === 'GCUSD' || c.name?.includes('Gold'));
+    if (gold?.price) return { price: Math.round(gold.price).toString(), change: (gold.changesPercentage ?? 0).toFixed(2), dir: (gold.changesPercentage ?? 0) >= 0 ? 'up' : 'dn' };
+  }
+  console.log('Gold: all attempts failed');
+  return null;
+}
+
+// ── BRENT via FMP — try multiple symbol formats ────────────────
+async function getBrent() {
+  const symbols = ['BZUSD', 'USOIL', 'CL=F', 'BRTUSD'];
+  for (const sym of symbols) {
+    const d = await fmp(`quote?symbol=${sym}`);
+    const q = Array.isArray(d) ? d[0] : d;
+    if (q?.price && q.price > 20 && q.price < 300) { // Brent is always $20-$300
+      console.log(`Brent via ${sym}: ${q.price}`);
+      return { price: Number(q.price).toFixed(2), change: (q.changesPercentage ?? 0).toFixed(2), dir: (q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn' };
+    }
+  }
+  // Try commodities endpoint
+  const d = await fmp('commodities-prices?');
+  if (Array.isArray(d)) {
+    const brent = d.find(c => c.symbol === 'BZUSD' || c.name?.includes('Brent') || c.name?.includes('Oil'));
+    if (brent?.price) return { price: Number(brent.price).toFixed(2), change: (brent.changesPercentage ?? 0).toFixed(2), dir: (brent.changesPercentage ?? 0) >= 0 ? 'up' : 'dn' };
+  }
+  console.log('Brent: all attempts failed');
+  return null;
 }
 
 // ── S&P 500 ────────────────────────────────────────────────────
 async function getSP500() {
-  try {
-    const d = await fmp('quote?symbol=SPY');
-    const q = Array.isArray(d) ? d[0] : d;
-    if (q?.price) { console.log('SP500:', q.price); return { price: q.price.toFixed(2), change: (q.changesPercentage ?? 0).toFixed(2), dir: (q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn' }; }
-  } catch(e) { console.log('SP500 error:', e.message); }
+  const d = await fmp('quote?symbol=SPY');
+  const q = Array.isArray(d) ? d[0] : d;
+  if (q?.price) return { price: q.price.toFixed(2), change: (q.changesPercentage ?? 0).toFixed(2), dir: (q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn' };
   return null;
 }
 
-// ── CRYPTO via FMP ─────────────────────────────────────────────
+// ── CRYPTO — individual quote-short (confirmed working) ────────
 async function getCrypto() {
-  const TOP = ['BTCUSD','ETHUSD','BNBUSD','SOLUSD','XRPUSD','ADAUSD','AVAXUSD','DOTUSD','MATICUSD','LINKUSD'];
-  try {
-    const d = await fmp('batch-crypto-quotes?');
-    console.log('Crypto batch type:', typeof d, Array.isArray(d) ? `array[${d?.length}]` : 'not array');
-    if (Array.isArray(d) && d.length > 0) {
-      const filtered = d.filter(q => TOP.includes(q.symbol) && q.price).sort((a,b) => TOP.indexOf(a.symbol) - TOP.indexOf(b.symbol));
-      console.log(`Crypto: ${filtered.length} coins`);
-      if (filtered.length > 0) return filtered.map(q => ({ symbol: q.symbol.replace('USD',''), price: q.price.toFixed(2), change: (q.changesPercentage ?? 0).toFixed(2), dir: (q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn' }));
-    }
-  } catch(e) { console.log('Crypto error:', e.message); }
-
-  // Fallback individual
-  try {
-    const results = await Promise.all(TOP.slice(0,5).map(sym => fmp(`quote-short?symbol=${sym}`)));
-    return results.map((r,i) => { const q = Array.isArray(r)?r[0]:r; if (!q?.price) return null; return { symbol: TOP[i].replace('USD',''), price: q.price.toFixed(2), change: (q.changesPercentage??0).toFixed(2), dir: (q.changesPercentage??0)>=0?'up':'dn' }; }).filter(Boolean);
-  } catch(e) { return []; }
+  const COINS = [
+    { sym: 'BTCUSD', label: 'BTC' }, { sym: 'ETHUSD', label: 'ETH' },
+    { sym: 'BNBUSD', label: 'BNB' }, { sym: 'SOLUSD', label: 'SOL' },
+    { sym: 'XRPUSD', label: 'XRP' }, { sym: 'ADAUSD', label: 'ADA' },
+    { sym: 'AVAXUSD',label: 'AVAX'},{ sym: 'DOTUSD', label: 'DOT' },
+    { sym: 'LINKUSD',label: 'LINK'},{ sym: 'MATICUSD',label:'MATIC'}
+  ];
+  // Batch in groups of 5 to avoid rate limits
+  const results = [];
+  for (let i = 0; i < COINS.length; i += 5) {
+    const batch = COINS.slice(i, i + 5);
+    const batchResults = await Promise.all(batch.map(c => fmp(`quote-short?symbol=${c.sym}`)));
+    batchResults.forEach((d, j) => {
+      const q = Array.isArray(d) ? d[0] : d;
+      if (!q?.price) return;
+      results.push({ symbol: batch[j].label, price: Number(q.price).toFixed(2), change: (q.changesPercentage ?? 0).toFixed(2), dir: (q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn' });
+    });
+    if (i + 5 < COINS.length) await new Promise(r => setTimeout(r, 200));
+  }
+  console.log(`Crypto: ${results.length} coins`);
+  return results;
 }
 
-// ── FOREX via FMP ──────────────────────────────────────────────
+// ── FOREX — individual quotes (confirmed working) ──────────────
 async function getFX() {
   const PAIRS = ['USDPKR','EURUSD','GBPUSD','USDJPY','USDSAR','USDAED'];
-  try {
-    const d = await fmp('batch-forex-quotes?');
-    console.log('FX batch type:', typeof d, Array.isArray(d) ? `array[${d?.length}]` : 'not array');
-    if (Array.isArray(d) && d.length > 0) {
-      const fx = {};
-      d.filter(q => PAIRS.includes(q.symbol)).forEach(q => {
-        const rate = q.ask ?? q.bid ?? q.price;
-        if (rate) fx[q.symbol] = { rate: Number(rate).toFixed(4), change: (q.changesPercentage??q.changes??0).toFixed(2), dir: (q.changesPercentage??0)>=0?'up':'dn' };
-      });
-      if (Object.keys(fx).length > 0) { console.log('FX pairs:', Object.keys(fx).join(',')); return fx; }
-    }
-  } catch(e) { console.log('FX error:', e.message); }
-
-  // Fallback
-  try {
-    const fx = {};
-    await Promise.all(PAIRS.map(async p => {
-      const d = await fmp(`quote?symbol=${p}`);
-      const q = Array.isArray(d)?d[0]:d;
-      if (q?.price) fx[p] = { rate: Number(q.price).toFixed(4), change: (q.changesPercentage??0).toFixed(2), dir: (q.changesPercentage??0)>=0?'up':'dn' };
-    }));
-    return fx;
-  } catch(e) { return {}; }
-}
-
-// ── PKR fallback ───────────────────────────────────────────────
-async function getPKRFallback() {
-  try {
-    const d = await get('https://open.er-api.com/v6/latest/USD');
-    if (d?.rates?.PKR) return { rate: d.rates.PKR.toFixed(2), change: '0', dir: 'up' };
-  } catch(e) {}
-  return null;
+  const fx = {};
+  const results = await Promise.all(PAIRS.map(p => fmp(`quote?symbol=${p}`)));
+  results.forEach((d, i) => {
+    const q = Array.isArray(d) ? d[0] : d;
+    if (!q?.price) return;
+    fx[PAIRS[i]] = { rate: Number(q.price).toFixed(4), change: (q.changesPercentage ?? 0).toFixed(2), dir: (q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn' };
+  });
+  console.log(`FX: ${Object.keys(fx).join(',')}`);
+  return fx;
 }
 
 // ── MAIN ───────────────────────────────────────────────────────
 exports.handler = async (event) => {
-  const headers = { 'Access-Control-Allow-Origin':'*', 'Access-Control-Allow-Headers':'Content-Type', 'Access-Control-Allow-Methods':'POST,GET,OPTIONS', 'Content-Type':'application/json', 'Cache-Control':'public, max-age=30' };
-  if (event.httpMethod === 'OPTIONS') return { statusCode:200, headers, body:'' };
+  const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'POST,GET,OPTIONS', 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=30' };
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
 
   let payload = {};
   try { payload = JSON.parse(event.body || '{}'); } catch(e) {}
 
-  const PSX_TICKERS = ['OGDC','PPL','PSO','MARI','APL','HASCOL','HBL','MCB','UBL','NBP','ABL','BAFL','ENGRO','FFC','EFERT','FFBL','LUCK','MLCF','CHCC','DGKC'];
-  const tickers = (payload.tickers || PSX_TICKERS).filter(t => PSX_TICKERS.includes(t));
+  const ALL_TICKERS = ['OGDC','PPL','PSO','MARI','APL','HASCOL','HBL','MCB','UBL','NBP','ABL','BAFL','ENGRO','FFC','EFERT','FFBL','LUCK','MLCF','CHCC','DGKC'];
+  const tickers = (payload.tickers || ALL_TICKERS).filter(t => ALL_TICKERS.includes(t));
 
-  console.log('=== PRICES FUNCTION START ===');
-  const [prices, kse100, commodities, crypto, fx, sp500] = await Promise.all([
-    getAllPSXPrices(tickers),
+  console.log('=== START ===');
+
+  // Run independent fetches in parallel, PSX stocks batched separately
+  const [psxPrices, kse100, gold, brent, sp500, crypto, fx] = await Promise.all([
+    batchedTicks(tickers),
     getKSE100(),
-    getCommodities(),
+    getGold(),
+    getBrent(),
+    getSP500(),
     getCrypto(),
-    getFX(),
-    getSP500()
+    getFX()
   ]);
 
-  let finalFX = fx || {};
-  if (!finalFX.USDPKR) { const pkr = await getPKRFallback(); if (pkr) finalFX.USDPKR = pkr; }
+  // PKR fallback if FMP forex missed it
+  let finalFX = fx;
+  if (!finalFX.USDPKR) {
+    try {
+      const d = await get('https://open.er-api.com/v6/latest/USD');
+      if (d?.rates?.PKR) finalFX.USDPKR = { rate: d.rates.PKR.toFixed(2), change: '0', dir: 'up' };
+    } catch(e) {}
+  }
 
-  console.log(`=== RESULT: PSX ${Object.keys(prices).length}/${tickers.length} | KSE ${kse100?.price||'X'} | Gold ${commodities?.gold?.price||'X'} | Brent ${commodities?.brent?.price||'X'} | SP500 ${sp500?.price||'X'} | Crypto ${crypto?.length||0} | FX ${Object.keys(finalFX).length} ===`);
+  const commodities = { gold, brent };
+  console.log(`=== DONE: PSX ${Object.keys(psxPrices).length}/${tickers.length} | KSE ${kse100?.price||'X'} | Gold ${gold?.price||'X'} | Brent ${brent?.price||'X'} | SP500 ${sp500?.price||'X'} | Crypto ${crypto.length} | FX ${Object.keys(finalFX).length} ===`);
 
-  return { statusCode:200, headers, body: JSON.stringify({ prices, kse100, commodities, crypto, fx:finalFX, sp500, timestamp: new Date().toISOString() }) };
+  return {
+    statusCode: 200, headers,
+    body: JSON.stringify({ prices: psxPrices, kse100, commodities, crypto, fx: finalFX, sp500, timestamp: new Date().toISOString() })
+  };
 };
