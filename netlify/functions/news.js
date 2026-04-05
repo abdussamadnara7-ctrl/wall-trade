@@ -15,115 +15,147 @@ function get(url, ms = 8000) {
   });
 }
 
-// Tag mapping based on keywords in title
+// ── FINANCIAL KEYWORDS — article must contain at least one ────
+const FINANCE_KEYWORDS = [
+  // Pakistan markets
+  'kse', 'psx', 'karachi stock', 'pakistan stock',
+  // Monetary/macro
+  'sbp', 'state bank', 'policy rate', 'interest rate', 'inflation',
+  'imf', 'world bank', 'current account', 'fiscal', 'budget', 'gdp',
+  'forex', 'pkr', 'rupee', 'dollar', 'exchange rate', 'reserves',
+  // Sectors
+  'ogdc', 'ppl', 'pso', 'mari petroleum', 'hbl', 'mcb', 'ubl', 'nbp',
+  'engro', 'ffc', 'efert', 'lucky cement', 'mlcf', 'dgkc', 'chcc',
+  'oil price', 'crude', 'brent', 'petroleum', 'energy sector',
+  'banking sector', 'fertiliser', 'cement sector',
+  // Global macro relevant to Pakistan
+  'federal reserve', 'fed rate', 'gold price', 'oil market',
+  'commodity', 'trade deficit', 'remittance', 'fdi',
+  // Finance/investment
+  'dividend', 'earnings', 'profit', 'revenue', 'ebitda',
+  'stock market', 'shares', 'equity', 'bond', 'yield',
+  'investment', 'portfolio', 'analyst', 'brokerage'
+];
+
+// ── EXCLUSION KEYWORDS — reject if title contains these ───────
+const EXCLUDE_KEYWORDS = [
+  'died', 'death', 'killed', 'murder', 'accident', 'injured', 'hospital',
+  'arrest', 'police', 'crime', 'court', 'jail', 'prison', 'convicted',
+  'fire', 'flood', 'earthquake', 'disaster', 'weather',
+  'election', 'political', 'politician', 'party', 'vote', 'minister',
+  'cricket', 'football', 'sport', 'match', 'tournament', 'player',
+  'celebrity', 'actor', 'actress', 'film', 'drama', 'showbiz',
+  'recipe', 'food', 'travel', 'tourism', 'fashion', 'lifestyle',
+  'health tips', 'covid', 'disease', 'hospital'
+];
+
+function isFinancialNews(title, description) {
+  if (!title) return false;
+  const text = (title + ' ' + (description || '')).toLowerCase();
+
+  // Reject if contains exclusion keywords
+  if (EXCLUDE_KEYWORDS.some(k => text.includes(k))) return false;
+
+  // Must contain at least one finance keyword
+  return FINANCE_KEYWORDS.some(k => text.includes(k));
+}
+
+// ── TAG based on content ────────────────────────────────────── 
 function tagArticle(title) {
   const t = title.toLowerCase();
-  if (t.includes('kse') || t.includes('psx') || t.includes('stock') || t.includes('shares') || t.includes('equity'))
+  if (t.includes('kse') || t.includes('psx') || t.includes('stock exchange') || t.includes('shares') || t.includes('equity'))
     return { tag: 'KSE-100', tagColor: '#34d399', tagBg: 'rgba(52,211,153,0.1)', tagBorder: 'rgba(52,211,153,0.25)' };
-  if (t.includes('sbp') || t.includes('policy rate') || t.includes('interest rate') || t.includes('monetary'))
+  if (t.includes('sbp') || t.includes('state bank') || t.includes('policy rate') || t.includes('monetary'))
     return { tag: 'SBP', tagColor: '#fbbf24', tagBg: 'rgba(251,191,36,0.1)', tagBorder: 'rgba(251,191,36,0.25)' };
   if (t.includes('imf') || t.includes('world bank') || t.includes('adb'))
     return { tag: 'IMF', tagColor: '#fb923c', tagBg: 'rgba(251,146,60,0.1)', tagBorder: 'rgba(251,146,60,0.25)' };
-  if (t.includes('rupee') || t.includes('pkr') || t.includes('dollar') || t.includes('forex') || t.includes('currency'))
+  if (t.includes('rupee') || t.includes('pkr') || t.includes('exchange rate') || t.includes('forex') || t.includes('dollar') || t.includes('reserves'))
     return { tag: 'FX', tagColor: '#818cf8', tagBg: 'rgba(129,140,248,0.1)', tagBorder: 'rgba(129,140,248,0.25)' };
-  if (t.includes('oil') || t.includes('gas') || t.includes('energy') || t.includes('petrol') || t.includes('ogdc') || t.includes('ppl'))
+  if (t.includes('oil') || t.includes('crude') || t.includes('brent') || t.includes('petroleum') || t.includes('energy') || t.includes('ogdc') || t.includes('ppl'))
     return { tag: 'ENERGY', tagColor: '#f472b6', tagBg: 'rgba(244,114,182,0.1)', tagBorder: 'rgba(244,114,182,0.25)' };
   if (t.includes('bank') || t.includes('hbl') || t.includes('mcb') || t.includes('ubl') || t.includes('nbp'))
     return { tag: 'BANKING', tagColor: '#38bdf8', tagBg: 'rgba(56,189,248,0.1)', tagBorder: 'rgba(56,189,248,0.25)' };
   if (t.includes('cement') || t.includes('luck') || t.includes('mlcf') || t.includes('dgkc'))
     return { tag: 'CEMENT', tagColor: '#a78bfa', tagBg: 'rgba(167,139,250,0.1)', tagBorder: 'rgba(167,139,250,0.25)' };
-  if (t.includes('fertiliser') || t.includes('fertilizer') || t.includes('engro') || t.includes('ffc'))
+  if (t.includes('fertiliser') || t.includes('fertilizer') || t.includes('engro') || t.includes('ffc') || t.includes('efert'))
     return { tag: 'FERTILISER', tagColor: '#34d399', tagBg: 'rgba(52,211,153,0.1)', tagBorder: 'rgba(52,211,153,0.25)' };
-  if (t.includes('gold') || t.includes('bitcoin') || t.includes('crypto'))
-    return { tag: 'GLOBAL', tagColor: '#fbbf24', tagBg: 'rgba(251,191,36,0.1)', tagBorder: 'rgba(251,191,36,0.25)' };
-  if (t.includes('inflation') || t.includes('gdp') || t.includes('budget') || t.includes('fiscal') || t.includes('economy'))
+  if (t.includes('inflation') || t.includes('gdp') || t.includes('budget') || t.includes('fiscal') || t.includes('current account') || t.includes('remittance'))
     return { tag: 'MACRO', tagColor: '#fb923c', tagBg: 'rgba(251,146,60,0.1)', tagBorder: 'rgba(251,146,60,0.25)' };
-  return { tag: 'MARKET', tagColor: '#818cf8', tagBg: 'rgba(129,140,248,0.1)', tagBorder: 'rgba(129,140,248,0.25)' };
+  if (t.includes('gold') || t.includes('commodity') || t.includes('federal reserve') || t.includes('fed'))
+    return { tag: 'GLOBAL', tagColor: '#fbbf24', tagBg: 'rgba(251,191,36,0.1)', tagBorder: 'rgba(251,191,36,0.25)' };
+  if (t.includes('dividend') || t.includes('earnings') || t.includes('profit') || t.includes('revenue'))
+    return { tag: 'EARNINGS', tagColor: '#34d399', tagBg: 'rgba(52,211,153,0.1)', tagBorder: 'rgba(52,211,153,0.25)' };
+  // Default financial tag
+  return { tag: 'FINANCE', tagColor: '#818cf8', tagBg: 'rgba(129,140,248,0.1)', tagBorder: 'rgba(129,140,248,0.25)' };
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
-  try {
-    return new Date(dateStr).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' });
-  } catch { return ''; }
+  try { return new Date(dateStr).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' }); }
+  catch { return ''; }
 }
 
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=600' // cache 10 mins
+    'Cache-Control': 'public, max-age=600'
   };
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
 
   const key = process.env.NEWSDATA_API_KEY;
-  if (!key) {
-    console.log('NO NEWSDATA_API_KEY');
-    return { statusCode: 200, headers, body: JSON.stringify({ news: [], error: 'No API key' }) };
-  }
+  if (!key) return { statusCode: 200, headers, body: JSON.stringify({ news: [], error: 'No API key' }) };
 
-  // Fetch 2 queries in parallel:
-  // 1. Pakistan business/economy news (local)
-  // 2. Global macro news relevant to Pakistan (oil, gold, IMF, Fed)
-  const [pakistanData, oilData, macroData] = await Promise.all([
-    get(`https://newsdata.io/api/1/news?apikey=${key}&country=pk&category=business,top&language=en&size=8`),
-    get(`https://newsdata.io/api/1/news?apikey=${key}&q=oil+gold+commodities&language=en&size=3`),
-    get(`https://newsdata.io/api/1/news?apikey=${key}&q=IMF+Fed+economy&language=en&size=3`)
+  // 3 targeted financial queries — all business/economy specific
+  const [pkFinanceData, pkMarketData, globalMacroData] = await Promise.all([
+    // Pakistan business/economy with financial keywords
+    get(`https://newsdata.io/api/1/news?apikey=${key}&country=pk&category=business&language=en&q=economy+OR+finance+OR+market+OR+rupee+OR+SBP+OR+PSX&size=10`),
+    // Pakistan stock market specific
+    get(`https://newsdata.io/api/1/news?apikey=${key}&country=pk&category=business&language=en&q=stocks+OR+KSE+OR+shares+OR+dividend+OR+earnings&size=6`),
+    // Global macro relevant to Pakistan
+    get(`https://newsdata.io/api/1/news?apikey=${key}&language=en&q=oil+price+OR+gold+price+OR+IMF+Pakistan+OR+Fed+rate&size=6`)
   ]);
-  const globalData = { results: [...(oilData?.results||[]), ...(macroData?.results||[])] };
 
-  const news = [];
+  const raw = [];
 
-  // Process Pakistan news
-  if (pakistanData?.results?.length) {
-    console.log(`Pakistan news: ${pakistanData.results.length} articles`);
-    pakistanData.results.forEach(a => {
-      if (!a.title || a.title.length < 10) return;
-      const tagInfo = tagArticle(a.title);
-      news.push({
+  const addArticles = (data) => {
+    if (!data?.results?.length) return;
+    data.results.forEach(a => {
+      if (!a.title || a.title.length < 15) return;
+      // Strict financial filter
+      if (!isFinancialNews(a.title, a.description)) {
+        console.log(`FILTERED OUT: ${a.title.slice(0, 60)}`);
+        return;
+      }
+      raw.push({
         title: a.title,
         url: a.link || '#',
-        source: a.source_name || a.source_id || 'Pakistan News',
+        source: a.source_name || a.source_id || 'News',
+        description: a.description || '',
         time: formatDate(a.pubDate),
-        ...tagInfo
+        ...tagArticle(a.title)
       });
     });
-  } else {
-    console.log('Pakistan news failed:', JSON.stringify(pakistanData)?.slice(0, 200));
-  }
+  };
 
-  // Process global macro news
-  if (globalData?.results?.length) {
-    console.log(`Global news: ${globalData.results.length} articles`);
-    globalData.results.forEach(a => {
-      if (!a.title || a.title.length < 10) return;
-      const tagInfo = tagArticle(a.title);
-      news.push({
-        title: a.title,
-        url: a.link || '#',
-        source: a.source_name || a.source_id || 'Global Markets',
-        time: formatDate(a.pubDate),
-        ...tagInfo
-      });
-    });
-  } else {
-    console.log('Global news failed:', JSON.stringify(globalData)?.slice(0, 200));
-  }
+  addArticles(pkFinanceData);
+  addArticles(pkMarketData);
+  addArticles(globalMacroData);
 
-  // Deduplicate by title similarity
+  // Deduplicate
   const seen = new Set();
-  const deduped = news.filter(n => {
-    const key = n.title.slice(0, 50).toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
+  const deduped = raw.filter(n => {
+    const k = n.title.slice(0, 60).toLowerCase().replace(/\s+/g, '');
+    if (seen.has(k)) return false;
+    seen.add(k);
     return true;
   });
 
-  console.log(`Total news: ${deduped.length} articles`);
+  console.log(`News: ${raw.length} raw → ${deduped.length} after filter & dedup`);
 
   return {
     statusCode: 200,
     headers,
-    body: JSON.stringify({ news: deduped.slice(0, 10), timestamp: new Date().toISOString() })
+    body: JSON.stringify({ news: deduped.slice(0, 8), timestamp: new Date().toISOString() })
   };
 };
