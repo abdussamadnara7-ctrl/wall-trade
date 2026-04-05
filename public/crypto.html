@@ -108,6 +108,15 @@ body{max-width:430px;margin:0 auto;padding-bottom:76px}
 
 .sec-hdr{font-size:8px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,239,248,0.25)}
 </style>
+
+<script>
+// Unregister any existing service workers to prevent stale cache
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+}
+</script>
 </head>
 <body>
 
@@ -357,7 +366,7 @@ async function selectCoin(sym) {
   document.getElementById('ans-wrap').classList.remove('on');
   document.getElementById('ask-in').placeholder = `Ask anything about ${sym}…`;
 
-  // Load AI verdict
+  // Load AI verdict — wait for price data first
   if (verdictCache[sym]) {
     renderVerdict(verdictCache[sym]);
   } else {
@@ -366,8 +375,12 @@ async function selectCoin(sym) {
     document.getElementById('ai-headline').textContent = '';
     document.getElementById('ai-body').textContent = '';
     document.getElementById('signals-container').innerHTML = '';
-    document.getElementById('gauge-svg').innerHTML = '<text x="55" y="40" text-anchor="middle" fill="rgba(240,239,248,0.25)" font-size="8" font-family="system-ui">Loading…</text>';
-    loadVerdict(sym);
+    // If prices not loaded yet, wait then load verdict
+    if (Object.keys(livePrices).length === 0) {
+      loadPrices().then(() => loadVerdict(sym));
+    } else {
+      loadVerdict(sym);
+    }
   }
 
   // Scroll to panel
