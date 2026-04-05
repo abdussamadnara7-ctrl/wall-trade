@@ -175,7 +175,7 @@ exports.handler = async (event) => {
   let payload = {};
   try { payload = JSON.parse(event.body || '{}'); } catch(e) {}
 
-  const ALL_TICKERS = ['OGDC','PPL','PSO','MARI','APL','HASCOL','HBL','MCB','UBL','NBP','ABL','BAFL','ENGRO','FFC','EFERT','FFBL','LUCK','MLCF','CHCC','DGKC'];
+  const ALL_TICKERS = ['OGDC','PPL','PSO','MARI','APL','HASCOL','HBL','MCB','UBL','NBP','ABL','BAFL','ENGROH','FFC','EFERT','LUCK','MLCF','CHCC','DGKC'];
   const tickers = (payload.tickers || ALL_TICKERS).filter(t => ALL_TICKERS.includes(t));
 
   console.log('=== START ===');
