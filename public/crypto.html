@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Wall-Trade — Crypto Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#0a0a14;color:#f0eff8;font-family:'Geist',-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{max-width:430px;margin:0 auto;padding-bottom:76px}
+::-webkit-scrollbar{width:0}
+
+.grad-logo{background-image:linear-gradient(90deg,#5fffc0 0%,#38bdf8 50%,#c4b5fd 100%);background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;display:inline-block}
+
+/* HEADER */
+.hdr{position:sticky;top:0;z-index:80;display:flex;align-items:center;justify-content:space-between;padding:15px 20px;background:rgba(10,10,20,0.97);backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,0.07)}
+.hdr-pill{display:flex;align-items:center;gap:7px;background:#16161f;border:1px solid rgba(255,255,255,0.09);border-radius:8px;padding:7px 12px 7px 8px;cursor:pointer}
+.pill-av{width:22px;height:22px;border-radius:5px;background:#1c1208;border:1px solid #5a3a00;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fbbf24}
+
+/* TICKER */
+.ticker-bar{background:#101018;border-bottom:1px solid rgba(255,255,255,0.06);padding:7px 0;overflow:hidden;white-space:nowrap}
+.ticker-track{display:flex;animation:tickerScroll 40s linear infinite;width:max-content}
+@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.t-item{display:inline-flex;align-items:center;gap:5px;padding:0 14px;white-space:nowrap;font-size:11px;font-weight:600;border-right:1px solid rgba(255,255,255,0.07)}
+.up{color:#34d399}.dn{color:#f87171}
+
+/* HERO */
+.hero{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.06)}
+
+/* TABS */
+.tabs{display:flex;padding:0 20px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:0}
+.tab{font-size:13px;font-weight:500;color:rgba(240,239,248,0.35);padding:11px 14px;border-bottom:1.5px solid transparent;cursor:pointer;transition:color 0.15s}
+.tab.on{color:#fbbf24;border-bottom-color:#fbbf24}
+.tcontent{display:none}.tcontent.on{display:block}
+
+/* CRYPTO LIST */
+.clist{padding:4px 0}
+.crow{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;cursor:pointer;transition:background 0.1s}
+.crow:hover,.crow.on{background:rgba(255,255,255,0.03)}
+.crow-l{display:flex;align-items:center;gap:12px}
+.crow-av{width:40px;height:40px;border-radius:12px;background:#1c1208;border:1px solid #5a3a00;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fbbf24;flex-shrink:0}
+.crow-sym{font-size:14px;font-weight:700;color:#f0eff8;letter-spacing:-0.02em}
+.crow-name{font-size:10px;color:rgba(240,239,248,0.35);margin-top:1px}
+.crow-price{font-size:13px;font-weight:600;color:#f0eff8;text-align:right}
+.crow-chg{font-size:11px;font-weight:700;margin-top:2px;text-align:right}
+
+/* ANALYSIS PANEL */
+.panel{background:#0c0c14;border-top:1px solid rgba(255,255,255,0.07)}
+
+/* VERDICT */
+.sc-eyebrow{font-size:8px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,239,248,0.25);margin-bottom:14px}
+.verdict-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.verdict-word{font-size:44px;font-weight:700;letter-spacing:-0.04em;line-height:0.9}
+.bullish{color:#34d399}.neutral{color:#fbbf24}.bearish{color:#f87171}
+
+/* INSIGHT CARDS */
+.insights{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.insight-card{display:flex;align-items:center;gap:12px;border-left:2px solid;padding:10px 12px;border-radius:0 6px 6px 0}
+.insight-icon{font-size:14px;flex-shrink:0}
+.insight-value{font-size:13px;font-weight:700;letter-spacing:-0.01em}
+.insight-label{font-size:11px;color:rgba(240,239,248,0.45);margin-top:2px}
+
+/* SIGNALS */
+.sigs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.sig-pill{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:rgba(240,239,248,0.5);background:#16161f;border:1px solid rgba(255,255,255,0.08);padding:5px 10px;border-radius:5px}
+.sdot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+
+/* AI VERDICT TEXT */
+.ai-row{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.ai-orb{width:7px;height:7px;border-radius:50%;background:#8b5cf6;flex-shrink:0;animation:orb 2.5s ease-in-out infinite}
+@keyframes orb{0%,100%{opacity:1}50%{opacity:0.4}}
+.ai-headline{font-size:15px;font-weight:600;color:#f0eff8;line-height:1.4;margin-bottom:8px;letter-spacing:-0.01em}
+.ai-body{font-size:12px;color:rgba(240,239,248,0.5);line-height:1.8}
+
+/* EDUCATION */
+.edu-box{background:#16161f;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px;margin-bottom:18px}
+.edu-lbl{font-size:8px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#fbbf24;margin-bottom:8px}
+.edu-text{font-size:12px;color:rgba(240,239,248,0.6);line-height:1.75}
+
+/* SEPARATOR */
+.sep{height:1px;background:rgba(255,255,255,0.07);margin:16px 0}
+
+/* ASK BAR */
+.ask-bar{position:sticky;bottom:0;z-index:70;padding:12px 20px 16px;background:rgba(10,10,20,0.97);backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,0.07)}
+.ask-row{display:flex;gap:8px}
+.ask-in{flex:1;background:#16161f;border:1px solid rgba(255,255,255,0.09);border-radius:10px;color:#f0eff8;font-family:'Geist',system-ui,sans-serif;font-size:13px;padding:11px 14px;outline:none;transition:border-color 0.2s}
+.ask-in:focus{border-color:rgba(251,191,36,0.4)}
+.ask-in::placeholder{color:rgba(240,239,248,0.2)}
+.ask-btn{background:linear-gradient(130deg,#d97706,#fbbf24);color:#0a0a14;font-family:'Geist',system-ui,sans-serif;font-size:13px;font-weight:700;padding:11px 18px;border-radius:10px;border:none;cursor:pointer;white-space:nowrap}
+
+/* LOADING */
+.spin{width:12px;height:12px;border:1.5px solid rgba(255,255,255,0.1);border-top-color:#fbbf24;border-radius:50%;animation:rot 0.7s linear infinite;flex-shrink:0;display:inline-block}
+@keyframes rot{to{transform:rotate(360deg)}}
+.ai-loading{display:flex;align-items:center;gap:8px;color:rgba(240,239,248,0.35);font-size:12px}
+
+/* ANS */
+.ans-wrap{padding:0 20px 8px;display:none}
+.ans-wrap.on{display:block}
+.ans-card{background:#16161f;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px;font-size:13px;color:rgba(240,239,248,0.6);line-height:1.8}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(10,10,20,0.97);backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,0.07);display:flex;z-index:90;padding:10px 0 max(20px,env(safe-area-inset-bottom))}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;text-decoration:none}
+.bnav-icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.bnav-lbl{font-size:8px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase}
+
+.sec-hdr{font-size:8px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,239,248,0.25)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div>
+    <div class="grad-logo" style="font-size:20px;font-weight:700;letter-spacing:-0.04em">Wall-Trade</div>
+    <div style="font-size:8px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:rgba(240,239,248,0.3);margin-top:2px">Crypto Intelligence</div>
+  </div>
+  <div class="hdr-pill" id="hdr-pill">
+    <div class="pill-av" id="pill-av">BTC</div>
+    <span style="font-size:12px;font-weight:600;color:#f0eff8;letter-spacing:-0.01em" id="pill-sym">Bitcoin</span>
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-left:2px"><path d="M2.5 4L5 6.5L7.5 4" stroke="rgba(240,239,248,0.35)" stroke-width="1.2" stroke-linecap="round"/></svg>
+  </div>
+</header>
+
+<!-- TICKER -->
+<div class="ticker-bar">
+  <div class="ticker-track" id="ticker-track">
+    <div class="t-item"><span style="color:rgba(240,239,248,0.4)">BTC</span><span style="color:#f0eff8;font-weight:600">$83,241</span><span class="t-chg dn">-1.24%</span></div>
+    <div class="t-item"><span style="color:rgba(240,239,248,0.4)">ETH</span><span style="color:#f0eff8;font-weight:600">$1,842</span><span class="t-chg dn">-2.10%</span></div>
+    <div class="t-item"><span style="color:rgba(240,239,248,0.4)">SOL</span><span style="color:#f0eff8;font-weight:600">$118.42</span><span class="t-chg up">+3.20%</span></div>
+    <div class="t-item"><span style="color:rgba(240,239,248,0.4)">XRP</span><span style="color:#f0eff8;font-weight:600">$2.14</span><span class="t-chg up">+1.80%</span></div>
+    <div class="t-item"><span style="color:rgba(240,239,248,0.4)">BNB</span><span style="color:#f0eff8;font-weight:600">$584.20</span><span class="t-chg dn">-0.90%</span></div>
+    <div class="t-item"><span style="color:rgba(240,239,248,0.4)">ADA</span><span style="color:#f0eff8;font-weight:600">$0.62</span><span class="t-chg up">+2.40%</span></div>
+    <div class="t-item"><span style="color:rgba(240,239,248,0.4)">BTC</span><span style="color:#f0eff8;font-weight:600">$83,241</span><span class="t-chg dn">-1.24%</span></div>
+    <div class="t-item"><span style="color:rgba(240,239,248,0.4)">ETH</span><span style="color:#f0eff8;font-weight:600">$1,842</span><span class="t-chg dn">-2.10%</span></div>
+    <div class="t-item"><span style="color:rgba(240,239,248,0.4)">SOL</span><span style="color:#f0eff8;font-weight:600">$118.42</span><span class="t-chg up">+3.20%</span></div>
+    <div class="t-item"><span style="color:rgba(240,239,248,0.4)">XRP</span><span style="color:#f0eff8;font-weight:600">$2.14</span><span class="t-chg up">+1.80%</span></div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab on" onclick="setTab('overview')">Overview</div>
+  <div class="tab" onclick="setTab('education')">Learn</div>
+</div>
+
+<!-- OVERVIEW TAB -->
+<div class="tcontent on" id="tc-overview">
+
+  <!-- COIN LIST -->
+  <div class="clist" id="coin-list">
+    <div style="display:flex;align-items:center;gap:8px;padding:20px;color:rgba(240,239,248,0.35);font-size:12px"><div class="spin"></div>Loading crypto prices…</div>
+  </div>
+
+  <!-- ANALYSIS PANEL -->
+  <div class="panel" id="analysis-panel" style="display:none">
+    <div style="padding:20px 20px 8px">
+      <!-- HERO PRICE -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;color:rgba(240,239,248,0.3);margin-bottom:12px" id="coin-name-full">Bitcoin</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end">
+          <div>
+            <div style="font-size:40px;font-weight:700;letter-spacing:-0.05em;line-height:0.95;color:#f0eff8" id="coin-sym-big">BTC</div>
+            <div style="font-size:9px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:rgba(240,239,248,0.3);margin-top:8px;display:flex;align-items:center;gap:5px">
+              <div style="width:4px;height:4px;border-radius:50%;background:#fbbf24"></div>Cryptocurrency
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:9px;color:rgba(240,239,248,0.3);margin-bottom:3px">USD</div>
+            <div style="font-size:32px;font-weight:700;letter-spacing:-0.04em;color:#f0eff8" id="coin-price-big">—</div>
+            <div style="font-size:12px;font-weight:700;margin-top:5px" id="coin-chg-big"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI VERDICT -->
+      <div class="sc-eyebrow">Wall-Trade crypto verdict</div>
+      <div class="verdict-row">
+        <div class="verdict-word" id="verdict-word">—</div>
+        <!-- Mini gauge -->
+        <svg width="110" height="70" viewBox="0 0 110 70" fill="none" id="gauge-svg">
+          <text x="55" y="65" text-anchor="middle" fill="rgba(240,239,248,0.25)" font-size="8" font-family="system-ui">Loading…</text>
+        </svg>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div class="insights" id="insights-container">
+        <div class="ai-loading"><div class="spin"></div>Analysing with live data…</div>
+      </div>
+
+      <!-- SEPARATOR -->
+      <div class="sep"></div>
+
+      <!-- AI TEXT -->
+      <div class="ai-row"><div class="ai-orb"></div><span style="font-size:8px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8b5cf6">AI Analysis</span></div>
+      <div id="ai-headline" class="ai-headline"></div>
+      <div id="ai-body" class="ai-body"></div>
+
+      <!-- SIGNALS -->
+      <div style="margin-top:16px">
+        <div class="sec-hdr" style="margin-bottom:10px">Key signals</div>
+        <div class="sigs" id="signals-container"></div>
+      </div>
+    </div>
+
+    <!-- ASK -->
+    <div class="ans-wrap" id="ans-wrap">
+      <div style="font-size:8px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8b5cf6;margin-bottom:8px;display:flex;align-items:center;gap:6px"><div class="ai-orb"></div>AI Answer</div>
+      <div class="ans-card" id="ans-card"></div>
+    </div>
+
+    <div class="ask-bar">
+      <div class="ask-row">
+        <input class="ask-in" id="ask-in" type="text" placeholder="Ask anything about this coin…"/>
+        <button class="ask-btn" id="ask-btn" onclick="doAsk()">Ask</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDUCATION TAB -->
+<div class="tcontent" id="tc-education">
+  <div style="padding:20px">
+    <div id="edu-content">
+      <div style="color:rgba(240,239,248,0.35);font-size:12px">Select a coin to see educational content</div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <a href="/" class="bnav-item">
+    <div class="bnav-icon">🏠</div>
+    <span class="bnav-lbl" style="color:rgba(240,239,248,0.3)">Home</span>
+  </a>
+  <a href="/app.html" class="bnav-item">
+    <div class="bnav-icon">📊</div>
+    <span class="bnav-lbl" style="color:rgba(240,239,248,0.3)">Stocks</span>
+  </a>
+  <a href="/crypto.html" class="bnav-item">
+    <div class="bnav-icon" style="background:#1c1208;border:1px solid #5a3a00">₿</div>
+    <span class="bnav-lbl" style="color:#fbbf24">Crypto</span>
+  </a>
+  <a href="/fx.html" class="bnav-item">
+    <div class="bnav-icon">💱</div>
+    <span class="bnav-lbl" style="color:rgba(240,239,248,0.3)">FX</span>
+  </a>
+</nav>
+
+<script>
+const COINS = [
+  {sym:'BTC',name:'Bitcoin',     bg:'#1c1208',bd:'#5a3a00',c:'#fbbf24'},
+  {sym:'ETH',name:'Ethereum',    bg:'#0f1024',bd:'#2d3080',c:'#818cf8'},
+  {sym:'SOL',name:'Solana',      bg:'#0e1f1a',bd:'#1a4d3a',c:'#34d399'},
+  {sym:'XRP',name:'XRP',         bg:'#0a1826',bd:'#1a4a6b',c:'#38bdf8'},
+  {sym:'BNB',name:'BNB',         bg:'#1c1800',bd:'#5c4d00',c:'#fbbf24'},
+  {sym:'ADA',name:'Cardano',     bg:'#0e1f1a',bd:'#1a4d3a',c:'#34d399'},
+  {sym:'AVAX',name:'Avalanche',  bg:'#1f0d0d',bd:'#6b2020',c:'#f87171'},
+  {sym:'DOT',name:'Polkadot',    bg:'#1f0d16',bd:'#6b2040',c:'#f472b6'},
+  {sym:'MATIC',name:'Polygon',   bg:'#130c22',bd:'#4a2d7a',c:'#a78bfa'},
+  {sym:'LINK',name:'Chainlink',  bg:'#0a1826',bd:'#1a4a6b',c:'#38bdf8'}
+];
+
+let curCoin = null;
+let livePrices = {};
+let verdictCache = {};
+let activeTab = 'overview';
+
+// ── TAB ──────────────────────────────────────────────────
+function setTab(t) {
+  activeTab = t;
+  document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('on', ['overview','education'][i] === t));
+  document.querySelectorAll('.tcontent').forEach(el => el.classList.toggle('on', el.id === 'tc-' + t));
+  if (t === 'education' && curCoin) renderEducation();
+}
+
+// ── GAUGE ─────────────────────────────────────────────────
+function buildGauge(score, verdict) {
+  const pct = Math.min(score/10, 1);
+  const W=110, H=70, cx=55, cy=58, R=40, n=18;
+  const id = 'g' + Math.random().toString(36).slice(2,6);
+  let dots = '';
+  for (let i=0; i<n; i++) {
+    const t = i/(n-1);
+    const angle = Math.PI + t*Math.PI;
+    const x = cx + R*Math.cos(angle);
+    const y = cy + R*Math.sin(angle);
+    const lit = t <= pct;
+    const col = verdict==='Bullish' ? '#34d399' : verdict==='Bearish' ? '#f87171' : '#fbbf24';
+    const baseCol = t < 0.4 ? '#f87171' : t < 0.6 ? '#fbbf24' : '#34d399';
+    dots += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${lit?4:3}" fill="${lit?col:baseCol}" opacity="${lit?1:0.13}"/>`;
+  }
+  const na = Math.PI + pct*Math.PI;
+  const nx = (cx + 28*Math.cos(na)).toFixed(1);
+  const ny = (cy + 28*Math.sin(na)).toFixed(1);
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" fill="none">
+    ${dots}
+    <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#f0eff8" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="4" fill="#1e1e2a" stroke="rgba(255,255,255,0.15)" stroke-width="1.2"/>
+    <circle cx="${cx}" cy="${cy}" r="1.8" fill="#f0eff8"/>
+    <text x="${cx}" y="${H}" text-anchor="middle" fill="rgba(240,239,248,0.3)" font-size="8" font-family="system-ui" font-weight="600">${score} / 10</text>
+  </svg>`;
+}
+
+// ── RENDER COIN LIST ──────────────────────────────────────
+function renderCoinList() {
+  const el = document.getElementById('coin-list');
+  el.innerHTML = COINS.map(c => {
+    const p = livePrices[c.sym];
+    const price = p ? `$${Number(p.price).toLocaleString()}` : '—';
+    const chg   = p ? `${p.dir==='up'?'+':''}${p.change}%` : '';
+    const cls   = p ? (p.dir==='up'?'up':'dn') : '';
+    return `<div class="crow ${curCoin?.sym===c.sym?'on':''}" onclick="selectCoin('${c.sym}')">
+      <div class="crow-l">
+        <div class="crow-av" style="background:${c.bg};border:1px solid ${c.bd};color:${c.c}">${c.sym.slice(0,3)}</div>
+        <div><div class="crow-sym">${c.sym}</div><div class="crow-name">${c.name}</div></div>
+      </div>
+      <div>
+        <div class="crow-price">${price}</div>
+        <div class="crow-chg ${cls}">${chg}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── SELECT COIN ────────────────────────────────────────────
+async function selectCoin(sym) {
+  const coin = COINS.find(c => c.sym === sym);
+  if (!coin) return;
+  curCoin = coin;
+
+  // Update header pill
+  document.getElementById('pill-av').textContent = sym.slice(0,3);
+  document.getElementById('pill-sym').textContent = coin.name;
+
+  // Highlight in list
+  document.querySelectorAll('.crow').forEach((el,i) => el.classList.toggle('on', COINS[i].sym === sym));
+
+  // Show panel
+  const panel = document.getElementById('analysis-panel');
+  panel.style.display = 'block';
+
+  // Update hero
+  const p = livePrices[sym];
+  document.getElementById('coin-name-full').textContent = coin.name;
+  document.getElementById('coin-sym-big').textContent = sym;
+  document.getElementById('coin-price-big').textContent = p ? `$${Number(p.price).toLocaleString()}` : '—';
+  const chgEl = document.getElementById('coin-chg-big');
+  if (p) {
+    chgEl.textContent = `${p.dir==='up'?'+':''}${p.change}% today`;
+    chgEl.className = p.dir==='up' ? 'up' : 'dn';
+  }
+
+  // Reset answer box
+  document.getElementById('ans-wrap').classList.remove('on');
+  document.getElementById('ask-in').placeholder = `Ask anything about ${sym}…`;
+
+  // Load AI verdict
+  if (verdictCache[sym]) {
+    renderVerdict(verdictCache[sym]);
+  } else {
+    document.getElementById('insights-container').innerHTML = '<div class="ai-loading"><div class="spin"></div>Analysing ' + sym + ' with live data…</div>';
+    document.getElementById('verdict-word').textContent = '—';
+    document.getElementById('ai-headline').textContent = '';
+    document.getElementById('ai-body').textContent = '';
+    document.getElementById('signals-container').innerHTML = '';
+    document.getElementById('gauge-svg').innerHTML = '<text x="55" y="40" text-anchor="middle" fill="rgba(240,239,248,0.25)" font-size="8" font-family="system-ui">Loading…</text>';
+    loadVerdict(sym);
+  }
+
+  // Scroll to panel
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── LOAD VERDICT ───────────────────────────────────────────
+async function loadVerdict(sym) {
+  const p = livePrices[sym];
+  try {
+    const res = await fetch('/.netlify/functions/crypto-analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol: sym, price: p?.price || '0', change: p?.change || '0' })
+    });
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    verdictCache[sym] = data;
+    if (curCoin?.sym === sym) renderVerdict(data);
+  } catch(e) {
+    document.getElementById('insights-container').innerHTML = '<div style="color:rgba(240,239,248,0.3);font-size:12px">Analysis unavailable — please try again</div>';
+  }
+}
+
+// ── RENDER VERDICT ─────────────────────────────────────────
+function renderVerdict(v) {
+  if (!v || v.error) return;
+
+  // Verdict word + colour
+  const verdictEl = document.getElementById('verdict-word');
+  verdictEl.textContent = v.verdict || 'Neutral';
+  verdictEl.className = 'verdict-word ' + (v.verdict==='Bullish'?'bullish':v.verdict==='Bearish'?'bearish':'neutral');
+
+  // Gauge
+  document.getElementById('gauge-svg').outerHTML = buildGauge(v.score||5, v.verdict);
+
+  // Insights
+  const insContainer = document.getElementById('insights-container');
+  if (v.insights?.length) {
+    const colorMap = {
+      green: { border:'#34d399', bg:'rgba(52,211,153,0.06)', val:'#34d399' },
+      amber: { border:'#fbbf24', bg:'rgba(251,191,36,0.06)', val:'#fbbf24' },
+      red:   { border:'#f87171', bg:'rgba(248,113,113,0.06)', val:'#f87171' },
+      purple:{ border:'#a78bfa', bg:'rgba(167,139,250,0.06)', val:'#a78bfa' },
+      blue:  { border:'#38bdf8', bg:'rgba(56,189,248,0.06)', val:'#38bdf8' }
+    };
+    insContainer.innerHTML = v.insights.map(ins => {
+      const cm = colorMap[ins.color] || colorMap.amber;
+      return `<div class="insight-card" style="border-left-color:${cm.border};background:${cm.bg}">
+        <div class="insight-icon">${ins.icon}</div>
+        <div>
+          <div class="insight-value" style="color:${cm.val}">${ins.value}</div>
+          <div class="insight-label">${ins.label}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Headline + body
+  document.getElementById('ai-headline').textContent = v.headline || '';
+  document.getElementById('ai-body').textContent = v.body || '';
+
+  // Signals
+  const sigMap = { green:'#34d399', amber:'#fbbf24', red:'#f87171', purple:'#a78bfa', blue:'#38bdf8' };
+  if (v.signals?.length) {
+    document.getElementById('signals-container').innerHTML = v.signals.map(s =>
+      `<div class="sig-pill"><div class="sdot" style="background:${sigMap[s.type]||'#fbbf24'}"></div>${s.label}</div>`
+    ).join('');
+  }
+}
+
+// ── EDUCATION ─────────────────────────────────────────────
+function renderEducation() {
+  const el = document.getElementById('edu-content');
+  if (!curCoin) return;
+  const v = verdictCache[curCoin.sym];
+  if (v?.education) {
+    el.innerHTML = `
+      <div class="edu-box">
+        <div class="edu-lbl">What is ${curCoin.sym}?</div>
+        <div class="edu-text">${v.education}</div>
+      </div>
+      <div class="edu-box">
+        <div class="edu-lbl">How to think about crypto for Pakistani investors</div>
+        <div class="edu-text">Crypto is highly volatile — prices can move 10-20% in a single day. Many Pakistanis use Bitcoin and USDT as a dollar hedge against PKR depreciation. P2P trading on platforms like Binance is accessible. Always only invest what you can afford to lose completely. Crypto is not regulated by SECP.</div>
+      </div>`;
+  } else {
+    el.innerHTML = `<div style="color:rgba(240,239,248,0.35);font-size:12px">Load the Overview tab first to generate educational content for ${curCoin.sym}</div>`;
+  }
+}
+
+// ── ASK ───────────────────────────────────────────────────
+async function doAsk() {
+  if (!curCoin) return;
+  const inp = document.getElementById('ask-in');
+  const btn = document.getElementById('ask-btn');
+  const q = inp.value.trim(); if (!q) return;
+  btn.disabled = true; btn.textContent = '…';
+  const aw = document.getElementById('ans-wrap');
+  const ac = document.getElementById('ans-card');
+  aw.classList.add('on'); ac.textContent = 'Thinking…';
+  const p = livePrices[curCoin.sym];
+  try {
+    const res = await fetch('/.netlify/functions/crypto-analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol: curCoin.sym, price: p?.price||'0', change: p?.change||'0', question: q })
+    });
+    const data = await res.json();
+    ac.textContent = data.answer || 'Could not get a response.';
+  } catch(e) { ac.textContent = 'Could not connect — please try again.'; }
+  btn.disabled = false; btn.textContent = 'Ask'; inp.value = '';
+}
+
+// ── LOAD LIVE PRICES ──────────────────────────────────────
+async function loadPrices() {
+  try {
+    const res = await fetch('/.netlify/functions/prices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tickers: [] })
+    });
+    if (!res.ok) return;
+    const d = await res.json();
+    if (d.crypto?.length) {
+      d.crypto.forEach(c => { livePrices[c.symbol] = c; });
+      updateTicker(d.crypto);
+      renderCoinList();
+      if (curCoin) {
+        const p = livePrices[curCoin.sym];
+        if (p) {
+          document.getElementById('coin-price-big').textContent = `$${Number(p.price).toLocaleString()}`;
+          const chgEl = document.getElementById('coin-chg-big');
+          chgEl.textContent = `${p.dir==='up'?'+':''}${p.change}% today`;
+          chgEl.className = p.dir==='up' ? 'up' : 'dn';
+        }
+      }
+    }
+  } catch(e) {}
+}
+
+function updateTicker(crypto) {
+  const track = document.getElementById('ticker-track');
+  if (!track || !crypto?.length) return;
+  const items = crypto.map(c => {
+    const up = c.dir === 'up';
+    return `<div class="t-item"><span style="color:rgba(240,239,248,0.4)">${c.symbol}</span><span style="color:#f0eff8;font-weight:600">$${Number(c.price).toLocaleString()}</span><span class="t-chg ${up?'up':'dn'}">${up?'+':''}${c.change}%</span></div>`;
+  }).join('');
+  track.innerHTML = items + items;
+}
+
+// ── INIT ─────────────────────────────────────────────────
+loadPrices();
+setInterval(loadPrices, 60000);
+renderCoinList();
+
+// Handle enter key
+document.getElementById('ask-in').addEventListener('keydown', e => { if (e.key==='Enter') doAsk(); });
+</script>
+</body>
+</html>
