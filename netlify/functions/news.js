@@ -65,10 +65,12 @@ exports.handler = async (event) => {
   // Fetch 2 queries in parallel:
   // 1. Pakistan business/economy news (local)
   // 2. Global macro news relevant to Pakistan (oil, gold, IMF, Fed)
-  const [pakistanData, globalData] = await Promise.all([
+  const [pakistanData, oilData, macroData] = await Promise.all([
     get(`https://newsdata.io/api/1/news?apikey=${key}&country=pk&category=business,top&language=en&size=8`),
-    get(`https://newsdata.io/api/1/news?apikey=${key}&q=oil+gold+imf+federal+reserve+pakistan+economy&language=en&size=5`)
+    get(`https://newsdata.io/api/1/news?apikey=${key}&q=oil+gold+commodities&language=en&size=3`),
+    get(`https://newsdata.io/api/1/news?apikey=${key}&q=IMF+Fed+economy&language=en&size=3`)
   ]);
+  const globalData = { results: [...(oilData?.results||[]), ...(macroData?.results||[])] };
 
   const news = [];
 
