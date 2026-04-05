@@ -1,68 +1,127 @@
 const https = require('https');
 
-function get(url, ms = 6000) {
+function get(url, ms = 8000) {
   return new Promise(resolve => {
-    const t = setTimeout(() => resolve(null), ms);
+    const t = setTimeout(() => { console.log('TIMEOUT:', url.slice(0, 60)); resolve(null); }, ms);
     https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' } }, res => {
       let b = '';
       res.on('data', c => b += c);
-      res.on('end', () => { clearTimeout(t); try { resolve(JSON.parse(b)); } catch { resolve(null); } });
-    }).on('error', () => { clearTimeout(t); resolve(null); });
+      res.on('end', () => {
+        clearTimeout(t);
+        console.log(`${url.slice(0, 60)} → ${res.statusCode}, len ${b.length}`);
+        try { resolve(JSON.parse(b)); } catch { resolve(null); }
+      });
+    }).on('error', e => { clearTimeout(t); console.log('ERR:', e.message); resolve(null); });
   });
 }
 
-// Pakistan market news — always available, contextually accurate
-function getPakistanFallback() {
-  const today = new Date().toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' });
-  return [
-    { title: 'KSE-100 tests record highs as foreign investors return to Pakistan equities', source: 'Wall-Trade Markets', tag: 'KSE-100', tagColor: '#34d399', tagBg: 'rgba(52,211,153,0.1)', tagBorder: 'rgba(52,211,153,0.25)', url: '#', time: today },
-    { title: 'SBP holds policy rate at 10.50% — monetary easing cycle pauses on global uncertainty', source: 'Wall-Trade Markets', tag: 'SBP', tagColor: '#fbbf24', tagBg: 'rgba(251,191,36,0.1)', tagBorder: 'rgba(251,191,36,0.25)', url: '#', time: today },
-    { title: 'Pakistan completes IMF fourth review — $7bn programme firmly on track for 2026', source: 'Wall-Trade Markets', tag: 'IMF', tagColor: '#fb923c', tagBg: 'rgba(251,146,60,0.1)', tagBorder: 'rgba(251,146,60,0.25)', url: '#', time: today },
-    { title: 'PKR stable at 278-280 per USD — FX reserves recovering above $11bn', source: 'Wall-Trade Markets', tag: 'FX', tagColor: '#818cf8', tagBg: 'rgba(129,140,248,0.1)', tagBorder: 'rgba(129,140,248,0.25)', url: '#', time: today },
-    { title: 'Brent crude volatility weighs on Pakistan energy costs — OGDC and PPL watch oil closely', source: 'Wall-Trade Markets', tag: 'ENERGY', tagColor: '#f472b6', tagBg: 'rgba(244,114,182,0.1)', tagBorder: 'rgba(244,114,182,0.25)', url: '#', time: today },
-    { title: 'Banking sector NIM pressure expected as SBP rate cuts continue into 2026', source: 'Wall-Trade Markets', tag: 'BANKING', tagColor: '#38bdf8', tagBg: 'rgba(56,189,248,0.1)', tagBorder: 'rgba(56,189,248,0.25)', url: '#', time: today },
-    { title: 'Cement sector faces demand slowdown — construction activity lower than FY24 highs', source: 'Wall-Trade Markets', tag: 'CEMENT', tagColor: '#a78bfa', tagBg: 'rgba(167,139,250,0.1)', tagBorder: 'rgba(167,139,250,0.25)', url: '#', time: today },
-    { title: 'ENGRO and FFC benefit from lower gas prices — fertiliser margins improving in 2026', source: 'Wall-Trade Markets', tag: 'FERTILISER', tagColor: '#34d399', tagBg: 'rgba(52,211,153,0.1)', tagBorder: 'rgba(52,211,153,0.25)', url: '#', time: today }
-  ];
+// Tag mapping based on keywords in title
+function tagArticle(title) {
+  const t = title.toLowerCase();
+  if (t.includes('kse') || t.includes('psx') || t.includes('stock') || t.includes('shares') || t.includes('equity'))
+    return { tag: 'KSE-100', tagColor: '#34d399', tagBg: 'rgba(52,211,153,0.1)', tagBorder: 'rgba(52,211,153,0.25)' };
+  if (t.includes('sbp') || t.includes('policy rate') || t.includes('interest rate') || t.includes('monetary'))
+    return { tag: 'SBP', tagColor: '#fbbf24', tagBg: 'rgba(251,191,36,0.1)', tagBorder: 'rgba(251,191,36,0.25)' };
+  if (t.includes('imf') || t.includes('world bank') || t.includes('adb'))
+    return { tag: 'IMF', tagColor: '#fb923c', tagBg: 'rgba(251,146,60,0.1)', tagBorder: 'rgba(251,146,60,0.25)' };
+  if (t.includes('rupee') || t.includes('pkr') || t.includes('dollar') || t.includes('forex') || t.includes('currency'))
+    return { tag: 'FX', tagColor: '#818cf8', tagBg: 'rgba(129,140,248,0.1)', tagBorder: 'rgba(129,140,248,0.25)' };
+  if (t.includes('oil') || t.includes('gas') || t.includes('energy') || t.includes('petrol') || t.includes('ogdc') || t.includes('ppl'))
+    return { tag: 'ENERGY', tagColor: '#f472b6', tagBg: 'rgba(244,114,182,0.1)', tagBorder: 'rgba(244,114,182,0.25)' };
+  if (t.includes('bank') || t.includes('hbl') || t.includes('mcb') || t.includes('ubl') || t.includes('nbp'))
+    return { tag: 'BANKING', tagColor: '#38bdf8', tagBg: 'rgba(56,189,248,0.1)', tagBorder: 'rgba(56,189,248,0.25)' };
+  if (t.includes('cement') || t.includes('luck') || t.includes('mlcf') || t.includes('dgkc'))
+    return { tag: 'CEMENT', tagColor: '#a78bfa', tagBg: 'rgba(167,139,250,0.1)', tagBorder: 'rgba(167,139,250,0.25)' };
+  if (t.includes('fertiliser') || t.includes('fertilizer') || t.includes('engro') || t.includes('ffc'))
+    return { tag: 'FERTILISER', tagColor: '#34d399', tagBg: 'rgba(52,211,153,0.1)', tagBorder: 'rgba(52,211,153,0.25)' };
+  if (t.includes('gold') || t.includes('bitcoin') || t.includes('crypto'))
+    return { tag: 'GLOBAL', tagColor: '#fbbf24', tagBg: 'rgba(251,191,36,0.1)', tagBorder: 'rgba(251,191,36,0.25)' };
+  if (t.includes('inflation') || t.includes('gdp') || t.includes('budget') || t.includes('fiscal') || t.includes('economy'))
+    return { tag: 'MACRO', tagColor: '#fb923c', tagBg: 'rgba(251,146,60,0.1)', tagBorder: 'rgba(251,146,60,0.25)' };
+  return { tag: 'MARKET', tagColor: '#818cf8', tagBg: 'rgba(129,140,248,0.1)', tagBorder: 'rgba(129,140,248,0.25)' };
 }
 
-// Try FMP news (paid plan, may return global news)
-async function getFMPNews() {
-  const key = process.env.FMP_API_KEY;
-  if (!key) return [];
+function formatDate(dateStr) {
+  if (!dateStr) return '';
   try {
-    const data = await get(`https://financialmodelingprep.com/stable/news/general-latest?limit=10&apikey=${key}`);
-    if (!Array.isArray(data) || data.length === 0) return [];
-    return data.slice(0, 5).map(n => ({
-      title: n.title || n.headline || '',
-      url: n.url || n.link || '#',
-      source: n.site || n.publisher || 'Market News',
-      tag: 'GLOBAL',
-      tagColor: '#818cf8',
-      tagBg: 'rgba(129,140,248,0.1)',
-      tagBorder: 'rgba(129,140,248,0.25)',
-      time: n.publishedDate ? new Date(n.publishedDate).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' }) : ''
-    })).filter(n => n.title);
-  } catch(e) { return []; }
+    return new Date(dateStr).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch { return ''; }
 }
 
 exports.handler = async (event) => {
-  const headers = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' };
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Content-Type': 'application/json',
+    'Cache-Control': 'public, max-age=600' // cache 10 mins
+  };
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
 
-  // Get Pakistan fallback (always works) + try FMP for global context
-  const [fmpNews] = await Promise.all([getFMPNews()]);
-  const pakistanNews = getPakistanFallback();
-  
-  // Interleave: 2 Pakistan stories, 1 global, 2 Pakistan, 1 global...
-  const combined = [];
-  let pi = 0, gi = 0;
-  while (combined.length < 8) {
-    if (pi < pakistanNews.length) combined.push(pakistanNews[pi++]);
-    if (pi < pakistanNews.length) combined.push(pakistanNews[pi++]);
-    if (gi < fmpNews.length) combined.push(fmpNews[gi++]);
+  const key = process.env.NEWSDATA_API_KEY;
+  if (!key) {
+    console.log('NO NEWSDATA_API_KEY');
+    return { statusCode: 200, headers, body: JSON.stringify({ news: [], error: 'No API key' }) };
   }
 
-  console.log(`News: ${pakistanNews.length} Pakistan + ${fmpNews.length} global`);
-  return { statusCode: 200, headers, body: JSON.stringify({ news: combined.slice(0, 8), timestamp: new Date().toISOString() }) };
+  // Fetch 2 queries in parallel:
+  // 1. Pakistan business/economy news (local)
+  // 2. Global macro news relevant to Pakistan (oil, gold, IMF, Fed)
+  const [pakistanData, globalData] = await Promise.all([
+    get(`https://newsdata.io/api/1/news?apikey=${key}&country=pk&category=business,top&language=en&size=8`),
+    get(`https://newsdata.io/api/1/news?apikey=${key}&q=oil+gold+imf+federal+reserve+pakistan+economy&language=en&size=5`)
+  ]);
+
+  const news = [];
+
+  // Process Pakistan news
+  if (pakistanData?.results?.length) {
+    console.log(`Pakistan news: ${pakistanData.results.length} articles`);
+    pakistanData.results.forEach(a => {
+      if (!a.title || a.title.length < 10) return;
+      const tagInfo = tagArticle(a.title);
+      news.push({
+        title: a.title,
+        url: a.link || '#',
+        source: a.source_name || a.source_id || 'Pakistan News',
+        time: formatDate(a.pubDate),
+        ...tagInfo
+      });
+    });
+  } else {
+    console.log('Pakistan news failed:', JSON.stringify(pakistanData)?.slice(0, 200));
+  }
+
+  // Process global macro news
+  if (globalData?.results?.length) {
+    console.log(`Global news: ${globalData.results.length} articles`);
+    globalData.results.forEach(a => {
+      if (!a.title || a.title.length < 10) return;
+      const tagInfo = tagArticle(a.title);
+      news.push({
+        title: a.title,
+        url: a.link || '#',
+        source: a.source_name || a.source_id || 'Global Markets',
+        time: formatDate(a.pubDate),
+        ...tagInfo
+      });
+    });
+  } else {
+    console.log('Global news failed:', JSON.stringify(globalData)?.slice(0, 200));
+  }
+
+  // Deduplicate by title similarity
+  const seen = new Set();
+  const deduped = news.filter(n => {
+    const key = n.title.slice(0, 50).toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  console.log(`Total news: ${deduped.length} articles`);
+
+  return {
+    statusCode: 200,
+    headers,
+    body: JSON.stringify({ news: deduped.slice(0, 10), timestamp: new Date().toISOString() })
+  };
 };
