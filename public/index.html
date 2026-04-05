@@ -362,16 +362,24 @@ function renderFX(fx) {
 // ── RENDER NEWS ───────────────────────────────────────────
 function renderNews(items) {
   const el = document.getElementById('news-list');
-  if (!items || !items.length) { el.innerHTML = ''; return; }
-  el.innerHTML = items.map(h => `
-    <div class="news-item" onclick="window.open('${h.url||'#'}','_blank')">
+  if (!items || !items.length) {
+    el.innerHTML = '<div style="color:rgba(240,239,248,0.3);font-size:12px;padding:8px 0">No news available right now</div>';
+    return;
+  }
+  // tagBg/tagBorder derived from tagColor if not provided
+  el.innerHTML = items.map(h => {
+    const c = h.tagColor || '#34d399';
+    const bg = h.tagBg || c.replace('#','rgba(').replace(/(..)(..)(..)/, (m,r,g,b) => `${parseInt(r,16)},${parseInt(g,16)},${parseInt(b,16)}`) + ',0.1)';
+    const border = h.tagBorder || c;
+    return `<div class="news-item" onclick="window.open('${h.url||'#'}','_blank')">
       <div class="news-meta">
         <span class="news-src">${h.source}</span>
-        ${h.tag ? `<span class="news-tag" style="color:${h.tagColor};background:${h.tagBg};border-color:${h.tagBorder}">${h.tag}</span>` : ''}
+        ${h.tag ? `<span class="news-tag" style="color:${c};background:${h.tagBg||'rgba(52,211,153,0.1)'};border-color:${h.tagBorder||c}">${h.tag}</span>` : ''}
       </div>
       <div class="news-title">${h.title}</div>
       <div class="news-time">${h.time}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── UPDATE MACRO CARDS ────────────────────────────────────
@@ -443,32 +451,19 @@ async function loadMarkets() {
 
 // ── LOAD NEWS ─────────────────────────────────────────────
 async function loadNews() {
-  const FEEDS = [
-    {url:'https://api.rss2json.com/v1/api.json?rss_url=https://www.dawn.com/feeds/business&count=4', src:'Dawn Business', tag:'PSX', tagColor:'#34d399', tagBg:'rgba(52,211,153,0.1)', tagBorder:'rgba(52,211,153,0.25)'},
-    {url:'https://api.rss2json.com/v1/api.json?rss_url=https://www.brecorder.com/feed&count=4',       src:'Business Recorder', tag:'KSE-100', tagColor:'#818cf8', tagBg:'rgba(99,102,241,0.1)', tagBorder:'rgba(99,102,241,0.25)'},
-    {url:'https://api.rss2json.com/v1/api.json?rss_url=https://thenews.com.pk/rss/2/5&count=3',      src:'The News', tag:'IMF', tagColor:'#fb923c', tagBg:'rgba(251,146,60,0.1)', tagBorder:'rgba(251,146,60,0.25)'}
-  ];
   try {
-    const results = await Promise.allSettled(FEEDS.map(f => fetch(f.url).then(r=>r.json()).then(d=>({...f,items:d.items}))));
-    const headlines = [];
-    results.forEach(r => {
-      if (r.status !== 'fulfilled' || !r.value?.items) return;
-      const f = r.value;
-      f.items.slice(0,3).forEach(item => {
-        headlines.push({
-          title: item.title,
-          url: item.link,
-          source: f.src,
-          tag: f.tag,
-          tagColor: f.tagColor,
-          tagBg: f.tagBg,
-          tagBorder: f.tagBorder,
-          time: item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-PK',{day:'numeric',month:'short',year:'numeric'}) : ''
-        });
-      });
-    });
-    renderNews(headlines.slice(0,8));
-  } catch(e) { renderNews([]); }
+    const res = await fetch('/.netlify/functions/news');
+    if (!res.ok) throw new Error('News fetch failed');
+    const data = await res.json();
+    if (data.news && data.news.length > 0) {
+      renderNews(data.news);
+    } else {
+      renderNews([]);
+    }
+  } catch(e) {
+    console.error('News error:', e);
+    renderNews([]);
+  }
 }
 
 // ── INIT ─────────────────────────────────────────────────
