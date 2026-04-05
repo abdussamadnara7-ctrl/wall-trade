@@ -1,13 +1,11 @@
-// Wall-Trade SW v2.1 — cache bust
-const CACHE = 'wall-trade-v2.1';
-const NEVER_CACHE = ['/app.html', '/index.html', '/.netlify/functions/'];
+// Wall-Trade SW v3.0 — hard cache bust
+const CACHE = 'wall-trade-v3.0';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
-  // Delete ALL old caches immediately
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.map(k => caches.delete(k)))
@@ -17,23 +15,19 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = e.request.url;
-
-  // Never cache HTML pages or API calls — always fetch fresh
-  if (NEVER_CACHE.some(p => url.includes(p)) || url.endsWith('.html')) {
-    e.respondWith(
-      fetch(e.request, { cache: 'no-store' }).catch(() => caches.match(e.request))
-    );
+  // Never cache HTML or API calls
+  if (url.includes('.html') || url.includes('.netlify/functions') || url.includes('index')) {
+    e.respondWith(fetch(e.request, { cache: 'no-store' }).catch(() => new Response('Offline')));
     return;
   }
-
-  // Cache fonts and static assets
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(res => {
-        if (!res || res.status !== 200) return res;
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
         return res;
       });
     })
