@@ -2,9 +2,27 @@
   publish = "public"
   functions = "netlify/functions"
 
+[functions]
+  node_bundler = "zisi"
+
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
     Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[functions."analyze"]
+  timeout = 26
+
+[functions."crypto-analyze"]
+  timeout = 26
+
+[functions."prices"]
+  timeout = 26
+
+[functions."news"]
+  timeout = 26
