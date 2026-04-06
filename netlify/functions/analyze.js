@@ -81,38 +81,32 @@ async function fetchLiveMacro() {
     fetched:  new Date().toISOString()
   };
 
-  try {
-    // 1 — Oil price via Yahoo Finance (no key needed)
-    const oilData = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/BZ=F?interval=1d&range=2d');
-    if (oilData?.chart?.result?.[0]) {
-      const r = oilData.chart.result[0];
-      const closes = r.indicators?.quote?.[0]?.close?.filter(v => v != null);
-      if (closes?.length >= 2) {
-        const current = closes[closes.length - 1];
-        const prev    = closes[closes.length - 2];
-        macro.oil = {
-          price:  current.toFixed(2),
-          change: ((current - prev) / prev * 100).toFixed(2),
-          label:  'Brent Crude (USD/bbl)'
-        };
-      }
-    }
-  } catch(e) {}
-
   const fmpKey = process.env.FMP_API_KEY;
 
-  // 2 — Gold, Brent, PKR/USD, DXY via FMP (fast, confirmed working)
+  // 2 — Gold, Brent, PKR/USD via FMP — try multiple symbols (GCUSD/BZUSD may not be on Starter)
   if (fmpKey) {
-    const fmpFetch = (sym) => fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=${sym}&apikey=${fmpKey}`, {}, 5000);
-    const [goldR, brentR, pkrR, dxyR] = await Promise.all([
-      fmpFetch('GCUSD'), fmpFetch('BZUSD'), fmpFetch('USDPKR'), fmpFetch('DX-Y.NYB')
+    const fmpFetch = (sym) => fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=${sym}&apikey=${fmpKey}`, {}, 3000);
+
+    // Fire ALL commodity + FX calls in parallel — fastest approach
+    const [gcusdR, xauR, bzusdR, usoilR, pkrR, dxyR] = await Promise.all([
+      fmpFetch('GCUSD'), fmpFetch('XAUUSD'),
+      fmpFetch('BZUSD'), fmpFetch('USOIL'),
+      fmpFetch('USDPKR'), fmpFetch('DX-Y.NYB')
     ]);
-    const pick = (r) => Array.isArray(r) ? r[0] : r;
-    const gq = pick(goldR),  bq = pick(brentR), pq = pick(pkrR), dq = pick(dxyR);
-    if (gq?.price) macro.gold    = { price: Math.round(gq.price).toString(), change: (gq.changesPercentage??0).toFixed(2), label: 'Gold (USD/oz)' };
-    if (bq?.price) macro.oil     = { price: Number(bq.price).toFixed(2),     change: (bq.changesPercentage??0).toFixed(2), label: 'Brent Crude (USD/bbl)' };
-    if (pq?.price) macro.pkrusd  = { rate:  Number(pq.price).toFixed(2),     label: 'PKR per USD' };
-    if (dq?.price) macro.usdindex= { price: Number(dq.price).toFixed(2),     change: (dq.changesPercentage??0).toFixed(2), label: 'USD Index (DXY)' };
+    const pickq = (r) => Array.isArray(r) ? r[0] : r;
+
+    // Gold — first non-null result wins
+    const goldQ = [gcusdR, xauR].map(pickq).find(q => q?.price > 100);
+    if (goldQ) macro.gold = { price: Math.round(goldQ.price).toString(), change: (goldQ.changesPercentage??0).toFixed(2), label: 'Gold (USD/oz)' };
+
+    // Brent — first non-null result wins
+    const brentQ = [bzusdR, usoilR].map(pickq).find(q => q?.price > 20 && q.price < 300);
+    if (brentQ) macro.oil = { price: Number(brentQ.price).toFixed(2), change: (brentQ.changesPercentage??0).toFixed(2), label: 'Brent Crude (USD/bbl)' };
+
+    const pq = pickq(pkrR), dq = pickq(dxyR);
+    if (pq?.price) macro.pkrusd   = { rate: Number(pq.price).toFixed(2), label: 'PKR per USD' };
+    if (dq?.price) macro.usdindex = { price: Number(dq.price).toFixed(2), change: (dq.changesPercentage??0).toFixed(2), label: 'USD Index (DXY)' };
+    console.log(`Macro: Gold=${macro.gold?.price||'X'} Brent=${macro.oil?.price||'X'} PKR=${macro.pkrusd?.rate||'X'}`);
   }
 
   // 3 — PKR fallback if FMP missed it
@@ -154,11 +148,11 @@ function buildMacroContext(live, staticMacro) {
   let ctx = `=== REAL-TIME MARKET DATA (as of ${today}) ===\n\n`;
 
   // Live prices
-  ctx += 'GLOBAL MARKETS (live):\n';
-  if (live.oil)      ctx += `• Brent Crude: $${live.oil.price}/bbl (${live.oil.change > 0 ? '+' : ''}${live.oil.change}%)\n`;
-  if (live.gold)     ctx += `• Gold: $${live.gold.price}/oz (${live.gold.change > 0 ? '+' : ''}${live.gold.change}%)\n`;
-  if (live.pkrusd)   ctx += `• PKR/USD: ${live.pkrusd.rate}\n`;
-  if (live.usdindex) ctx += `• USD Index (DXY): ${live.usdindex.price} (${live.usdindex.change > 0 ? '+' : ''}${live.usdindex.change}%)\n`;
+  ctx += 'GLOBAL MARKETS (live as of today):\n';
+  if (live.oil)      ctx += `• Brent Crude: $${live.oil.price}/bbl (${Number(live.oil.change) >= 0 ? '+' : ''}${live.oil.change}% today) — KEY: impacts Pakistan energy costs, OMC margins, current account\n`;
+  if (live.gold)     ctx += `• Gold: $${live.gold.price}/oz (${Number(live.gold.change) >= 0 ? '+' : ''}${live.gold.change}% today) — signals global risk appetite\n`;
+  if (live.pkrusd)   ctx += `• PKR/USD: ${live.pkrusd.rate} — directly affects import costs, foreign debt servicing, inflation\n`;
+  if (live.usdindex) ctx += `• USD Index (DXY): ${live.usdindex.price} (${Number(live.usdindex.change) >= 0 ? '+' : ''}${live.usdindex.change}%) — stronger USD = pressure on PKR\n`;
 
   if (live.kse100) {
     const kseDir = parseFloat(live.kse100.change) >= 0 ? '▲' : '▼';
@@ -188,34 +182,16 @@ function buildMacroContext(live, staticMacro) {
   return ctx;
 }
 
-// ── FMP LIVE STOCK DATA ────────────────────────────────────────
-async function getLiveStockData(ticker) {
-  const key = process.env.FMP_API_KEY;
-  if (!key) return null;
-  try {
-    const [quote, metrics, ratios] = await Promise.all([
-      fetchJSON(`https://financialmodelingprep.com/api/v3/quote/${ticker}.KA?apikey=${key}`),
-      fetchJSON(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${ticker}.KA?apikey=${key}`),
-      fetchJSON(`https://financialmodelingprep.com/api/v3/ratios-ttm/${ticker}.KA?apikey=${key}`)
-    ]);
-    if (!quote?.[0]) return null;
-    const q = quote[0], m = metrics?.[0] || {}, r = ratios?.[0] || {};
-    const pct = v => v != null ? (v*100).toFixed(1)+'%' : 'N/A';
-    const fmt = (v,d=2) => v != null ? Number(v).toFixed(d) : 'N/A';
-    return {
-      price: fmt(q.price), change: fmt(q.changesPercentage),
-      yearHigh: fmt(q.yearHigh), yearLow: fmt(q.yearLow),
-      pe: fmt(r.peRatioTTM), pb: fmt(r.priceToBookRatioTTM),
-      ps: fmt(r.priceToSalesRatioTTM), ev_ebitda: fmt(m.enterpriseValueOverEBITDATTM),
-      roe: pct(r.returnOnEquityTTM), roa: pct(r.returnOnAssetsTTM),
-      roic: pct(m.roicTTM), grossMargin: pct(r.grossProfitMarginTTM),
-      netMargin: pct(r.netProfitMarginTTM), ebitdaMargin: pct(r.ebitdaMarginTTM),
-      debtToEquity: fmt(r.debtEquityRatioTTM), currentRatio: fmt(r.currentRatioTTM),
-      quickRatio: fmt(r.quickRatioTTM), interestCover: fmt(m.interestCoverageTTM),
-      divYield: pct(r.dividendYieldTTM), payoutRatio: pct(r.payoutRatioTTM),
-      fcfYield: pct(m.freeCashFlowYieldTTM), eps: fmt(r.epsTTM)
-    };
-  } catch(e) { return null; }
+// ── LIVE STOCK DATA — uses ratios passed from frontend (hardcoded fundamentals) ──
+// Note: FMP PSX.KA endpoints are not available on Starter plan
+// Fundamentals come from app.html DATA object, live price from PSX Terminal via frontend
+function buildStockContext(ticker, ratios) {
+  if (!ratios || !Object.keys(ratios).length) return '';
+  return `STOCK DATA FOR ${ticker}:
+Price: PKR ${ratios.price || 'N/A'} (${ratios.chg || 'N/A'}% today)
+P/E: ${ratios.pe || 'N/A'}x | P/B: ${ratios.pb || 'N/A'}x | EV/EBITDA: ${ratios.ev_ebitda || 'N/A'}x
+ROE: ${ratios.roe || 'N/A'} | Net Margin: ${ratios.netMargin || 'N/A'} | Div Yield: ${ratios.divYield || 'N/A'}
+D/E: ${ratios.debtToEquity || 'N/A'} | Current Ratio: ${ratios.currentRatio || 'N/A'}`;
 }
 
 // ── QUESTION CLASSIFIER ────────────────────────────────────────
@@ -237,6 +213,8 @@ function classifyQuestion(question, ticker) {
 // ── ANTHROPIC CALL ─────────────────────────────────────────────
 function callAnthropic(body) {
   return new Promise((resolve, reject) => {
+    // Hard timeout — Netlify kills at 26s, so we must resolve before then
+    const hardTimeout = setTimeout(() => reject(new Error('Anthropic timeout after 18s')), 18000);
     const data = JSON.stringify(body);
     const req = https.request({
       hostname: 'api.anthropic.com',
@@ -251,24 +229,20 @@ function callAnthropic(body) {
     }, res => {
       let b = '';
       res.on('data', chunk => { b += chunk; });
-      res.on('end', () => { try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
+      res.on('end', () => {
+        clearTimeout(hardTimeout);
+        try { resolve(JSON.parse(b)); } catch(e) { reject(e); }
+      });
     });
-    req.on('error', reject);
+    req.on('error', e => { clearTimeout(hardTimeout); reject(e); });
     req.write(data);
     req.end();
   });
 }
 
 // ── BUILD AI PROMPT ────────────────────────────────────────────
-function buildPrompt(type, ticker, stockData, macroContext, safeQuestion, questionType) {
-  const stockCtx = stockData
-    ? `LIVE STOCK DATA FOR ${ticker}:
-Price: PKR ${stockData.price} (${stockData.change}% today) | 52W: ${stockData.yearLow}-${stockData.yearHigh}
-Valuation: P/E ${stockData.pe}x | P/B ${stockData.pb}x | EV/EBITDA ${stockData.ev_ebitda}x
-Profitability: ROE ${stockData.roe} | ROIC ${stockData.roic} | Gross Margin ${stockData.grossMargin} | Net Margin ${stockData.netMargin}
-Health: D/E ${stockData.debtToEquity} | Current Ratio ${stockData.currentRatio} | Interest Cover ${stockData.interestCover}x
-Income: Div Yield ${stockData.divYield} | FCF Yield ${stockData.fcfYield} | EPS PKR ${stockData.eps}`
-    : '';
+function buildPrompt(type, ticker, stockCtx, macroContext, safeQuestion, questionType) {
+  // stockCtx is already a formatted string from buildStockContext()
 
   if (type === 'verdict') {
     return `${macroContext}\n\n${stockCtx}\n\nGive your sharpest analyst take on ${ticker} right now, fully informed by the live market data and news headlines above.\n\nReturn ONLY valid JSON (no markdown, no backticks, no extra text):\n{\n  "verdict": "Positive",\n  "score": 7,\n  "headline": "Positive: one razor-sharp reason max 12 words",\n  "body": "3-4 sentences. Weave stock financials + Pakistan macro today + global factors from live data above. Specific numbers. Clear Positive/Neutral/Caution case. No buy/sell advice.",\n  "insights": [\n    {"icon":"📊","value":"key metric with unit","label":"plain explanation max 10 words","color":"green"},\n    {"icon":"💰","value":"key metric with unit","label":"plain explanation max 10 words","color":"green"},\n    {"icon":"⚠️","value":"key risk","label":"plain explanation max 10 words","color":"amber"}\n  ],\n  "signals": [\n    {"label":"2-3 word signal","type":"green"},\n    {"label":"2-3 word signal","type":"amber"},\n    {"label":"2-3 word signal","type":"purple"}\n  ],\n  "scores": {"Financial health":7,"Macro environment":5,"Growth outlook":6,"Risk level":6},\n  "factors": [\n    {"icon":"🌍","title":"Factor title","detail":"2 sentences plain English explaining this factor."},\n    {"icon":"💸","title":"Factor title","detail":"2 sentences plain English explaining this factor."},\n    {"icon":"💱","title":"Factor title","detail":"2 sentences plain English explaining this factor."}\n  ],\n  "summary": "One sentence overall summary for score card."\n}`;
@@ -328,14 +302,17 @@ When any macro event occurs (petrol price change, oil spike, rate decision, curr
 Always connect macro events to their full chain of consequences across the PSX — not just the first-order obvious effect.`;
 
 // ── STATIC MACRO CONTEXT ───────────────────────────────────────
-const STATIC_MACRO = `IMF EFF programme: Active 37-month programme — energy pricing reforms, circular debt reduction, DISCO privatisation, cost-reflective tariffs are key conditions
-CPI Inflation: ~8-10% (down sharply from 38% peak — disinflation well underway)
-Current account: Near-balanced or slight surplus — FX reserves recovering to ~$15bn+
-PSDP: Recovering as fiscal space improves with lower interest burden
-PSX KSE-100: At record highs — market re-rating on macro stabilisation, rate cuts benefiting equities
-Circular debt: Rs. 2.3tn+ in power sector — still structurally problematic
-Geopolitical: Iran-US tensions elevated — Strait of Hormuz oil supply risk, affects Pakistan import costs
-Key risks: Oil price spike (geopolitical), IMF programme slippage, political instability, rupee vulnerability`;
+const STATIC_MACRO = `PAKISTAN MACRO — April 2026:
+IMF Programme: 37-month EFF active, 4th review completed successfully — $7bn programme on track, next tranche expected
+Policy Rate: SBP at 10.50% — down from 22% peak, aggressive easing cycle, rate cuts benefit equity valuations
+CPI Inflation: ~8-9% (peaked at 38% in 2023, well under control now — real rates still positive)
+PKR: Stable at 278-280/USD — FX reserves ~$11-12bn, near 3 months of import cover
+Current Account: Near-balanced — remittances strong ($30bn+ annual run rate), import compression easing
+KSE-100: At/near record highs (118,000+ range) — foreign investor return, rate cut re-rating
+Circular Debt: Rs 2.4tn power sector — DISCO privatisation pledged, still structural risk
+CPEC Phase 2: Infrastructure investment continuing, Chinese FDI positive for construction/cement
+Global Risks to Pakistan: Oil price spike (Strait of Hormuz), USD strengthening vs EM, China slowdown
+US Tariffs (April 2026): Trump tariff escalation causing global market volatility — risk-off sentiment, commodity price pressure`;
 
 // ── MAIN HANDLER ──────────────────────────────────────────────
 exports.handler = async (event) => {
@@ -365,34 +342,34 @@ exports.handler = async (event) => {
   if (!['verdict', 'question'].includes(type)) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid type' }) };
   }
-  const ALLOWED = ['OGDC','PPL','PSO','MARI','APL','HASCOL','ENGRO','HBL','LUCK','MCB','UBL','NBP','FFBL','FFC','MLCF'];
+  const ALLOWED = ['OGDC','PPL','PSO','MARI','APL','HASCOL','ENGROH','HBL','LUCK','MCB','UBL','NBP','ABL','BAFL','FFC','EFERT','MLCF','CHCC','DGKC'];
   if (!ALLOWED.includes(ticker)) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Ticker not supported' }) };
   }
 
   const safeQuestion = (question || '').replace(/[<>{}[\]\\]/g, '').slice(0, 500);
 
-  // Fetch everything in parallel
-  const [liveMacro, liveStock] = await Promise.all([
+  // Fetch macro — cap at 5s total so Claude always gets called
+  const liveMacro = await Promise.race([
     fetchLiveMacro(),
-    getLiveStockData(ticker)
+    new Promise(r => setTimeout(() => r({}), 5000))
   ]);
+  const stockCtx  = buildStockContext(ticker, ratios);
 
   const macroContext  = buildMacroContext(liveMacro, STATIC_MACRO);
   const questionType  = type === 'question' ? classifyQuestion(safeQuestion, ticker) : 'verdict';
-  const userPrompt    = buildPrompt(type, ticker, liveStock, macroContext, safeQuestion, questionType);
+  const userPrompt    = buildPrompt(type, ticker, stockCtx, macroContext, safeQuestion, questionType);
 
   try {
     const result = await callAnthropic({
       model:      'claude-sonnet-4-20250514',
-      max_tokens: 1000,
+      max_tokens: 700,
       system:     SYSTEM,
       messages:   [{ role: 'user', content: userPrompt }]
     });
 
     const responseBody = { ...result };
-    if (liveStock) responseBody.liveData = liveStock;
-    if (liveMacro)  responseBody.macroData = {
+    if (liveMacro) responseBody.macroData = {
       oil:       liveMacro.oil,
       gold:      liveMacro.gold,
       pkrusd:    liveMacro.pkrusd,
