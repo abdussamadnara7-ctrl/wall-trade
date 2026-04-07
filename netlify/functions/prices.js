@@ -137,19 +137,30 @@ async function getCrypto() {
     { sym: 'AVAXUSD',label: 'AVAX'},{ sym: 'DOTUSD', label: 'DOT' },
     { sym: 'LINKUSD',label: 'LINK'},{ sym: 'MATICUSD',label:'MATIC'}
   ];
-  // Batch in groups of 5 to avoid rate limits
+  // Try full quote first (more reliable across coins), fall back to quote-short
   const results = [];
   for (let i = 0; i < COINS.length; i += 5) {
     const batch = COINS.slice(i, i + 5);
-    const batchResults = await Promise.all(batch.map(c => fmp(`quote-short?symbol=${c.sym}`)));
+    const batchResults = await Promise.all(batch.map(c => fmp(`quote?symbol=${c.sym}`)));
     batchResults.forEach((d, j) => {
       const q = Array.isArray(d) ? d[0] : d;
-      if (!q?.price) return;
-      results.push({ symbol: batch[j].label, price: Number(q.price).toFixed(2), change: (q.changesPercentage ?? 0).toFixed(2), dir: (q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn' });
+      if (!q?.price) { console.log(`No price for ${batch[j].sym}`); return; }
+      results.push({
+        symbol:    batch[j].label,
+        price:     Number(q.price).toFixed(2),
+        change:    Number(q.changePercentage ?? q.changesPercentage ?? 0).toFixed(2),
+        dir:       (q.changePercentage ?? q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn',
+        high:      q.dayHigh,
+        low:       q.dayLow,
+        yearHigh:  q.yearHigh,
+        yearLow:   q.yearLow,
+        marketCap: q.marketCap,
+        volume:    q.volume
+      });
     });
-    if (i + 5 < COINS.length) await new Promise(r => setTimeout(r, 200));
+    if (i + 5 < COINS.length) await new Promise(r => setTimeout(r, 150));
   }
-  console.log(`Crypto: ${results.length} coins`);
+  console.log(`Crypto: ${results.length}/10 coins loaded`);
   return results;
 }
 
