@@ -87,13 +87,30 @@ async function fetchLiveMacro() {
   if (fmpKey) {
     const fmpFetch = (sym) => fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=${sym}&apikey=${fmpKey}`, {}, 3000);
 
-    // Fire ALL commodity + FX calls in parallel — fastest approach
-    const [gcusdR, xauR, bzusdR, usoilR, pkrR, dxyR] = await Promise.all([
+    // Fire ALL commodity + FX + index calls in parallel
+    const fmpFetchIdx = (sym) => fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=${encodeURIComponent(sym)}&apikey=${fmpKey}`, 3000);
+    const [gcusdR, xauR, bzusdR, usoilR, pkrR, dxyR, gspcR, vixR] = await Promise.all([
       fmpFetch('GCUSD'), fmpFetch('XAUUSD'),
       fmpFetch('BZUSD'), fmpFetch('USOIL'),
-      fmpFetch('USDPKR'), fmpFetch('DX-Y.NYB')
+      fmpFetch('USDPKR'), fmpFetch('DX-Y.NYB'),
+      fmpFetchIdx('^GSPC'), fmpFetchIdx('^VIX')
     ]);
     const pickq = (r) => Array.isArray(r) ? r[0] : r;
+
+    // S&P 500 (proper index)
+    const gspcQ = pickq(gspcR);
+    if (gspcQ?.price) macro.sp500 = { price: Number(gspcQ.price).toLocaleString(), change: (gspcQ.changePercentage??0).toFixed(2), label: 'S&P 500' };
+
+    // VIX — market fear index
+    const vixQ = pickq(vixR);
+    if (vixQ?.price) {
+      const vixVal = Number(vixQ.price).toFixed(1);
+      const vixLevel = vixQ.price > 30 ? 'EXTREME FEAR — global risk-off, EM selloff likely' :
+                       vixQ.price > 20 ? 'ELEVATED — markets nervous, caution warranted' :
+                       'LOW — markets calm, risk appetite positive';
+      macro.vix = { price: vixVal, level: vixLevel, label: 'VIX Fear Index' };
+      console.log(`VIX: ${vixVal} — ${vixLevel}`);
+    }
 
     // Gold — first non-null result wins
     const goldQ = [gcusdR, xauR].map(pickq).find(q => q?.price > 100);
@@ -117,24 +134,67 @@ async function fetchLiveMacro() {
     } catch(e) {}
   }
 
-  // 4 — KSE-100 from PSX Terminal
+  // 4 — KSE-100 from PSX Terminal + FMP news (parallel)
+  const fmpNewsUrl = fmpKey
+    ? `https://financialmodelingprep.com/stable/news/stock-latest?page=0&limit=20&apikey=${fmpKey}`
+    : null;
+  const fxNewsUrl = fmpKey
+    ? `https://financialmodelingprep.com/stable/news/forex-latest?page=0&limit=10&apikey=${fmpKey}`
+    : null;
+
+  const [kseResp, stockNewsData, fxNewsData] = await Promise.all([
+    fetchJSON('https://psxterminal.com/api/ticks/IDX/KSE100', 4000),
+    fmpNewsUrl ? fetchJSON(fmpNewsUrl, 4000) : Promise.resolve(null),
+    fxNewsUrl  ? fetchJSON(fxNewsUrl, 4000)  : Promise.resolve(null)
+  ]);
+
+  // KSE-100
   try {
-    const kseResp = await fetchJSON('https://psxterminal.com/api/ticks/IDX/KSE100', { 'Origin': 'https://psxterminal.com', 'Referer': 'https://psxterminal.com/' }, 4000);
     const d = kseResp?.data ?? kseResp;
     if (d?.price && Number(d.price) > 10000) {
-      const pct = Math.abs(Number(d.changePercent ?? 0)) < 1 ? Number(d.changePercent ?? 0) * 100 : Number(d.changePercent ?? 0);
-      macro.kse100 = { price: Math.round(Number(d.price)).toLocaleString(), change: pct.toFixed(2), label: 'KSE-100 Index' };
+      const pct = Math.abs(Number(d.changePercent ?? 0)) < 1
+        ? Number(d.changePercent ?? 0) * 100
+        : Number(d.changePercent ?? 0);
+      macro.kse100 = { price: Number(d.price).toLocaleString(), change: pct.toFixed(2), dir: pct >= 0 ? 'up' : 'dn' };
+      console.log(`KSE-100: ${macro.kse100.price} (${macro.kse100.change}%)`);
     }
   } catch(e) {}
 
-  // 5 — Static recent Pakistan news headlines (RSS blocked from Netlify servers)
-  macro.news = [
-    { title: 'SBP holds policy rate at 10.50% — easing cycle pauses amid global uncertainty', source: 'SBP', publishedAt: new Date().toISOString() },
-    { title: 'KSE-100 testing record highs on improved macro outlook and foreign inflows', source: 'PSX', publishedAt: new Date().toISOString() },
-    { title: 'Pakistan IMF programme on track — fourth review completed successfully', source: 'IMF', publishedAt: new Date().toISOString() },
-    { title: 'PKR stabilises at 278-280 per USD — FX reserves recovering to $11bn+', source: 'SBP', publishedAt: new Date().toISOString() },
-    { title: 'Brent crude volatility poses risk to Pakistan energy sector costs and subsidies', source: 'OGRA', publishedAt: new Date().toISOString() }
-  ];
+  // FMP Stock News — filter for macro-relevant headlines
+  const MACRO_KEYWORDS = ['oil', 'brent', 'crude', 'gold', 'pakistan', 'imf', 'federal reserve', 'fed rate',
+    'dollar', 'rupee', 'emerging market', 'inflation', 'rate cut', 'rate hike', 'opec', 'china',
+    'energy', 'commodity', 'interest rate', 'tariff', 'trade war', 'usd'];
+
+  if (Array.isArray(stockNewsData)) {
+    const filtered = stockNewsData
+      .filter(n => n.title && MACRO_KEYWORDS.some(kw => n.title.toLowerCase().includes(kw)))
+      .slice(0, 4)
+      .map(n => ({ title: n.title, source: n.site || n.publisher || 'Markets', description: n.text?.slice(0, 120) || '', publishedAt: n.publishedDate }));
+    macro.news.push(...filtered);
+    console.log(`Stock news: ${stockNewsData.length} total, ${filtered.length} macro-relevant`);
+  }
+
+  // FMP Forex News — gold and PKR headlines always relevant
+  if (Array.isArray(fxNewsData)) {
+    const fxFiltered = fxNewsData
+      .filter(n => n.title)
+      .slice(0, 3)
+      .map(n => ({ title: n.title, source: n.site || n.publisher || 'FX', description: n.text?.slice(0, 120) || '', publishedAt: n.publishedDate }));
+    macro.news.push(...fxFiltered);
+    console.log(`Forex news: ${fxFiltered.length} added`);
+  }
+
+  // Deduplicate news by title
+  const seen = new Set();
+  macro.news = macro.news.filter(n => {
+    const k = n.title.slice(0, 50);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  }).slice(0, 6);
+
+  console.log(`Total macro news for Claude: ${macro.news.length} headlines`);
+
 
   return macro;
 }
@@ -149,6 +209,8 @@ function buildMacroContext(live, staticMacro) {
 
   // Live prices
   ctx += 'GLOBAL MARKETS (live as of today):\n';
+  if (live.sp500)    ctx += `• S&P 500: ${live.sp500.price} (${Number(live.sp500.change) >= 0 ? '+' : ''}${live.sp500.change}%) — US market direction affects global risk appetite\n`;
+  if (live.vix)      ctx += `• VIX Fear Index: ${live.vix.price} — ${live.vix.level}\n`;
   if (live.oil)      ctx += `• Brent Crude: $${live.oil.price}/bbl (${Number(live.oil.change) >= 0 ? '+' : ''}${live.oil.change}% today) — KEY: impacts Pakistan energy costs, OMC margins, current account\n`;
   if (live.gold)     ctx += `• Gold: $${live.gold.price}/oz (${Number(live.gold.change) >= 0 ? '+' : ''}${live.gold.change}% today) — signals global risk appetite\n`;
   if (live.pkrusd)   ctx += `• PKR/USD: ${live.pkrusd.rate} — directly affects import costs, foreign debt servicing, inflation\n`;
@@ -374,6 +436,8 @@ exports.handler = async (event) => {
       gold:      liveMacro.gold,
       pkrusd:    liveMacro.pkrusd,
       kse100:    liveMacro.kse100,
+      sp500:     liveMacro.sp500,
+      vix:       liveMacro.vix,
       newsCount: liveMacro.news?.length || 0
     };
 
