@@ -85,25 +85,39 @@ exports.handler = async (event) => {
 
   // Fire all FMP calls in parallel — full quote + news + history
   const [quoteData, newsData, histData] = await Promise.all([
-    // Full quote — price, 52w range, market cap, 50/200MA
-    fetchFMP(`quote?symbol=${fmpSymbol}`),
-    // Coin-specific news headlines
-    fetchFMP(`news/crypto?symbols=${newsSymbol}&limit=5`),
-    // 30-day price history for trend
-    fetchFMP(`historical-price-eod/light?symbol=${fmpSymbol}`)
+    fetchFMP(`quote?symbol=${fmpSymbol}`, 5000),
+    fetchFMP(`news/crypto?symbols=${newsSymbol}&limit=5`, 4000),
+    fetchFMP(`historical-price-eod/light?symbol=${fmpSymbol}`, 4000)
   ]);
 
-  // Extract full quote data
+  // Extract price — handle both changePercentage and changesPercentage field names
   const q = Array.isArray(quoteData) ? quoteData[0] : quoteData;
-  if (q?.price) {
+  if (q?.price && Number(q.price) > 0) {
     price = Number(q.price).toFixed(2);
-    change = Number(q.changePercentage ?? 0).toFixed(2);
-  } else if (!price || price === '0') {
-    // Last resort fallback
-    const short = await fetchFMP(`quote-short?symbol=${fmpSymbol}`);
+    change = Number(q.changePercentage ?? q.changesPercentage ?? 0).toFixed(2);
+    console.log(`${symbol} from full quote: $${price} (${change}%)`);
+  } else if (!price || price === '0' || Number(price) === 0) {
+    // Fallback: try quote-short
+    console.log(`${symbol}: full quote empty (status may be 402 or empty array), trying quote-short...`);
+    const short = await fetchFMP(`quote-short?symbol=${fmpSymbol}`, 4000);
     const sq = Array.isArray(short) ? short[0] : short;
-    if (sq?.price) { price = Number(sq.price).toFixed(2); change = (sq.changesPercentage ?? 0).toFixed(2); }
+    if (sq?.price && Number(sq.price) > 0) {
+      price = Number(sq.price).toFixed(2);
+      change = Number(sq.changesPercentage ?? 0).toFixed(2);
+      console.log(`${symbol} from quote-short: $${price}`);
+    } else {
+      console.log(`${symbol}: both quote and quote-short failed — no price`);
+    }
   }
+
+  // Hard stop — no point calling Claude with no price
+  if (!price || price === '0' || Number(price) === 0) {
+    return { statusCode: 200, headers, body: JSON.stringify({
+      error: 'price_unavailable',
+      message: `Live price for ${symbol} is temporarily unavailable. Please try again shortly.`
+    })};
+  }
+
 
   // Build rich market data context
   const marketData = [];
@@ -166,11 +180,11 @@ Return ONLY valid JSON (no markdown, no backticks):
   "verdict": "Bullish" or "Neutral" or "Bearish",
   "score": <1-10>,
   "headline": "Sharp one-line take referencing actual data — max 12 words",
-  "body": "3 sentences. Reference actual price levels, MA position, and latest news. Pakistan-specific angle in final sentence. No advice.",
+  "body": "2-3 sentences. Price level vs MA, key news driver, Pakistan angle. No advice.",
   "insights": [
-    {"icon":"📊","value":"specific metric with number","label":"plain explanation max 10 words","color":"green"},
-    {"icon":"⚡","value":"specific metric with number","label":"plain explanation max 10 words","color":"amber"},
-    {"icon":"🌍","value":"specific metric with number","label":"plain explanation max 10 words","color":"purple"}
+    {"icon":"📊","value":"metric+number","label":"max 8 words","color":"green"},
+    {"icon":"⚡","value":"metric+number","label":"max 8 words","color":"amber"},
+    {"icon":"🌍","value":"metric+number","label":"max 8 words","color":"purple"}
   ],
   "signals": [
     {"label":"2-3 word signal","type":"green"},
@@ -183,7 +197,7 @@ Return ONLY valid JSON (no markdown, no backticks):
   try {
     const result = await callAnthropic({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 700,
+      max_tokens: 500,
       system: 'You are a concise crypto analyst with access to live market data. Return only valid JSON for verdicts, plain text for questions. Always reference specific numbers from the data provided.',
       messages: [{ role: 'user', content: prompt }]
     });
