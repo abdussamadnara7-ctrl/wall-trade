@@ -2,6 +2,7 @@ const https = require('https');
 
 function callAnthropic(body) {
   return new Promise((resolve, reject) => {
+    const hardTimeout = setTimeout(() => reject(new Error('Anthropic timeout')), 18000);
     const data = JSON.stringify(body);
     const req = https.request({
       hostname: 'api.anthropic.com',
@@ -16,21 +17,21 @@ function callAnthropic(body) {
     }, res => {
       let b = '';
       res.on('data', c => b += c);
-      res.on('end', () => { try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
+      res.on('end', () => { clearTimeout(hardTimeout); try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
     });
-    req.on('error', reject);
+    req.on('error', e => { clearTimeout(hardTimeout); reject(e); });
     req.write(data);
     req.end();
   });
 }
 
-function fetchFMP(path, timeoutMs = 7000) {
+function fetchFMP(path, timeoutMs = 4000) {
   const key = process.env.FMP_API_KEY;
-  if (!key) { console.log('NO FMP KEY'); return Promise.resolve(null); }
+  if (!key) return Promise.resolve(null);
   const sep = path.includes('?') ? '&' : '?';
   const url = `https://financialmodelingprep.com/stable/${path}${sep}apikey=${key}`;
   return new Promise((resolve) => {
-    const timer = setTimeout(() => { console.log('FMP timeout:', path); resolve(null); }, timeoutMs);
+    const timer = setTimeout(() => { console.log('FMP timeout:', path.slice(0,40)); resolve(null); }, timeoutMs);
     https.get(url, { headers: { 'Accept': 'application/json' } }, res => {
       let body = '';
       res.on('data', c => body += c);
@@ -39,13 +40,20 @@ function fetchFMP(path, timeoutMs = 7000) {
         console.log(`FMP ${path.slice(0,40)} → ${res.statusCode}`);
         try { resolve(JSON.parse(body)); } catch(e) { resolve(null); }
       });
-    }).on('error', (e) => { clearTimeout(timer); console.log('FMP error:', e.message); resolve(null); });
+    }).on('error', (e) => { clearTimeout(timer); resolve(null); });
   });
 }
 
-// Verdict cache
+// Cache
 const cache = {};
-const CACHE_TTL = 30 * 60 * 1000; // 30 mins for crypto
+const CACHE_TTL = 20 * 60 * 1000; // 20 mins
+
+// Coin → FMP news symbol map
+const COIN_NEWS_SYMBOL = {
+  BTC: 'BTCUSD', ETH: 'ETHUSD', SOL: 'SOLUSD', BNB: 'BNBUSD',
+  XRP: 'XRPUSD', ADA: 'ADAUSD', DOGE: 'DOGEUSD', DOT: 'DOTUSD',
+  AVAX: 'AVAXUSD', MATIC: 'MATICUSD'
+};
 
 exports.handler = async (event) => {
   const headers = {
@@ -56,55 +64,154 @@ exports.handler = async (event) => {
   };
 
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
-  if (!['POST','GET'].includes(event.httpMethod)) return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
-
-  console.log('crypto-analyze called:', event.httpMethod, event.body?.slice(0,100));
 
   let payload;
   try { payload = JSON.parse(event.body || '{}'); }
   catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request' }) }; }
 
-  const { symbol, price, change, question } = payload;
-  if (!symbol) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Symbol required' }) };
+  const { symbol, question } = payload;
+  let { price, change } = payload;
+  if (!symbol) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Symbol required' }) }; 
 
-  const cacheKey = question ? `q_${symbol}_${question}` : `v_${symbol}`;
+  const cacheKey = question ? `q_${symbol}_${question.slice(0,40)}` : `v_${symbol}`;
   const cached = cache[cacheKey];
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    console.log(`Cache hit: ${symbol}`);
     return { statusCode: 200, headers, body: JSON.stringify(cached.data) };
   }
 
-  // Skip historical fetch (not on Starter plan)
-  const extraData = {};
+  const fmpSymbol = `${symbol}USD`;
+  const newsSymbol = COIN_NEWS_SYMBOL[symbol] || fmpSymbol;
 
-  const PAKISTAN_CRYPTO_CONTEXT = `Pakistan context: PKR/USD ~278, SBP has not banned crypto but it's in a grey area. Many Pakistanis use crypto for remittances and as USD hedge. P2P trading is common. Binance and other exchanges accessible. Young population (median age 22) driving adoption. Global context: Fed policy, US dollar strength, Bitcoin ETF flows, and institutional adoption all affect crypto prices significantly.`;
+  // Fire all FMP calls in parallel — full quote + news + history
+  const [quoteData, newsData, histData] = await Promise.all([
+    // Full quote — price, 52w range, market cap, 50/200MA
+    fetchFMP(`quote?symbol=${fmpSymbol}`),
+    // Coin-specific news headlines
+    fetchFMP(`news/crypto?symbols=${newsSymbol}&limit=5`),
+    // 30-day price history for trend
+    fetchFMP(`historical-price-eod/light?symbol=${fmpSymbol}`)
+  ]);
+
+  // Extract full quote data
+  const q = Array.isArray(quoteData) ? quoteData[0] : quoteData;
+  if (q?.price) {
+    price = Number(q.price).toFixed(2);
+    change = Number(q.changePercentage ?? 0).toFixed(2);
+  } else if (!price || price === '0') {
+    // Last resort fallback
+    const short = await fetchFMP(`quote-short?symbol=${fmpSymbol}`);
+    const sq = Array.isArray(short) ? short[0] : short;
+    if (sq?.price) { price = Number(sq.price).toFixed(2); change = (sq.changesPercentage ?? 0).toFixed(2); }
+  }
+
+  // Build rich market data context
+  const marketData = [];
+  if (q) {
+    if (q.yearHigh)    marketData.push(`52W High: $${Number(q.yearHigh).toLocaleString()}`);
+    if (q.yearLow)     marketData.push(`52W Low: $${Number(q.yearLow).toLocaleString()}`);
+    if (q.marketCap)   marketData.push(`Market Cap: $${(q.marketCap/1e9).toFixed(1)}B`);
+    if (q.priceAvg50)  marketData.push(`50-Day MA: $${Number(q.priceAvg50).toLocaleString()} (${Number(price) > q.priceAvg50 ? 'ABOVE — bullish' : 'BELOW — bearish'})`);
+    if (q.priceAvg200) marketData.push(`200-Day MA: $${Number(q.priceAvg200).toLocaleString()} (${Number(price) > q.priceAvg200 ? 'ABOVE — long-term bullish' : 'BELOW — long-term bearish'})`);
+    if (q.volume)      marketData.push(`24h Volume: $${(q.volume/1e9).toFixed(2)}B`);
+    if (q.dayHigh && q.dayLow) marketData.push(`Today's Range: $${Number(q.dayLow).toLocaleString()} – $${Number(q.dayHigh).toLocaleString()}`);
+  }
+
+  // 30-day price change from history
+  const hist = Array.isArray(histData) ? histData : histData?.historical;
+  if (hist?.length >= 30) {
+    const price30ago = hist[29]?.close || hist[hist.length-1]?.close;
+    if (price30ago) {
+      const change30d = ((Number(price) - price30ago) / price30ago * 100).toFixed(1);
+      marketData.push(`30-Day Change: ${change30d > 0 ? '+' : ''}${change30d}%`);
+    }
+  }
+
+  // Latest news headlines
+  const newsHeadlines = [];
+  if (Array.isArray(newsData) && newsData.length) {
+    newsData.slice(0, 4).forEach(n => {
+      if (n.title) newsHeadlines.push(`[${n.publisher}] ${n.title}`);
+    });
+  }
+
+  const PAKISTAN_CONTEXT = `Pakistan investor context: PKR/USD ~278. Crypto is in a legal grey area — SBP hasn't banned it but it's unregulated. Many Pakistanis use crypto as a USD hedge against PKR depreciation and for cross-border remittances. P2P trading on Binance is most common access method. High inflation history makes Pakistani investors particularly interested in store-of-value assets.`;
 
   let prompt;
   if (question) {
-    prompt = `You are a crypto analyst. A Pakistani investor asks about ${symbol}: "${question}"\n\nCurrent price: $${price} (${change}% today)\n${extraData.weekHigh ? `7-day range: $${extraData.weekLow} - $${extraData.weekHigh}` : ''}\n\n${PAKISTAN_CRYPTO_CONTEXT}\n\nAnswer clearly in 3-4 sentences. Explain what this means for Pakistani investors. No financial advice.`;
+    prompt = `You are a crypto analyst. A Pakistani investor asks about ${symbol}: "${question}"
+
+LIVE MARKET DATA:
+Price: $${price} (${change}% today)
+${marketData.join('\n')}
+
+${newsHeadlines.length ? `LATEST NEWS:\n${newsHeadlines.join('\n')}` : ''}
+
+${PAKISTAN_CONTEXT}
+
+Answer in 3-4 sentences. Reference the live data above. Explain what it means specifically for Pakistani investors. No financial advice.`;
   } else {
-    prompt = `You are a crypto analyst covering ${symbol} for Pakistani retail investors on Wall-Trade.\n\nLIVE DATA:\nSymbol: ${symbol}\nPrice: $${price}\nChange today: ${change}%\n${extraData.weekHigh ? `7-day High: $${extraData.weekHigh}\n7-day Low: $${extraData.weekLow}` : ''}\n\n${PAKISTAN_CRYPTO_CONTEXT}\n\nReturn ONLY valid JSON:\n{\n  "verdict": "Bullish" or "Neutral" or "Bearish",\n  "score": <1-10>,\n  "headline": "Sharp one-line take max 12 words",\n  "body": "3 sentences. Current momentum, key driver, Pakistan-specific angle. No advice.",\n  "insights": [\n    {"icon":"📊","value":"metric","label":"explanation","color":"green"},\n    {"icon":"⚡","value":"metric","label":"explanation","color":"amber"},\n    {"icon":"🌍","value":"metric","label":"explanation","color":"purple"}\n  ],\n  "signals": [\n    {"label":"signal","type":"green"},\n    {"label":"signal","type":"amber"}\n  ],\n  "education": "2-3 sentences explaining what ${symbol} is and what drives its price. Plain English for a new Pakistani investor."\n}`;
+    prompt = `You are a crypto analyst for Wall-Trade — Pakistan's AI markets intelligence platform.
+
+LIVE MARKET DATA FOR ${symbol}:
+Price: $${price} (${change}% today)
+${marketData.join('\n')}
+
+${newsHeadlines.length ? `LATEST NEWS (last 24-48 hours):\n${newsHeadlines.join('\n')}\n\nFactor these developments into your analysis.` : ''}
+
+${PAKISTAN_CONTEXT}
+
+Return ONLY valid JSON (no markdown, no backticks):
+{
+  "verdict": "Bullish" or "Neutral" or "Bearish",
+  "score": <1-10>,
+  "headline": "Sharp one-line take referencing actual data — max 12 words",
+  "body": "3 sentences. Reference actual price levels, MA position, and latest news. Pakistan-specific angle in final sentence. No advice.",
+  "insights": [
+    {"icon":"📊","value":"specific metric with number","label":"plain explanation max 10 words","color":"green"},
+    {"icon":"⚡","value":"specific metric with number","label":"plain explanation max 10 words","color":"amber"},
+    {"icon":"🌍","value":"specific metric with number","label":"plain explanation max 10 words","color":"purple"}
+  ],
+  "signals": [
+    {"label":"2-3 word signal","type":"green"},
+    {"label":"2-3 word signal","type":"amber"}
+  ],
+  "education": "2 sentences. What is ${symbol} and what drives its price. Plain English for new Pakistani investor."
+}`;
   }
 
   try {
     const result = await callAnthropic({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 800,
-      system: 'You are a concise crypto analyst. Return only valid JSON for verdicts, plain text for questions.',
+      max_tokens: 700,
+      system: 'You are a concise crypto analyst with access to live market data. Return only valid JSON for verdicts, plain text for questions. Always reference specific numbers from the data provided.',
       messages: [{ role: 'user', content: prompt }]
     });
 
     const raw = result.content?.map(i => i.text || '').join('').replace(/```json|```/g, '').trim();
-    
     let response;
     if (question) {
       response = { answer: raw };
     } else {
       const m = raw.match(/\{[\s\S]*\}/);
-      response = m ? JSON.parse(m[0]) : { error: 'Parse failed', raw };
+      response = m ? JSON.parse(m[0]) : { error: 'Parse failed' };
+    }
+
+    // Attach market data for frontend use
+    if (!question && q) {
+      response.marketData = {
+        yearHigh: q.yearHigh, yearLow: q.yearLow,
+        marketCap: q.marketCap, priceAvg50: q.priceAvg50,
+        priceAvg200: q.priceAvg200, volume: q.volume,
+        dayHigh: q.dayHigh, dayLow: q.dayLow
+      };
+      if (hist?.length >= 7) response.history = hist.slice(0, 30).map(d => ({ date: d.date, close: d.close }));
     }
 
     cache[cacheKey] = { data: response, ts: Date.now() };
+    console.log(`${symbol} verdict: ${response.verdict} ${response.score}/10 | News: ${newsHeadlines.length} | MarketData: ${marketData.length} fields`);
     return { statusCode: 200, headers, body: JSON.stringify(response) };
+
   } catch(e) {
     console.error('Crypto analyze error:', e.message);
     return { statusCode: 502, headers, body: JSON.stringify({ error: 'AI unavailable' }) };
