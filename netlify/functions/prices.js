@@ -122,7 +122,7 @@ async function getBrent() {
 
 // ── S&P 500 ────────────────────────────────────────────────────
 async function getSP500() {
-  const d = await fmp('quote?symbol=SPY');
+  const d = await fmp(`quote?symbol=${encodeURIComponent('^GSPC')}`);
   const q = Array.isArray(d) ? d[0] : d;
   if (q?.price) return { price: q.price.toFixed(2), change: (q.changesPercentage ?? 0).toFixed(2), dir: (q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn' };
   return null;
