@@ -81,120 +81,141 @@ async function fetchLiveMacro() {
     fetched:  new Date().toISOString()
   };
 
-  const fmpKey = process.env.FMP_API_KEY;
-
-  // 2 — Gold, Brent, PKR/USD via FMP — try multiple symbols (GCUSD/BZUSD may not be on Starter)
-  if (fmpKey) {
-    const fmpFetch = (sym) => fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=${sym}&apikey=${fmpKey}`, {}, 3000);
-
-    // Fire ALL commodity + FX + index calls in parallel
-    const fmpFetchIdx = (sym) => fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=${encodeURIComponent(sym)}&apikey=${fmpKey}`, 3000);
-    const [gcusdR, xauR, bzusdR, usoilR, pkrR, dxyR, gspcR, vixR] = await Promise.all([
-      fmpFetch('GCUSD'), fmpFetch('XAUUSD'),
-      fmpFetch('BZUSD'), fmpFetch('USOIL'),
-      fmpFetch('USDPKR'), fmpFetch('DX-Y.NYB'),
-      fmpFetchIdx('^GSPC'), fmpFetchIdx('^VIX')
-    ]);
-    const pickq = (r) => Array.isArray(r) ? r[0] : r;
-
-    // S&P 500 (proper index)
-    const gspcQ = pickq(gspcR);
-    if (gspcQ?.price) macro.sp500 = { price: Number(gspcQ.price).toLocaleString(), change: (gspcQ.changePercentage??0).toFixed(2), label: 'S&P 500' };
-
-    // VIX — market fear index
-    const vixQ = pickq(vixR);
-    if (vixQ?.price) {
-      const vixVal = Number(vixQ.price).toFixed(1);
-      const vixLevel = vixQ.price > 30 ? 'EXTREME FEAR — global risk-off, EM selloff likely' :
-                       vixQ.price > 20 ? 'ELEVATED — markets nervous, caution warranted' :
-                       'LOW — markets calm, risk appetite positive';
-      macro.vix = { price: vixVal, level: vixLevel, label: 'VIX Fear Index' };
-      console.log(`VIX: ${vixVal} — ${vixLevel}`);
-    }
-
-    // Gold — first non-null result wins
-    const goldQ = [gcusdR, xauR].map(pickq).find(q => q?.price > 100);
-    if (goldQ) macro.gold = { price: Math.round(goldQ.price).toString(), change: (goldQ.changesPercentage??0).toFixed(2), label: 'Gold (USD/oz)' };
-
-    // Brent — first non-null result wins
-    const brentQ = [bzusdR, usoilR].map(pickq).find(q => q?.price > 20 && q.price < 300);
-    if (brentQ) macro.oil = { price: Number(brentQ.price).toFixed(2), change: (brentQ.changesPercentage??0).toFixed(2), label: 'Brent Crude (USD/bbl)' };
-
-    const pq = pickq(pkrR), dq = pickq(dxyR);
-    if (pq?.price) macro.pkrusd   = { rate: Number(pq.price).toFixed(2), label: 'PKR per USD' };
-    if (dq?.price) macro.usdindex = { price: Number(dq.price).toFixed(2), change: (dq.changesPercentage??0).toFixed(2), label: 'USD Index (DXY)' };
-    console.log(`Macro: Gold=${macro.gold?.price||'X'} Brent=${macro.oil?.price||'X'} PKR=${macro.pkrusd?.rate||'X'}`);
-  }
-
-  // 3 — PKR fallback if FMP missed it
-  if (!macro.pkrusd) {
-    try {
-      const fxData = await fetchJSON('https://open.er-api.com/v6/latest/USD', {}, 4000);
-      if (fxData?.rates?.PKR) macro.pkrusd = { rate: fxData.rates.PKR.toFixed(2), label: 'PKR per USD' };
-    } catch(e) {}
-  }
-
-  // 4 — KSE-100 from PSX Terminal + FMP news (parallel)
-  const fmpNewsUrl = fmpKey
-    ? `https://financialmodelingprep.com/stable/news/stock-latest?page=0&limit=20&apikey=${fmpKey}`
-    : null;
-  const fxNewsUrl = fmpKey
-    ? `https://financialmodelingprep.com/stable/news/forex-latest?page=0&limit=10&apikey=${fmpKey}`
-    : null;
-
-  const [kseResp, stockNewsData, fxNewsData] = await Promise.all([
-    fetchJSON('https://psxterminal.com/api/ticks/IDX/KSE100', 4000),
-    fmpNewsUrl ? fetchJSON(fmpNewsUrl, 4000) : Promise.resolve(null),
-    fxNewsUrl  ? fetchJSON(fxNewsUrl, 4000)  : Promise.resolve(null)
-  ]);
-
-  // KSE-100
   try {
-    const d = kseResp?.data ?? kseResp;
-    if (d?.price && Number(d.price) > 10000) {
-      const pct = Math.abs(Number(d.changePercent ?? 0)) < 1
-        ? Number(d.changePercent ?? 0) * 100
-        : Number(d.changePercent ?? 0);
-      macro.kse100 = { price: Number(d.price).toLocaleString(), change: pct.toFixed(2), dir: pct >= 0 ? 'up' : 'dn' };
-      console.log(`KSE-100: ${macro.kse100.price} (${macro.kse100.change}%)`);
+    // 1 — Oil price via Yahoo Finance (no key needed)
+    const oilData = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/BZ=F?interval=1d&range=2d');
+    if (oilData?.chart?.result?.[0]) {
+      const r = oilData.chart.result[0];
+      const closes = r.indicators?.quote?.[0]?.close?.filter(v => v != null);
+      if (closes?.length >= 2) {
+        const current = closes[closes.length - 1];
+        const prev    = closes[closes.length - 2];
+        macro.oil = {
+          price:  current.toFixed(2),
+          change: ((current - prev) / prev * 100).toFixed(2),
+          label:  'Brent Crude (USD/bbl)'
+        };
+      }
     }
   } catch(e) {}
 
-  // FMP Stock News — filter for macro-relevant headlines
-  const MACRO_KEYWORDS = ['oil', 'brent', 'crude', 'gold', 'pakistan', 'imf', 'federal reserve', 'fed rate',
-    'dollar', 'rupee', 'emerging market', 'inflation', 'rate cut', 'rate hike', 'opec', 'china',
-    'energy', 'commodity', 'interest rate', 'tariff', 'trade war', 'usd'];
+  try {
+    // 2 — Gold price
+    const goldData = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=2d');
+    if (goldData?.chart?.result?.[0]) {
+      const r = goldData.chart.result[0];
+      const closes = r.indicators?.quote?.[0]?.close?.filter(v => v != null);
+      if (closes?.length >= 2) {
+        const current = closes[closes.length - 1];
+        const prev    = closes[closes.length - 2];
+        macro.gold = {
+          price:  current.toFixed(0),
+          change: ((current - prev) / prev * 100).toFixed(2),
+          label:  'Gold (USD/oz)'
+        };
+      }
+    }
+  } catch(e) {}
 
-  if (Array.isArray(stockNewsData)) {
-    const filtered = stockNewsData
-      .filter(n => n.title && MACRO_KEYWORDS.some(kw => n.title.toLowerCase().includes(kw)))
-      .slice(0, 4)
-      .map(n => ({ title: n.title, source: n.site || n.publisher || 'Markets', description: n.text?.slice(0, 120) || '', publishedAt: n.publishedDate }));
-    macro.news.push(...filtered);
-    console.log(`Stock news: ${stockNewsData.length} total, ${filtered.length} macro-relevant`);
-  }
+  try {
+    // 3 — KSE-100 index (live PSX market)
+    const kseData = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/%5EKSE?interval=1d&range=2d');
+    if (kseData?.chart?.result?.[0]) {
+      const r = kseData.chart.result[0];
+      const closes = r.indicators?.quote?.[0]?.close?.filter(v => v != null);
+      if (closes?.length >= 2) {
+        const current = closes[closes.length - 1];
+        const prev    = closes[closes.length - 2];
+        macro.kse100 = {
+          price:  Math.round(current).toLocaleString(),
+          change: ((current - prev) / prev * 100).toFixed(2),
+          label:  'KSE-100 Index'
+        };
+      }
+    }
+  } catch(e) {}
 
-  // FMP Forex News — gold and PKR headlines always relevant
-  if (Array.isArray(fxNewsData)) {
-    const fxFiltered = fxNewsData
-      .filter(n => n.title)
-      .slice(0, 3)
-      .map(n => ({ title: n.title, source: n.site || n.publisher || 'FX', description: n.text?.slice(0, 120) || '', publishedAt: n.publishedDate }));
-    macro.news.push(...fxFiltered);
-    console.log(`Forex news: ${fxFiltered.length} added`);
-  }
+  try {
+    // 4 — PKR/USD via FMP
+    const fxData = await fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=USDPKR&apikey=${process.env.FMP_API_KEY}`);
+    // FMP returns [{symbol:'USDPKR', price:278.50, ...}]
+    const pkrRate = Array.isArray(fxData) ? fxData[0]?.price : fxData?.rates?.PKR;
+    if (pkrRate) {
+      macro.pkrusd = {
+        rate:  parseFloat(pkrRate).toFixed(2),
+        label: 'PKR per USD'
+      };
+    }
+  } catch(e) {}
 
-  // Deduplicate news by title
-  const seen = new Set();
-  macro.news = macro.news.filter(n => {
-    const k = n.title.slice(0, 50);
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  }).slice(0, 6);
+  try {
+    // 5 — USD Index (DXY)
+    const dxyData = await fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?interval=1d&range=2d');
+    if (dxyData?.chart?.result?.[0]) {
+      const r = dxyData.chart.result[0];
+      const closes = r.indicators?.quote?.[0]?.close?.filter(v => v != null);
+      if (closes?.length >= 2) {
+        const current = closes[closes.length - 1];
+        const prev    = closes[closes.length - 2];
+        macro.usdindex = {
+          price:  current.toFixed(2),
+          change: ((current - prev) / prev * 100).toFixed(2),
+          label:  'USD Index (DXY)'
+        };
+      }
+    }
+  } catch(e) {}
 
-  console.log(`Total macro news for Claude: ${macro.news.length} headlines`);
+  try {
+    // 6 — Pakistan financial news via free RSS feeds
+    // Only keep articles published within the last 36 hours to prevent day-old news
+    const RSS_FEEDS = [
+      { url: 'https://www.dawn.com/feeds/business-finance',         source: 'Dawn Business'   },
+      { url: 'https://www.brecorder.com/feeds/rss',                 source: 'Business Recorder' },
+      { url: 'https://www.thenews.com.pk/rss/2/29',                 source: 'The News Business' },
+      { url: 'https://tribune.com.pk/feed/business',                source: 'Tribune Business' },
+      { url: 'https://propakistani.pk/feed/',                       source: 'ProPakistani'    },
+    ];
 
+    const rssResults = await Promise.allSettled(
+      RSS_FEEDS.map(feed => fetchXML(feed.url, feed.source, 5000))
+    );
+
+    const allArticles = [];
+    rssResults.forEach(r => {
+      if (r.status === 'fulfilled' && r.value) allArticles.push(...r.value);
+    });
+
+    // Cut-off: only articles from the last 36 hours
+    const cutoff = Date.now() - (36 * 60 * 60 * 1000);
+
+    const keywords = ['economy','psx','sbp','stock','rupee','pkr','oil','imf','budget',
+      'inflation','interest rate','kse','market','investment','sector','energy','bank',
+      'cement','fertiliser','engroh','ogdc','hbl','mcb','dollar','brent','gold','fed',
+      'geopolit','iran','strait','hormuz','tariff','china','fiscal','monetary'];
+
+    const scored = allArticles
+      .filter(a => {
+        // Must have a parseable date AND be within cutoff
+        if (!a.date || a.date === 0) return true; // keep if date unparseable
+        return a.date >= cutoff;
+      })
+      .map(a => {
+        const text = (a.title + ' ' + (a.description || '')).toLowerCase();
+        const score = keywords.filter(k => text.includes(k)).length;
+        return { ...a, score };
+      })
+      .filter(a => a.score > 0)
+      .sort((a, b) => b.date - a.date || b.score - a.score); // newest first, then by relevance
+
+    macro.news = scored.slice(0, 8).map(a => ({
+      title:       a.title,
+      source:      a.source,
+      description: a.description?.slice(0, 150),
+      publishedAt: a.publishedAt,
+      date:        a.date
+    }));
+  } catch(e) {}
 
   return macro;
 }
@@ -208,13 +229,11 @@ function buildMacroContext(live, staticMacro) {
   let ctx = `=== REAL-TIME MARKET DATA (as of ${today}) ===\n\n`;
 
   // Live prices
-  ctx += 'GLOBAL MARKETS (live as of today):\n';
-  if (live.sp500)    ctx += `• S&P 500: ${live.sp500.price} (${Number(live.sp500.change) >= 0 ? '+' : ''}${live.sp500.change}%) — US market direction affects global risk appetite\n`;
-  if (live.vix)      ctx += `• VIX Fear Index: ${live.vix.price} — ${live.vix.level}\n`;
-  if (live.oil)      ctx += `• Brent Crude: $${live.oil.price}/bbl (${Number(live.oil.change) >= 0 ? '+' : ''}${live.oil.change}% today) — KEY: impacts Pakistan energy costs, OMC margins, current account\n`;
-  if (live.gold)     ctx += `• Gold: $${live.gold.price}/oz (${Number(live.gold.change) >= 0 ? '+' : ''}${live.gold.change}% today) — signals global risk appetite\n`;
-  if (live.pkrusd)   ctx += `• PKR/USD: ${live.pkrusd.rate} — directly affects import costs, foreign debt servicing, inflation\n`;
-  if (live.usdindex) ctx += `• USD Index (DXY): ${live.usdindex.price} (${Number(live.usdindex.change) >= 0 ? '+' : ''}${live.usdindex.change}%) — stronger USD = pressure on PKR\n`;
+  ctx += 'GLOBAL MARKETS (live):\n';
+  if (live.oil)      ctx += `• Brent Crude: $${live.oil.price}/bbl (${live.oil.change > 0 ? '+' : ''}${live.oil.change}%)\n`;
+  if (live.gold)     ctx += `• Gold: $${live.gold.price}/oz (${live.gold.change > 0 ? '+' : ''}${live.gold.change}%)\n`;
+  if (live.pkrusd)   ctx += `• PKR/USD: ${live.pkrusd.rate}\n`;
+  if (live.usdindex) ctx += `• USD Index (DXY): ${live.usdindex.price} (${live.usdindex.change > 0 ? '+' : ''}${live.usdindex.change}%)\n`;
 
   if (live.kse100) {
     const kseDir = parseFloat(live.kse100.change) >= 0 ? '▲' : '▼';
@@ -244,16 +263,34 @@ function buildMacroContext(live, staticMacro) {
   return ctx;
 }
 
-// ── LIVE STOCK DATA — uses ratios passed from frontend (hardcoded fundamentals) ──
-// Note: FMP PSX.KA endpoints are not available on Starter plan
-// Fundamentals come from app.html DATA object, live price from PSX Terminal via frontend
-function buildStockContext(ticker, ratios) {
-  if (!ratios || !Object.keys(ratios).length) return '';
-  return `STOCK DATA FOR ${ticker}:
-Price: PKR ${ratios.price || 'N/A'} (${ratios.chg || 'N/A'}% today)
-P/E: ${ratios.pe || 'N/A'}x | P/B: ${ratios.pb || 'N/A'}x | EV/EBITDA: ${ratios.ev_ebitda || 'N/A'}x
-ROE: ${ratios.roe || 'N/A'} | Net Margin: ${ratios.netMargin || 'N/A'} | Div Yield: ${ratios.divYield || 'N/A'}
-D/E: ${ratios.debtToEquity || 'N/A'} | Current Ratio: ${ratios.currentRatio || 'N/A'}`;
+// ── FMP LIVE STOCK DATA ────────────────────────────────────────
+async function getLiveStockData(ticker) {
+  const key = process.env.FMP_API_KEY;
+  if (!key) return null;
+  try {
+    const [quote, metrics, ratios] = await Promise.all([
+      fetchJSON(`https://financialmodelingprep.com/api/v3/quote/${ticker}.KA?apikey=${key}`),
+      fetchJSON(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${ticker}.KA?apikey=${key}`),
+      fetchJSON(`https://financialmodelingprep.com/api/v3/ratios-ttm/${ticker}.KA?apikey=${key}`)
+    ]);
+    if (!quote?.[0]) return null;
+    const q = quote[0], m = metrics?.[0] || {}, r = ratios?.[0] || {};
+    const pct = v => v != null ? (v*100).toFixed(1)+'%' : 'N/A';
+    const fmt = (v,d=2) => v != null ? Number(v).toFixed(d) : 'N/A';
+    return {
+      price: fmt(q.price), change: fmt(q.changesPercentage),
+      yearHigh: fmt(q.yearHigh), yearLow: fmt(q.yearLow),
+      pe: fmt(r.peRatioTTM), pb: fmt(r.priceToBookRatioTTM),
+      ps: fmt(r.priceToSalesRatioTTM), ev_ebitda: fmt(m.enterpriseValueOverEBITDATTM),
+      roe: pct(r.returnOnEquityTTM), roa: pct(r.returnOnAssetsTTM),
+      roic: pct(m.roicTTM), grossMargin: pct(r.grossProfitMarginTTM),
+      netMargin: pct(r.netProfitMarginTTM), ebitdaMargin: pct(r.ebitdaMarginTTM),
+      debtToEquity: fmt(r.debtEquityRatioTTM), currentRatio: fmt(r.currentRatioTTM),
+      quickRatio: fmt(r.quickRatioTTM), interestCover: fmt(m.interestCoverageTTM),
+      divYield: pct(r.dividendYieldTTM), payoutRatio: pct(r.payoutRatioTTM),
+      fcfYield: pct(m.freeCashFlowYieldTTM), eps: fmt(r.epsTTM)
+    };
+  } catch(e) { return null; }
 }
 
 // ── QUESTION CLASSIFIER ────────────────────────────────────────
@@ -275,8 +312,6 @@ function classifyQuestion(question, ticker) {
 // ── ANTHROPIC CALL ─────────────────────────────────────────────
 function callAnthropic(body) {
   return new Promise((resolve, reject) => {
-    // Hard timeout — Netlify kills at 26s, so we must resolve before then
-    const hardTimeout = setTimeout(() => reject(new Error('Anthropic timeout after 18s')), 18000);
     const data = JSON.stringify(body);
     const req = https.request({
       hostname: 'api.anthropic.com',
@@ -291,23 +326,27 @@ function callAnthropic(body) {
     }, res => {
       let b = '';
       res.on('data', chunk => { b += chunk; });
-      res.on('end', () => {
-        clearTimeout(hardTimeout);
-        try { resolve(JSON.parse(b)); } catch(e) { reject(e); }
-      });
+      res.on('end', () => { try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
     });
-    req.on('error', e => { clearTimeout(hardTimeout); reject(e); });
+    req.on('error', reject);
     req.write(data);
     req.end();
   });
 }
 
 // ── BUILD AI PROMPT ────────────────────────────────────────────
-function buildPrompt(type, ticker, stockCtx, macroContext, safeQuestion, questionType) {
-  // stockCtx is already a formatted string from buildStockContext()
+function buildPrompt(type, ticker, stockData, macroContext, safeQuestion, questionType) {
+  const stockCtx = stockData
+    ? `LIVE STOCK DATA FOR ${ticker}:
+Price: PKR ${stockData.price} (${stockData.change}% today) | 52W: ${stockData.yearLow}-${stockData.yearHigh}
+Valuation: P/E ${stockData.pe}x | P/B ${stockData.pb}x | EV/EBITDA ${stockData.ev_ebitda}x
+Profitability: ROE ${stockData.roe} | ROIC ${stockData.roic} | Gross Margin ${stockData.grossMargin} | Net Margin ${stockData.netMargin}
+Health: D/E ${stockData.debtToEquity} | Current Ratio ${stockData.currentRatio} | Interest Cover ${stockData.interestCover}x
+Income: Div Yield ${stockData.divYield} | FCF Yield ${stockData.fcfYield} | EPS PKR ${stockData.eps}`
+    : '';
 
   if (type === 'verdict') {
-    return `${macroContext}\n\n${stockCtx}\n\nGive your sharpest analyst take on ${ticker} right now, fully informed by the live market data and news headlines above.\n\nReturn ONLY valid JSON (no markdown, no backticks, no extra text):\n{\n  "verdict": "Positive",\n  "score": 7,\n  "headline": "Positive: one razor-sharp reason max 12 words",\n  "body": "3-4 sentences. Weave stock financials + Pakistan macro today + global factors from live data above. Specific numbers. Clear Positive/Neutral/Caution case. No buy/sell advice.",\n  "insights": [\n    {"icon":"📊","value":"key metric with unit","label":"plain explanation max 10 words","color":"green"},\n    {"icon":"💰","value":"key metric with unit","label":"plain explanation max 10 words","color":"green"},\n    {"icon":"⚠️","value":"key risk","label":"plain explanation max 10 words","color":"amber"}\n  ],\n  "signals": [\n    {"label":"2-3 word signal","type":"green"},\n    {"label":"2-3 word signal","type":"amber"},\n    {"label":"2-3 word signal","type":"purple"}\n  ],\n  "scores": {"Financial health":7,"Macro environment":5,"Growth outlook":6,"Risk level":6},\n  "factors": [\n    {"icon":"🌍","title":"Factor title","detail":"2 sentences plain English explaining this factor."},\n    {"icon":"💸","title":"Factor title","detail":"2 sentences plain English explaining this factor."},\n    {"icon":"💱","title":"Factor title","detail":"2 sentences plain English explaining this factor."}\n  ],\n  "summary": "One sentence overall summary for score card."\n}`;
+    return `${macroContext}\n\n${stockCtx}\n\nGive your sharpest analyst take on ${ticker} right now, fully informed by the live market data and news headlines above.\n\nReturn ONLY this JSON (no markdown):\n{"headline":"One razor-sharp sentence, max 12 words. Real analyst confidence — specific, memorable, not generic.","body":"3-4 sentences of genuine analysis. Weave together: the stock's financials, what's happening in Pakistan's economy today, any relevant global factors (oil, rates, geopolitics) from the live data above. Be specific with numbers. Make a clear case for Positive, Neutral or Caution."}`;
   }
 
   const base = `${macroContext}\n\n${stockCtx}`;
@@ -364,17 +403,14 @@ When any macro event occurs (petrol price change, oil spike, rate decision, curr
 Always connect macro events to their full chain of consequences across the PSX — not just the first-order obvious effect.`;
 
 // ── STATIC MACRO CONTEXT ───────────────────────────────────────
-const STATIC_MACRO = `PAKISTAN MACRO — April 2026:
-IMF Programme: 37-month EFF active, 4th review completed successfully — $7bn programme on track, next tranche expected
-Policy Rate: SBP at 10.50% — down from 22% peak, aggressive easing cycle, rate cuts benefit equity valuations
-CPI Inflation: ~8-9% (peaked at 38% in 2023, well under control now — real rates still positive)
-PKR: Stable at 278-280/USD — FX reserves ~$11-12bn, near 3 months of import cover
-Current Account: Near-balanced — remittances strong ($30bn+ annual run rate), import compression easing
-KSE-100: At/near record highs (118,000+ range) — foreign investor return, rate cut re-rating
-Circular Debt: Rs 2.4tn power sector — DISCO privatisation pledged, still structural risk
-CPEC Phase 2: Infrastructure investment continuing, Chinese FDI positive for construction/cement
-Global Risks to Pakistan: Oil price spike (Strait of Hormuz), USD strengthening vs EM, China slowdown
-US Tariffs (April 2026): Trump tariff escalation causing global market volatility — risk-off sentiment, commodity price pressure`;
+const STATIC_MACRO = `IMF EFF programme: Active 37-month programme — energy pricing reforms, circular debt reduction, DISCO privatisation, cost-reflective tariffs are key conditions
+CPI Inflation: ~8-10% (down sharply from 38% peak — disinflation well underway)
+Current account: Near-balanced or slight surplus — FX reserves recovering to ~$15bn+
+PSDP: Recovering as fiscal space improves with lower interest burden
+PSX KSE-100: At record highs — market re-rating on macro stabilisation, rate cuts benefiting equities
+Circular debt: Rs. 2.3tn+ in power sector — still structurally problematic
+Geopolitical: Iran-US tensions elevated — Strait of Hormuz oil supply risk, affects Pakistan import costs
+Key risks: Oil price spike (geopolitical), IMF programme slippage, political instability, rupee vulnerability`;
 
 // ── MAIN HANDLER ──────────────────────────────────────────────
 exports.handler = async (event) => {
@@ -404,40 +440,53 @@ exports.handler = async (event) => {
   if (!['verdict', 'question'].includes(type)) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid type' }) };
   }
-  const ALLOWED = ['OGDC','PPL','PSO','MARI','APL','HASCOL','ENGROH','HBL','LUCK','MCB','UBL','NBP','ABL','BAFL','FFC','EFERT','MLCF','CHCC','DGKC'];
-  if (!ALLOWED.includes(ticker)) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Ticker not supported' }) };
+
+  // Ticker aliases — ENGRO was delisted Jan 2025, replaced by ENGROH
+  const TICKER_ALIASES = { 'ENGRO': 'ENGROH' };
+  const resolvedTicker = TICKER_ALIASES[ticker] || ticker;
+
+  const ALLOWED = [
+    // Energy & Oil
+    'OGDC','PPL','PSO','MARI','APL','HASCOL','SNGP','SSGC',
+    // Banking
+    'HBL','MCB','UBL','NBP','ABL','BAFL','BAHL','MEBL','FABL',
+    // Fertiliser — ENGROH (formerly ENGRO, delisted Jan 2025 and replaced)
+    'ENGROH','EFERT','FFC','FFBL',
+    // Cement
+    'LUCK','MLCF','CHCC','DGKC','PIOC','FCCL'
+  ];
+
+  if (!ALLOWED.includes(resolvedTicker)) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: `Ticker ${ticker} not supported. Supported: OGDC, PPL, PSO, MARI, HBL, MCB, UBL, NBP, ENGROH, EFERT, FFC, LUCK, MLCF, CHCC and more.` }) };
   }
 
   const safeQuestion = (question || '').replace(/[<>{}[\]\\]/g, '').slice(0, 500);
 
-  // Fetch macro — cap at 5s total so Claude always gets called
-  const liveMacro = await Promise.race([
+  // Fetch everything in parallel — use resolvedTicker (handles ENGRO→ENGROH alias)
+  const [liveMacro, liveStock] = await Promise.all([
     fetchLiveMacro(),
-    new Promise(r => setTimeout(() => r({}), 5000))
+    getLiveStockData(resolvedTicker)
   ]);
-  const stockCtx  = buildStockContext(ticker, ratios);
 
   const macroContext  = buildMacroContext(liveMacro, STATIC_MACRO);
-  const questionType  = type === 'question' ? classifyQuestion(safeQuestion, ticker) : 'verdict';
-  const userPrompt    = buildPrompt(type, ticker, stockCtx, macroContext, safeQuestion, questionType);
+  const questionType  = type === 'question' ? classifyQuestion(safeQuestion, resolvedTicker) : 'verdict';
+  const userPrompt    = buildPrompt(type, resolvedTicker, liveStock, macroContext, safeQuestion, questionType);
 
   try {
     const result = await callAnthropic({
       model:      'claude-sonnet-4-20250514',
-      max_tokens: 700,
+      max_tokens: 1000,
       system:     SYSTEM,
       messages:   [{ role: 'user', content: userPrompt }]
     });
 
     const responseBody = { ...result };
-    if (liveMacro) responseBody.macroData = {
+    if (liveStock) responseBody.liveData = liveStock;
+    if (liveMacro)  responseBody.macroData = {
       oil:       liveMacro.oil,
       gold:      liveMacro.gold,
       pkrusd:    liveMacro.pkrusd,
       kse100:    liveMacro.kse100,
-      sp500:     liveMacro.sp500,
-      vix:       liveMacro.vix,
       newsCount: liveMacro.news?.length || 0
     };
 
