@@ -527,10 +527,10 @@ body {
 
 <!-- Bottom navigation -->
 <nav class="bnav" id="bnav">
-  <div class="bnav-item on" id="bnav-home" onclick="switchSection('home')">
+  <a href="/" class="bnav-item" id="bnav-home">
     <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
     <span>HOME</span>
-  </div>
+  </a>
   <div class="bnav-item" id="bnav-stocks" onclick="switchSection('stocks')">
     <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16 7 22 7 22 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span>STOCKS</span>
@@ -549,7 +549,7 @@ body {
 // ── AUTH ──────────────────────────────────────────────────
 // AUTH_ENFORCED = false  →  app loads for everyone (current state)
 // AUTH_ENFORCED = true   →  set this once Supabase is live and users are signing up
-const AUTH_ENFORCED = false;
+const AUTH_ENFORCED = true;
 
 (function() {
   if (!AUTH_ENFORCED) return; // gate is off — app loads normally
@@ -582,12 +582,10 @@ function signOut() {
 
 // ── POPULAR PSX STOCKS (for quick browse) ──────────────────
 const POPULAR = {
-  'Energy & Oil':    ['OGDC','PPL','PSO','MARI','APL','HASCOL','SNGP','SSGC'],
-  'Banking':         ['HBL','MCB','UBL','NBP','ABL','BAFL','BAHL','MEBL','FABL'],
-  'Fertiliser':      ['ENGROH','FFBL','FFC','EFERT'],
-  'Cement':          ['LUCK','MLCF','CHCC','DGKC','PIOC','FCCL'],
-  'Technology':      ['TRG','SYS','NETSOL'],
-  'Other':           ['PAKT','PNSC']
+  'Energy & Oil': ['OGDC','PPL','PSO','MARI','APL','HASCOL'],
+  'Banking':      ['HBL','MCB','UBL','NBP','ABL','BAFL'],
+  'Fertiliser':   ['ENGROH','FFC','EFERT'],
+  'Cement':       ['LUCK','MLCF','CHCC','DGKC']
 };
 
 const ALL_TICKERS = Object.values(POPULAR).flat();
@@ -986,18 +984,13 @@ function buildSheet() {
 
 function getShortName(ticker) {
   const names = {
-    OGDC:'Oil & Gas Dev Co',PPL:'Pakistan Petroleum',PSO:'Pakistan State Oil',
-    MARI:'Mari Petroleum',APL:'Attock Petroleum',HASCOL:'Hascol Petroleum',
-    SNGP:'Sui Northern Gas',SSGC:'Sui Southern Gas',
-    HBL:'Habib Bank Ltd',MCB:'MCB Bank',UBL:'United Bank',NBP:'National Bank',
-    ABL:'Allied Bank',BAFL:'Bank Al Falah',BAHL:'Bank Al Habib',
-    MEBL:'Meezan Bank',FABL:'Faysal Bank',
-    ENGROH:'Engro Holdings Ltd',FFBL:'Fauji Fertiliser Bin Qasim',
-    FFC:'Fauji Fertiliser Co',EFERT:'Engro Fertilisers',
-    LUCK:'Lucky Cement',MLCF:'Maple Leaf Cement',CHCC:'Cherat Cement',
-    DGKC:'D.G. Khan Cement',PIOC:'Pioneer Cement',FCCL:'Fauji Cement',
-    TRG:'TRG Pakistan',SYS:'Systems Ltd',NETSOL:'NetSol Technologies',
-    PAKT:'Pakistan Tobacco',PNSC:'Pakistan Natl Shipping'
+    OGDC:'Oil & Gas Dev Co', PPL:'Pakistan Petroleum', PSO:'Pakistan State Oil',
+    MARI:'Mari Petroleum',   APL:'Attock Petroleum',   HASCOL:'Hascol Petroleum',
+    HBL:'Habib Bank Ltd',    MCB:'MCB Bank',            UBL:'United Bank',
+    NBP:'National Bank',     ABL:'Allied Bank',         BAFL:'Bank Al Falah',
+    ENGROH:'Engro Holdings', FFC:'Fauji Fertiliser',    EFERT:'Engro Fertilisers',
+    LUCK:'Lucky Cement',     MLCF:'Maple Leaf Cement',  CHCC:'Cherat Cement',
+    DGKC:'D.G. Khan Cement'
   };
   return names[ticker] || ticker;
 }
@@ -1121,10 +1114,10 @@ function switchSection(section) {
   // Update header pill behaviour per section
   const pill = document.getElementById('hdr-pill');
 
-  if (section === 'home' || section === 'stocks') {
+  if (section === 'stocks') {
     document.getElementById('root').style.display = 'block';
     if (pill) { pill.style.display = 'flex'; pill.onclick = openSheet; }
-    if (section === 'stocks') openSheet();
+    openSheet();
   } else if (section === 'crypto') {
     document.getElementById('crypto-root').style.display = 'block';
     if (pill) pill.style.display = 'none';
@@ -1176,6 +1169,7 @@ async function renderCryptoSection() {
       body: JSON.stringify({ action: 'prices' })
     });
     const data = await res.json();
+    if (data.error) throw new Error(data.error);
     if (data.prices) {
       cryptoPrices = data.prices;
       Object.entries(data.prices).forEach(([sym, coin]) => {
@@ -1188,7 +1182,6 @@ async function renderCryptoSection() {
           chgEl.textContent = (isUp ? '+' : '') + coin.change24h;
           chgEl.className = 'coin-chg ' + (isUp ? 'up' : 'dn');
         }
-        // Load cached verdict if available
         if (verdEl && cryptoVerdictCache[sym]) {
           const v = cryptoVerdictCache[sym].verdict;
           verdEl.textContent = v;
@@ -1198,7 +1191,17 @@ async function renderCryptoSection() {
         }
       });
     }
-  } catch(e) {}
+  } catch(e) {
+    console.error('Crypto prices error:', e.message);
+    const grid = document.getElementById('crypto-grid');
+    if (grid) {
+      grid.innerHTML = `<div style="padding:32px 20px;text-align:center;color:var(--t3)">
+        <div style="font-size:28px;margin-bottom:12px">⚠️</div>
+        <div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:6px">Crypto prices unavailable</div>
+        <div style="font-size:12px;line-height:1.7">FMP data temporarily unavailable.<br>Check back shortly.</div>
+      </div>`;
+    }
+  }
 }
 
 async function openCoinDetail(sym) {
