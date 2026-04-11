@@ -280,10 +280,179 @@ function getStockData(ticker, livePrice) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AI VERDICT
+// LIVE MACRO FETCHER — same intelligence as analyze.js
+// Fetches: Brent crude, Gold, PKR/USD, DXY, KSE-100, Pakistan financial news
+// ─────────────────────────────────────────────────────────────────────────────
+function fetchJSON(url, ms = 5000) {
+  return new Promise(resolve => {
+    const t = setTimeout(() => resolve(null), ms);
+    https.get(url, { headers: { 'User-Agent': 'WallTrade/1.0', 'Accept': 'application/json' } }, res => {
+      let b = '';
+      res.on('data', c => b += c);
+      res.on('end', () => { clearTimeout(t); try { resolve(JSON.parse(b)); } catch { resolve(null); } });
+    }).on('error', () => { clearTimeout(t); resolve(null); });
+  });
+}
+
+function fetchRSS(url, source, ms = 4000) {
+  return new Promise(resolve => {
+    const t = setTimeout(() => resolve([]), ms);
+    https.get(url, { headers: { 'User-Agent': 'WallTrade/1.0', 'Accept': 'application/rss+xml,text/xml' } }, res => {
+      let b = '';
+      res.on('data', c => b += c);
+      res.on('end', () => {
+        clearTimeout(t);
+        try {
+          const items = b.match(/<item>([\s\S]*?)<\/item>/gi) || [];
+          const articles = items.slice(0, 6).map(item => {
+            const title   = (item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/i) || item.match(/<title>(.*?)<\/title>/i) || [])[1] || '';
+            const pubDate = (item.match(/<pubDate>(.*?)<\/pubDate>/i) || [])[1] || '';
+            return { title: title.trim().replace(/&amp;/g,'&').replace(/&#39;/g,"'"), source, pubDate, date: pubDate ? new Date(pubDate).getTime() : 0 };
+          }).filter(a => a.title);
+          resolve(articles);
+        } catch { resolve([]); }
+      });
+    }).on('error', () => { clearTimeout(t); resolve([]); });
+  });
+}
+
+async function fetchLiveMacro(ticker) {
+  const fmpKey = process.env.FMP_API_KEY;
+  const macro  = { oil: null, gold: null, pkrusd: null, dxy: null, kse100: null, sp500: null, news: [] };
+
+  // Fire all market data in parallel — cap total time at 5s
+  const [oilR, goldR, fxR, dxyR, kseR, sp500R] = await Promise.all([
+    fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/BZ=F?interval=1d&range=2d'),
+    fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=2d'),
+    fmpKey ? fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=USDPKR&apikey=${fmpKey}`) : Promise.resolve(null),
+    fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?interval=1d&range=2d'),
+    fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/%5EKSE?interval=1d&range=2d'),
+    fmpKey ? fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=%5EGSPC&apikey=${fmpKey}`) : Promise.resolve(null),
+  ]);
+
+  // Extract 2-day chart data helper
+  const chartChange = (r) => {
+    const closes = r?.chart?.result?.[0]?.indicators?.quote?.[0]?.close?.filter(v => v != null);
+    if (!closes || closes.length < 2) return null;
+    const cur = closes[closes.length - 1], prev = closes[closes.length - 2];
+    return { price: cur.toFixed(2), change: ((cur - prev) / prev * 100).toFixed(2) };
+  };
+
+  const oil = chartChange(oilR);
+  if (oil) macro.oil = { ...oil, label: 'Brent Crude (USD/bbl)' };
+
+  const gold = chartChange(goldR);
+  if (gold) macro.gold = { price: Math.round(parseFloat(gold.price)).toString(), change: gold.change, label: 'Gold (USD/oz)' };
+
+  const dxy = chartChange(dxyR);
+  if (dxy) macro.dxy = { ...dxy, label: 'USD Index (DXY)' };
+
+  const kse = chartChange(kseR);
+  if (kse) macro.kse100 = { price: Math.round(parseFloat(kse.price)).toLocaleString(), change: kse.change, label: 'KSE-100 Index' };
+
+  // PKR/USD from FMP
+  const pkrArr = Array.isArray(fxR) ? fxR : null;
+  if (pkrArr?.[0]?.price) macro.pkrusd = { rate: parseFloat(pkrArr[0].price).toFixed(2), label: 'PKR per USD' };
+
+  // S&P 500 from FMP
+  const sp = Array.isArray(sp500R) ? sp500R[0] : null;
+  if (sp?.price) macro.sp500 = { price: sp.price.toFixed(2), change: (sp.changesPercentage || 0).toFixed(2), label: 'S&P 500' };
+
+  // Pakistan financial news — top RSS feeds, filtered for relevance to this ticker
+  const SECTOR_KEYWORDS = {
+    'Energy':      ['oil','brent','crude','ogdc','ppl','pso','mari','energy','petroleum','circular debt','OMC'],
+    'Banking':     ['bank','hbl','mcb','ubl','nbp','abl','bafl','interest rate','sbp','npl','casa','nim'],
+    'Fertiliser':  ['fertiliser','fertilizer','urea','engro','engroh','efert','ffc','gas','agriculture'],
+    'Cement':      ['cement','luck','mlcf','chcc','dgkc','construction','cpec','psdp','coal'],
+    'Conglomerate':['engro','engroh','lng','fertiliser','polymer','diversified'],
+  };
+  const fb = FUNDAMENTALS[ticker];
+  const sectorKeys = SECTOR_KEYWORDS[fb?.sector] || [];
+  const generalKeys = ['psx','kse','imf','pakistan economy','sbp','rupee','pkr','inflation','dollar','budget','fiscal','monetary policy'];
+  const allKeys = [...new Set([...sectorKeys, ...generalKeys])];
+
+  try {
+    const feeds = [
+      { url: 'https://www.brecorder.com/feeds/rss',     source: 'Business Recorder' },
+      { url: 'https://www.dawn.com/feeds/business-finance', source: 'Dawn Business' },
+      { url: 'https://tribune.com.pk/feed/business',    source: 'Tribune Business' },
+      { url: 'https://www.thenews.com.pk/rss/2/29',     source: 'The News Business' },
+    ];
+    const rssResults = await Promise.allSettled(feeds.map(f => fetchRSS(f.url, f.source, 4000)));
+    const cutoff = Date.now() - (48 * 60 * 60 * 1000); // last 48h
+    const all = rssResults.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+    macro.news = all
+      .filter(a => !a.date || a.date >= cutoff)
+      .map(a => ({ ...a, score: allKeys.filter(k => a.title.toLowerCase().includes(k)).length }))
+      .filter(a => a.score > 0)
+      .sort((a, b) => b.date - a.date || b.score - a.score)
+      .slice(0, 6)
+      .map(a => ({ title: a.title, source: a.source, pubDate: a.pubDate }));
+  } catch(e) {}
+
+  return macro;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DCF VALUATION — simplified intrinsic value estimate
+// Uses: EPS, current price, risk-free rate, sector growth assumptions
+// ─────────────────────────────────────────────────────────────────────────────
+function computeDCF(s, livePrice) {
+  try {
+    const eps = parseFloat(s.eps);
+    const price = parseFloat(livePrice?.price || 0);
+    if (!eps || eps <= 0 || !price) return null;
+
+    // Sector growth and discount rate assumptions (Pakistan-calibrated)
+    const SECTOR_PARAMS = {
+      'Energy':      { growthYr1_5: 0.06, growthYr6_10: 0.04, terminalGrowth: 0.03, discountRate: 0.14 },
+      'Banking':     { growthYr1_5: 0.12, growthYr6_10: 0.08, terminalGrowth: 0.04, discountRate: 0.15 },
+      'Fertiliser':  { growthYr1_5: 0.07, growthYr6_10: 0.05, terminalGrowth: 0.03, discountRate: 0.14 },
+      'Cement':      { growthYr1_5: 0.08, growthYr6_10: 0.05, terminalGrowth: 0.03, discountRate: 0.15 },
+      'Conglomerate':{ growthYr1_5: 0.08, growthYr6_10: 0.05, terminalGrowth: 0.03, discountRate: 0.14 },
+    };
+
+    const params = SECTOR_PARAMS[s.sector] || { growthYr1_5: 0.07, growthYr6_10: 0.05, terminalGrowth: 0.03, discountRate: 0.15 };
+    const { growthYr1_5, growthYr6_10, terminalGrowth, discountRate } = params;
+
+    // Project EPS for 10 years, discount back
+    let pv = 0;
+    let currentEPS = eps;
+    for (let yr = 1; yr <= 10; yr++) {
+      const g = yr <= 5 ? growthYr1_5 : growthYr6_10;
+      currentEPS *= (1 + g);
+      // Payout ratio assumption: 60% for banks, 70% for others
+      const payout = s.sector === 'Banking' ? 0.60 : 0.70;
+      const dividend = currentEPS * payout;
+      pv += dividend / Math.pow(1 + discountRate, yr);
+    }
+
+    // Terminal value (Gordon Growth Model on year 10 EPS)
+    const terminalEPS = currentEPS * (1 + terminalGrowth);
+    const terminalValue = (terminalEPS * 0.70) / (discountRate - terminalGrowth);
+    const pvTerminal = terminalValue / Math.pow(1 + discountRate, 10);
+
+    const intrinsicValue = pv + pvTerminal;
+    const upside = ((intrinsicValue - price) / price * 100).toFixed(1);
+    const marginOfSafety = ((intrinsicValue - price) / intrinsicValue * 100).toFixed(1);
+
+    return {
+      intrinsicValue: intrinsicValue.toFixed(2),
+      currentPrice:   price.toFixed(2),
+      upside:         upside + '%',
+      marginOfSafety: marginOfSafety + '%',
+      verdict:        parseFloat(upside) > 20 ? 'Undervalued' : parseFloat(upside) < -20 ? 'Overvalued' : 'Fair Value',
+      assumptions:    `Disc rate ${(discountRate*100).toFixed(0)}%, growth ${(growthYr1_5*100).toFixed(0)}%→${(growthYr6_10*100).toFixed(0)}%→${(terminalGrowth*100).toFixed(0)}% terminal`,
+      note:           'Simplified DDM/DCF — directional estimate only'
+    };
+  } catch(e) { return null; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI VERDICT — JP Morgan grade prompt with full intelligence
 // ─────────────────────────────────────────────────────────────────────────────
 const verdictCache = {};
-const CACHE_TTL    = 6 * 60 * 60 * 1000; // 6h
+const CACHE_TTL    = 4 * 60 * 60 * 1000; // 4h — refresh more often for fresher news
 
 function getCached(ticker) {
   const c = verdictCache[ticker];
@@ -292,57 +461,77 @@ function getCached(ticker) {
 }
 function setCache(ticker, data) { verdictCache[ticker] = { data, ts: Date.now() }; }
 
-async function generateVerdict(s, macroContext) {
+async function generateVerdict(s, livePrice, macroContext) {
   const cached = getCached(s.ticker);
   if (cached) return { ...cached, cached: true };
 
-  // Build banking-specific extra context so AI doesn't misread D/E
+  const today = new Date().toLocaleDateString('en-PK', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  // Banking-specific context so AI correctly interprets high D/E
   const bankExtra = s.casaRatio
-    ? `\nBANKING METRICS:\n• CASA Ratio: ${s.casaRatio} (higher = cheaper funding cost)\n• NPL Ratio: ${s.nplRatio} (lower = better loan quality)\n• IMPORTANT: D/E of ${s.debtToEquity} is deposit-funded — NORMAL for banks. Do NOT treat as leverage risk. Assess banks on CASA, NPL, ROE instead.`
+    ? `\nBANKING-SPECIFIC METRICS:\n• CASA Ratio: ${s.casaRatio} (higher = lower cost of funds = structural advantage)\n• NPL Ratio: ${s.nplRatio} (lower = cleaner loan book)\n• IMPORTANT: D/E of ${s.debtToEquity} is DEPOSIT-FUNDED — entirely normal for banks. Do NOT treat as leverage risk. Evaluate banks on CASA, NPL, ROE, NIM instead.`
     : '';
 
-  const prompt = `You are a sharp, data-driven PSX equity analyst for Wall-Trade — Pakistan's AI markets intelligence platform for retail investors.
+  const prompt = `You are a senior equity analyst at a tier-1 investment bank covering Pakistani equities. Today is ${today}. Your task is to produce a complete, publishable research note on ${s.ticker}.
 
-LIVE STOCK DATA: ${s.ticker} — ${s.name}
-Sector: ${s.sector} | Industry: ${s.industry}
-Live Price: PKR ${s.price ?? 'unavailable'} (${s.change ?? '?'}% today) | Source: ${s.priceSource}
-Day Range: PKR ${s.low ?? '?'} – ${s.high ?? '?'} | Volume: ${s.volume ?? 'N/A'}
-52-Week Range: PKR ${s.week52Low ?? '?'} – ${s.week52High ?? '?'}
-Market Cap: ${s.marketCap}
+═══════════════════════════════════════════════
+SECTION 1 — REAL-TIME MARKET INTELLIGENCE
+═══════════════════════════════════════════════
+${macroContext}
 
-VALUATION (FY2025):
-P/E: ${s.pe}x | P/B: ${s.pb}x | EPS: PKR ${s.eps} | Dividend Yield: ${s.divYield}
+═══════════════════════════════════════════════
+SECTION 2 — STOCK FUNDAMENTALS (FY2025)
+═══════════════════════════════════════════════
+Company: ${s.name} | Sector: ${s.sector} | Industry: ${s.industry}
+Live Price: PKR ${livePrice?.price || 'unavailable'} (${livePrice?.change || '??'}% today)
+
+VALUATION MULTIPLES:
+• P/E Ratio: ${s.pe}x | P/B Ratio: ${s.pb}x | EPS: PKR ${s.eps} | Dividend Yield: ${s.divYield}
 
 PROFITABILITY:
-ROE: ${s.roe} | ROA: ${s.roa} | Gross Margin: ${s.grossMargin} | Operating Margin: ${s.opMargin} | Net Margin: ${s.netMargin}
-EBITDA: ${s.ebitda} | Revenue: ${s.revenue}
+• ROE: ${s.roe} | ROA: ${s.roa} | Gross Margin: ${s.grossMargin} | Operating Margin: ${s.opMargin} | Net Margin: ${s.netMargin}
+• EBITDA: ${s.ebitda} | Revenue: ${s.revenue}
 
 FINANCIAL HEALTH:
-Current Ratio: ${s.currentRatio} | D/E: ${s.debtToEquity} | Total Cash: ${s.totalCash} | Total Debt: ${s.totalDebt} | FCF: ${s.fcf}${bankExtra}
+• Current Ratio: ${s.currentRatio} | D/E Ratio: ${s.debtToEquity} | FCF: ${s.fcf}
+• Total Cash: ${s.totalCash} | Total Debt: ${s.totalDebt}${bankExtra}
 
-GROWTH:
-Revenue Growth: ${s.revenueGrowth} | Earnings Growth: ${s.earningsGrowth} | Beta: ${s.beta}
+GROWTH TRAJECTORY:
+• Revenue Growth (YoY): ${s.revenueGrowth} | Earnings Growth (YoY): ${s.earningsGrowth} | Beta: ${s.beta}
 
 ANALYST NOTE: ${s.week52Note}
 
-PAKISTAN MACRO:
-${macroContext}
+═══════════════════════════════════════════════
+SECTION 3 — DCF VALUATION MODEL
+═══════════════════════════════════════════════
+${macroContext.includes('DCF') ? macroContext : ''}
+[PROVIDED SEPARATELY IN dcf FIELD — REFERENCE IT IN YOUR ANALYSIS]
 
-Return ONLY valid JSON (no markdown, no backticks, no extra text):
+═══════════════════════════════════════════════
+ANALYST FRAMEWORK — APPLY THIS RIGOROUSLY:
+═══════════════════════════════════════════════
+1. MACRO-TO-STOCK LINKAGE: What do today's oil price, PKR rate, and interest rates mean specifically for THIS company's margins, revenues, and debt costs?
+2. NEWS IMPACT: Have any of the news headlines above moved the needle for this stock? Be specific.
+3. VALUATION: Is the stock cheap or expensive vs its own history and sector peers? Use P/E, P/B, and DCF together.
+4. SECTOR DYNAMICS: What is the #1 sector-specific risk/opportunity right now (e.g. circular debt for energy, rate cuts for banks, gas curtailment for fertiliser, coal costs for cement)?
+5. VERDICT: Give a clear, opinionated call. Positive/Neutral/Caution. No wishy-washy "it depends".
+
+Return ONLY valid JSON (no markdown, no backticks):
 {
   "verdict": "Positive" or "Neutral" or "Caution",
   "score": <integer 1-10>,
-  "headline": "<verdict word>: <one sharp specific reason, max 12 words>",
-  "body": "<130-160 words. Confident verdict. Use REAL numbers from data. 2-3 key drivers. One clear risk. Pakistan macro connection. Short mobile-friendly paragraphs. No jargon. No buy/sell advice.>",
+  "headline": "<verdict>: <one sharp conviction statement, max 14 words — make it memorable>",
+  "body": "<180-220 words. This is your research note body. Paragraph 1: state verdict and 2 strongest drivers with real numbers. Paragraph 2: connect to today's live macro data — oil, PKR, rates, any news. Paragraph 3: valuation assessment using multiples and DCF direction. One clear risk that could invalidate the thesis. No jargon. No buy/sell advice. Write for an intelligent Pakistani retail investor.>",
   "insights": [
-    {"icon":"<emoji>","value":"<specific metric>","label":"<plain English, max 10 words>","color":"green"},
-    {"icon":"<emoji>","value":"<specific metric>","label":"<plain English, max 10 words>","color":"green"},
-    {"icon":"<emoji>","value":"<risk or caution>","label":"<plain English, max 10 words>","color":"amber"}
+    {"icon":"<emoji>","value":"<specific metric with number>","label":"<what this means in plain English, max 10 words>","color":"green"},
+    {"icon":"<emoji>","value":"<specific metric with number>","label":"<what this means in plain English, max 10 words>","color":"green"},
+    {"icon":"<emoji>","value":"<risk or concern>","label":"<what this means in plain English, max 10 words>","color":"amber"}
   ],
   "signals": [
-    {"label":"<2-3 word signal>","type":"green"},
-    {"label":"<2-3 word signal>","type":"amber"},
-    {"label":"<2-3 word signal>","type":"purple"}
+    {"label":"<2-4 word signal>","type":"green"},
+    {"label":"<2-4 word signal>","type":"amber"},
+    {"label":"<2-4 word signal>","type":"purple"},
+    {"label":"<2-4 word signal>","type":"green"}
   ],
   "scores": {
     "Financial health": <1-10>,
@@ -351,24 +540,24 @@ Return ONLY valid JSON (no markdown, no backticks, no extra text):
     "Risk level": <1-10>
   },
   "factors": [
-    {"icon":"<emoji>","title":"<max 6 words>","detail":"<2-3 sentences. Specific, Pakistan-relevant, plain English.>"},
-    {"icon":"<emoji>","title":"<max 6 words>","detail":"<2-3 sentences. Specific, Pakistan-relevant, plain English.>"},
-    {"icon":"<emoji>","title":"<max 6 words>","detail":"<2-3 sentences. Specific, Pakistan-relevant, plain English.>"}
+    {"icon":"<emoji>","title":"<factor title, max 6 words>","detail":"<3 sentences. Specific numbers. Pakistan-relevant cause and effect. Plain English.>"},
+    {"icon":"<emoji>","title":"<factor title, max 6 words>","detail":"<3 sentences. Specific numbers. Pakistan-relevant cause and effect. Plain English.>"},
+    {"icon":"<emoji>","title":"<factor title, max 6 words>","detail":"<3 sentences. Specific numbers. Pakistan-relevant cause and effect. Plain English.>"}
   ],
-  "summary": "<one concise sentence overall verdict>"
+  "summary": "<one sharp conviction sentence for the scorecard>"
 }`;
 
   try {
     const result = await callAnthropic({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 1200,
-      system: 'You are a senior PSX equity analyst. Base analysis strictly on the numbers provided. Be specific — cite the actual figures. Return only valid JSON.',
+      max_tokens: 1600,
+      system: `You are a senior PSX equity analyst at a tier-1 investment bank. Your analysis is read by institutional and retail investors. You are known for being specific, data-driven, and willing to take a clear stance. You always use the actual numbers from the data provided. You connect macro events to stock-level impact with precision. Return only valid JSON.`,
       messages: [{ role: 'user', content: prompt }]
     });
 
     const raw = result.content?.map(i => i.text || '').join('').replace(/```json|```/g, '').trim();
     const m = raw.match(/\{[\s\S]*\}/);
-    if (!m) throw new Error('No JSON found in response');
+    if (!m) throw new Error('No JSON in response');
     const verdict = JSON.parse(m[0]);
     setCache(s.ticker, verdict);
     console.log(`[stock] ${s.ticker} verdict: ${verdict.verdict} (${verdict.score}/10)`);
@@ -396,15 +585,14 @@ exports.handler = async (event) => {
   try { payload = JSON.parse(event.body); }
   catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request body' }) }; }
 
-  const { ticker, macroContext, livePrice } = payload;
+  const { ticker, livePrice } = payload;
   if (!ticker || typeof ticker !== 'string' || ticker.length > 10) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid ticker symbol' }) };
   }
 
   const cleanTicker = ticker.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  console.log(`[stock] Request: ${cleanTicker} | livePrice: ${livePrice?.price || 'none passed'}`);
+  console.log(`[stock] Request: ${cleanTicker} | livePrice: ${livePrice?.price || 'none'}`);
 
-  // livePrice is passed from the frontend — already fetched by prices.js
   const stockData = getStockData(cleanTicker, livePrice || null);
   if (!stockData) {
     return {
@@ -414,12 +602,67 @@ exports.handler = async (event) => {
     };
   }
 
-  // Generate AI verdict — works even if price is null (will note in analysis)
-  const verdict = await generateVerdict(stockData, macroContext || '');
+  // Run macro fetch and DCF in parallel — cap at 6s so we always call Claude
+  const [liveMacro] = await Promise.all([
+    Promise.race([fetchLiveMacro(cleanTicker), new Promise(r => setTimeout(() => r({}), 6000))])
+  ]);
+
+  // Build macro context string
+  const today = new Date().toLocaleDateString('en-PK', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  let macroCtx = `LIVE MARKET DATA (${today}):\n`;
+  if (liveMacro.oil)    macroCtx += `• Brent Crude: $${liveMacro.oil.price}/bbl (${Number(liveMacro.oil.change)>=0?'+':''}${liveMacro.oil.change}% today) — KEY: impacts Pakistan current account, OMC margins, E&P revenues\n`;
+  if (liveMacro.gold)   macroCtx += `• Gold: $${liveMacro.gold.price}/oz (${Number(liveMacro.gold.change)>=0?'+':''}${liveMacro.gold.change}%) — global risk sentiment indicator\n`;
+  if (liveMacro.pkrusd) macroCtx += `• PKR/USD: ${liveMacro.pkrusd.rate} — directly affects import costs, dollar-linked revenues, inflation\n`;
+  if (liveMacro.dxy)    macroCtx += `• USD Index (DXY): ${liveMacro.dxy.price} (${Number(liveMacro.dxy.change)>=0?'+':''}${liveMacro.dxy.change}%) — stronger DXY pressures PKR and all EM currencies\n`;
+  if (liveMacro.kse100) macroCtx += `• KSE-100: ${liveMacro.kse100.price} pts (${Number(liveMacro.kse100.change)>=0?'▲ ':' '} ${Math.abs(liveMacro.kse100.change)}% — ${Number(liveMacro.kse100.change)>=0?'positive':'negative'} market sentiment today)\n`;
+  if (liveMacro.sp500)  macroCtx += `• S&P 500: ${liveMacro.sp500.price} (${Number(liveMacro.sp500.change)>=0?'+':''}${liveMacro.sp500.change}%) — global risk-on/off signal\n`;
+
+  macroCtx += `\nPAKISTAN MACRO (current):\n`;
+  macroCtx += `• SBP Policy Rate: 10.50% p.a. | Ceiling: 11.50% | Floor: 9.50%\n`;
+  macroCtx += `• Rate trajectory: Aggressive easing from 22% peak — 11 cuts since mid-2024\n`;
+  macroCtx += `• IMF EFF: Active 37-month programme — energy reform, circular debt, DISCO privatisation\n`;
+  macroCtx += `• CPI: ~8-9% (down from 38% peak) — disinflation well established\n`;
+  macroCtx += `• Current account: Near-balanced, FX reserves ~$15bn+\n`;
+  macroCtx += `• Circular debt: Rs. 2.3tn+ power sector — structural risk\n`;
+  macroCtx += `• PSX KSE-100: Near record highs — rate cut re-rating cycle\n`;
+
+  if (liveMacro.news?.length) {
+    macroCtx += `\nLATEST NEWS HEADLINES (last 48 hours — MUST factor into analysis):\n`;
+    liveMacro.news.forEach((n, i) => {
+      macroCtx += `${i+1}. [${n.source}] ${n.title}\n`;
+    });
+  }
+
+  // DCF valuation
+  const dcf = computeDCF(stockData, livePrice);
+  if (dcf) {
+    macroCtx += `\nDCF VALUATION MODEL (simplified DDM/DCF):\n`;
+    macroCtx += `• Intrinsic Value Estimate: PKR ${dcf.intrinsicValue}\n`;
+    macroCtx += `• Current Price: PKR ${dcf.currentPrice}\n`;
+    macroCtx += `• Implied Upside/Downside: ${dcf.upside}\n`;
+    macroCtx += `• Margin of Safety: ${dcf.marginOfSafety}\n`;
+    macroCtx += `• DCF Signal: ${dcf.verdict}\n`;
+    macroCtx += `• Assumptions: ${dcf.assumptions}\n`;
+    macroCtx += `• Note: ${dcf.note}\n`;
+  }
+
+  const verdict = await generateVerdict(stockData, livePrice, macroCtx);
 
   return {
     statusCode: 200,
     headers,
-    body: JSON.stringify({ stockData, verdict, timestamp: new Date().toISOString() })
+    body: JSON.stringify({
+      stockData,
+      verdict,
+      dcf: dcf || null,
+      macroSnapshot: {
+        oil:    liveMacro.oil,
+        gold:   liveMacro.gold,
+        pkrusd: liveMacro.pkrusd,
+        kse100: liveMacro.kse100,
+        newsCount: liveMacro.news?.length || 0
+      },
+      timestamp: new Date().toISOString()
+    })
   };
 };
