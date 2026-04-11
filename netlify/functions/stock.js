@@ -199,18 +199,7 @@ const FUNDAMENTALS = {
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
-function get(url, extraHeaders = {}, ms = 6000) {
-  return new Promise(resolve => {
-    const t = setTimeout(() => { console.log(`TIMEOUT: ${url.slice(0,70)}`); resolve(null); }, ms);
-    https.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Accept': 'application/json', ...extraHeaders }
-    }, res => {
-      let b = '';
-      res.on('data', c => b += c);
-      res.on('end', () => { clearTimeout(t); try { resolve(JSON.parse(b)); } catch { resolve(null); } });
-    }).on('error', () => { clearTimeout(t); resolve(null); });
-  });
-}
+
 
 function callAnthropic(body) {
   return new Promise((resolve, reject) => {
@@ -233,59 +222,23 @@ function callAnthropic(body) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FETCH LIVE PRICE — PSX Terminal (primary)
+// BUILD STOCK DATA
+// Price comes from the frontend (already fetched by prices.js via PSX Terminal)
+// This avoids duplicate PSX Terminal calls and the IP-blocking issue on stock detail
 // ─────────────────────────────────────────────────────────────────────────────
-const PSX_H = { 'Origin': 'https://psxterminal.com', 'Referer': 'https://psxterminal.com/' };
-
-async function getLivePrice(ticker) {
-  try {
-    const resp = await get(`https://psxterminal.com/api/ticks/REG/${ticker}`, PSX_H, 6000);
-    if (!resp) return null;
-    const d = resp.data ?? resp;
-    if (!d || !d.price) return null;
-
-    const pNum   = Number(d.price);
-    if (isNaN(pNum) || pNum <= 0) return null;
-
-    const rawPct = d.changePercent ?? d.change ?? 0;
-    const pct    = Math.abs(Number(rawPct)) < 1 ? Number(rawPct) * 100 : Number(rawPct);
-
-    return {
-      price:      pNum.toFixed(2),
-      change:     pct.toFixed(2),
-      changeAmt:  d.ldcp ? (pNum - Number(d.ldcp)).toFixed(2) : null,
-      dir:        pct >= 0 ? 'up' : 'dn',
-      high:       d.high      ? Number(d.high).toFixed(2)      : null,
-      low:        d.low       ? Number(d.low).toFixed(2)       : null,
-      prevClose:  d.ldcp      ? Number(d.ldcp).toFixed(2)      : null,
-      volume:     d.volume    ? Number(d.volume).toLocaleString() : null,
-      week52High: d.yearHigh  ? Number(d.yearHigh).toFixed(2)  : null,
-      week52Low:  d.yearLow   ? Number(d.yearLow).toFixed(2)   : null,
-    };
-  } catch(e) {
-    console.error(`PSX Terminal error for ${ticker}:`, e.message);
-    return null;
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// BUILD FULL STOCK DATA
-// ─────────────────────────────────────────────────────────────────────────────
-async function getStockData(ticker) {
+function getStockData(ticker, livePrice) {
   const fb = FUNDAMENTALS[ticker];
-  const lp = await getLivePrice(ticker);
+  if (!fb) return null;   // unknown ticker — not in our 19
 
-  if (!lp && !fb) return null;
-
-  if (!lp) console.log(`${ticker}: PSX Terminal returned no price — fundamentals-only response`);
+  const lp = livePrice;   // passed from app.html livePrices{}
 
   return {
     ticker,
-    name:     fb?.name     || ticker,
-    sector:   fb?.sector   || 'Pakistan Stock Exchange',
-    industry: fb?.industry || '',
+    name:     fb.name,
+    sector:   fb.sector,
+    industry: fb.industry,
 
-    // Live price (PSX Terminal)
+    // Live price (passed from frontend — fetched by prices.js)
     price:      lp?.price     || null,
     change:     lp?.change    || null,
     changeAmt:  lp?.changeAmt || null,
@@ -296,32 +249,32 @@ async function getStockData(ticker) {
     volume:     lp?.volume    || null,
     week52High: lp?.week52High || null,
     week52Low:  lp?.week52Low  || null,
-    priceSource: lp ? 'PSX Terminal (live)' : 'unavailable',
+    priceSource: lp?.price ? 'PSX Terminal via prices.js' : 'unavailable',
 
-    // Fundamentals (Wall-Trade research database, FY2025)
-    pe:            fb?.pe            || 'N/A',
-    pb:            fb?.pb            || 'N/A',
-    eps:           fb?.eps           || 'N/A',
-    divYield:      fb?.divYield      || 'N/A',
-    roe:           fb?.roe           || 'N/A',
-    roa:           fb?.roa           || 'N/A',
-    grossMargin:   fb?.grossMargin   || 'N/A',
-    netMargin:     fb?.netMargin     || 'N/A',
-    opMargin:      fb?.opMargin      || 'N/A',
-    ebitda:        fb?.ebitda        || 'N/A',
-    revenue:       fb?.revenue       || 'N/A',
-    currentRatio:  fb?.currentRatio  || 'N/A',
-    debtToEquity:  fb?.debtToEquity  || 'N/A',
-    totalDebt:     fb?.totalDebt     || 'N/A',
-    totalCash:     fb?.totalCash     || 'N/A',
-    fcf:           fb?.fcf           || 'N/A',
-    marketCap:     fb?.marketCap     || 'N/A',
-    revenueGrowth: fb?.revenueGrowth || 'N/A',
-    earningsGrowth:fb?.earningsGrowth || 'N/A',
-    beta:          fb?.beta          || 'N/A',
-    casaRatio:     fb?.casaRatio     || null,
-    nplRatio:      fb?.nplRatio      || null,
-    week52Note:    fb?.week52Note    || '',
+    // Fundamentals (Wall-Trade research DB, FY2025)
+    pe:            fb.pe            || 'N/A',
+    pb:            fb.pb            || 'N/A',
+    eps:           fb.eps           || 'N/A',
+    divYield:      fb.divYield      || 'N/A',
+    roe:           fb.roe           || 'N/A',
+    roa:           fb.roa           || 'N/A',
+    grossMargin:   fb.grossMargin   || 'N/A',
+    netMargin:     fb.netMargin     || 'N/A',
+    opMargin:      fb.opMargin      || 'N/A',
+    ebitda:        fb.ebitda        || 'N/A',
+    revenue:       fb.revenue       || 'N/A',
+    currentRatio:  fb.currentRatio  || 'N/A',
+    debtToEquity:  fb.debtToEquity  || 'N/A',
+    totalDebt:     fb.totalDebt     || 'N/A',
+    totalCash:     fb.totalCash     || 'N/A',
+    fcf:           fb.fcf           || 'N/A',
+    marketCap:     fb.marketCap     || 'N/A',
+    revenueGrowth: fb.revenueGrowth || 'N/A',
+    earningsGrowth:fb.earningsGrowth || 'N/A',
+    beta:          fb.beta          || 'N/A',
+    casaRatio:     fb.casaRatio     || null,
+    nplRatio:      fb.nplRatio      || null,
+    week52Note:    fb.week52Note    || '',
     fundamentalsSource: 'Wall-Trade Research Database (FY2025)',
   };
 }
@@ -443,31 +396,25 @@ exports.handler = async (event) => {
   try { payload = JSON.parse(event.body); }
   catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request body' }) }; }
 
-  const { ticker, macroContext } = payload;
+  const { ticker, macroContext, livePrice } = payload;
   if (!ticker || typeof ticker !== 'string' || ticker.length > 10) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid ticker symbol' }) };
   }
 
   const cleanTicker = ticker.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  console.log(`[stock] Request: ${cleanTicker}`);
+  console.log(`[stock] Request: ${cleanTicker} | livePrice: ${livePrice?.price || 'none passed'}`);
 
-  const stockData = await getStockData(cleanTicker);
+  // livePrice is passed from the frontend — already fetched by prices.js
+  const stockData = getStockData(cleanTicker, livePrice || null);
   if (!stockData) {
     return {
       statusCode: 404,
       headers,
-      body: JSON.stringify({ error: `${cleanTicker} not found. Check the symbol or try: OGDC, HBL, MCB, LUCK, ENGROH, FFC` })
+      body: JSON.stringify({ error: `${cleanTicker} is not in our coverage universe. Available: OGDC, PPL, PSO, MARI, APL, HASCOL, HBL, MCB, UBL, NBP, ABL, BAFL, ENGROH, FFC, EFERT, LUCK, MLCF, CHCC, DGKC` })
     };
   }
 
-  if (!stockData.price) {
-    return {
-      statusCode: 503,
-      headers,
-      body: JSON.stringify({ error: `Live price for ${cleanTicker} is temporarily unavailable. PSX Terminal may be closed or blocking. Try again shortly.` })
-    };
-  }
-
+  // Generate AI verdict — works even if price is null (will note in analysis)
   const verdict = await generateVerdict(stockData, macroContext || '');
 
   return {
