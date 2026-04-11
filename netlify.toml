@@ -2,6 +2,9 @@
   publish = "public"
   functions = "netlify/functions"
 
+[functions]
+  node_bundler = "zisi"
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -10,34 +13,32 @@
     Cache-Control = "no-cache, no-store, must-revalidate"
 
 [[headers]]
-  for = "/.netlify/functions/crypto"
+  for = "/.netlify/functions/*"
   [headers.values]
-    Cache-Control = "public, max-age=60"
-
-[[headers]]
-  for = "/.netlify/functions/forex"
-  [headers.values]
-    Cache-Control = "public, max-age=120"
+    Cache-Control = "no-cache"
 
 [[headers]]
   for = "/.netlify/functions/prices"
   [headers.values]
     Cache-Control = "public, max-age=30"
 
-[functions]
-  node_bundler = "esbuild"
-
-[functions."stock"]
+[functions."analyze"]
   timeout = 26
 
-[functions."analyze"]
+[functions."stock"]
   timeout = 26
 
 [functions."crypto"]
   timeout = 26
 
-[functions."forex"]
+[functions."prices"]
+  timeout = 26
+
+[functions."news"]
   timeout = 15
 
 [functions."auth"]
   timeout = 10
+
+[functions."forex"]
+  timeout = 15
