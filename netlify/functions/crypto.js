@@ -58,12 +58,27 @@ function callAnthropic(body) {
 
 // ── FETCH ALL 10 COIN PRICES VIA FMP ─────────────────────────
 async function getAllCoinPrices(key) {
-  // Build comma-separated FMP symbols
+  // Try batch first (comma-separated) — works on FMP Starter for crypto
   const symbols = Object.values(COINS).map(c => c.fmp).join(',');
-  const data = await fetchJSON(
+  let data = await fetchJSON(
     `https://financialmodelingprep.com/stable/quote?symbol=${symbols}&apikey=${key}`
   );
-  if (!Array.isArray(data)) return null;
+
+  // If batch fails (empty or error), try individual fetches
+  if (!Array.isArray(data) || data.length === 0) {
+    console.log('Crypto batch fetch failed — trying individual fetches');
+    const individual = await Promise.all(
+      Object.values(COINS).map(c =>
+        fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=${c.fmp}&apikey=${key}`)
+      )
+    );
+    data = individual.flat().filter(Boolean);
+  }
+
+  if (!Array.isArray(data) || data.length === 0) {
+    console.log('All FMP crypto fetches failed');
+    return null;
+  }
 
   const result = {};
   data.forEach(q => {
