@@ -361,7 +361,7 @@ body { padding-bottom: 80px; }
   <div>
     <div class="hdr-logo g-logo">Wall-Trade<span>AI Markets Intelligence</span></div>
   </div>
-  <button class="hdr-btn" id="hdr-auth-btn" onclick="openAuth()">Get Access ↗</button>
+  <button class="hdr-btn" id="hdr-auth-btn" onclick="openAuth()">Sign Up Free ↗</button>
 </header>
 
 <!-- TICKER -->
@@ -776,16 +776,27 @@ document.getElementById('auth-overlay').addEventListener('click', function(e) {
   if (e.target === this) closeAuth();
 });
 
-// Update header button if already logged in AND on Netlify (not local)
-const isNetlifyEnv = window.location.protocol !== 'file:' && window.location.hostname !== 'localhost';
-if (localStorage.getItem('wt_token') && isNetlifyEnv) {
-  const btn = document.getElementById('hdr-auth-btn');
-  if (btn) { btn.textContent = 'Open App ↗'; }
-}
+// Auth state handled in auto-open block below
 
 if (window.location.search.includes('signin=1')) {
   openAuth(); switchAuthTab('signin');
 }
+
+// ── AUTO-OPEN AUTH ON HOMEPAGE LOAD ────────────────────────
+// If user has no token, show auth modal immediately
+// This makes the homepage an auth gate, not a marketing page
+(function() {
+  const token = localStorage.getItem('wt_token');
+  const isNetlify = window.location.protocol !== 'file:' && window.location.hostname !== 'localhost';
+  if (!token) {
+    // Small delay so the page renders first, then modal appears
+    setTimeout(() => openAuth(), 300);
+  } else if (isNetlify) {
+    // Already logged in on Netlify — update button
+    const btn = document.getElementById('hdr-auth-btn');
+    if (btn) btn.textContent = 'Open App ↗';
+  }
+})();
 
 // ── LOAD PRICES ───────────────────────────────────────────
 async function loadPrices() {
