@@ -274,6 +274,7 @@ body {
 .ai-loading { display: flex; align-items: center; gap: 10px; color: var(--t3); font-size: 12px; }
 .spin { width: 13px; height: 13px; border: 1.5px solid var(--rim2); border-top-color: var(--pb); border-radius: 50%; flex-shrink: 0; animation: rot .7s linear infinite; }
 @keyframes rot { to { transform: rotate(360deg); } }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── SIGNALS ── */
 .sigs-wrap { padding: 20px 20px 24px; }
@@ -531,7 +532,7 @@ body {
     <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
     <span>HOME</span>
   </a>
-  <div class="bnav-item" id="bnav-stocks" onclick="switchSection('stocks')">
+  <div class="bnav-item on" id="bnav-stocks" onclick="switchSection('stocks')">
     <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16 7 22 7 22 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span>STOCKS</span>
   </div>
@@ -846,26 +847,28 @@ async function loadStock(ticker) {
   renderLoading(ticker);
 
   try {
+    // Pass any live price we already have from prices.js so stock.js
+    // doesn't need to call PSX Terminal again (which gets blocked)
+    const lp = livePrices[ticker] || null;
+
     const res = await fetch('/.netlify/functions/stock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker, macroContext: MACRO })
+      body: JSON.stringify({ ticker, macroContext: MACRO, livePrice: lp })
     });
 
-    if (res.status === 404) {
-      const err = await res.json();
-      renderError(ticker, err.error);
+    const data = await res.json();
+
+    if (!res.ok) {
+      renderError(ticker, data.error || 'Could not load ' + ticker + '. Please try again.');
       return;
     }
 
-    if (!res.ok) throw new Error('Server error');
-
-    const data = await res.json();
-    stockCache[ticker]  = data.stockData;
+    stockCache[ticker]   = data.stockData;
     verdictCache[ticker] = data.verdict;
     render(ticker, data.stockData, data.verdict);
 
-    // Update pill with latest price
+    // Keep livePrices in sync
     if (data.stockData?.price) {
       livePrices[ticker] = {
         price:  data.stockData.price,
@@ -874,7 +877,8 @@ async function loadStock(ticker) {
       };
     }
   } catch(e) {
-    renderError(ticker, 'Unable to connect. Please check your connection and try again.');
+    console.error('loadStock error:', e);
+    renderError(ticker, 'Unable to connect. Please check your internet connection and try again.');
   }
 }
 
@@ -1087,9 +1091,13 @@ function updateSheetTitle() {
 
 // ── INIT ──────────────────────────────────────────────────
 updateSheetTitle();
-fetchLivePrices();
+// Fetch live prices first, then load default stock so price is available immediately
+fetchLivePrices().then(() => {
+  select('OGDC');
+}).catch(() => {
+  select('OGDC'); // load anyway even if prices fail
+});
 setInterval(fetchLivePrices, 60000);
-select('OGDC');
 
 // ── SECTION SWITCHING ────────────────────────────────────
 let currentSection = 'home';
@@ -1106,7 +1114,8 @@ function switchSection(section) {
   document.getElementById('forex-root').style.display  = 'none';
   document.getElementById('ticker-bar').style.display  = 'block';
 
-  ['home','stocks','crypto','forex'].forEach(s => {
+  // bnav-home is an <a> link — skip it in the section toggle loop
+  ['stocks','crypto','forex'].forEach(s => {
     const el = document.getElementById('bnav-' + s);
     if (el) el.classList.toggle('on', s === section);
   });
