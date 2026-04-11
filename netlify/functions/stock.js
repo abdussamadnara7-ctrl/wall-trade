@@ -9,7 +9,7 @@ const https = require('https');
 // ─────────────────────────────────────────────────────────────────────────────
 const FUNDAMENTALS = {
 
-  // ── ENERGY & OIL ─────────────────────────────────────────────────
+  // ── ENERGY & OIL (6) ─────────────────────────────────────────
   OGDC: {
     name:'Oil & Gas Development Co.', sector:'Energy', industry:'Exploration & Production',
     pe:'8.1', pb:'1.1', eps:'38.40', divYield:'6.2%',
@@ -64,26 +64,8 @@ const FUNDAMENTALS = {
     revenueGrowth:'-2.6%', earningsGrowth:'-19%', beta:'1.42',
     week52Note:'Under active debt restructuring — highly speculative, risk of total loss'
   },
-  SNGP: {
-    name:'Sui Northern Gas Pipelines', sector:'Energy', industry:'Gas Distribution',
-    pe:'8.4', pb:'1.2', eps:'22.40', divYield:'4.2%',
-    roe:'14.8%', roa:'5.2%', grossMargin:'12.4%', netMargin:'6.8%', opMargin:'9.6%',
-    ebitda:'Rs. 28B', revenue:'Rs. 412B', currentRatio:'1.42', debtToEquity:'0.68',
-    totalDebt:'Rs. 38B', totalCash:'Rs. 12B', fcf:'Rs. 8.4B', marketCap:'Rs. 62B',
-    revenueGrowth:'4.2%', earningsGrowth:'3.8%', beta:'0.88',
-    week52Note:'State gas distributor — gas curtailment and regulatory risk'
-  },
-  SSGC: {
-    name:'Sui Southern Gas Co.', sector:'Energy', industry:'Gas Distribution',
-    pe:'N/A', pb:'0.9', eps:'-8.20', divYield:'N/A',
-    roe:'-12.4%', roa:'-4.2%', grossMargin:'4.8%', netMargin:'-3.8%', opMargin:'-2.4%',
-    ebitda:'Rs. -2.8B', revenue:'Rs. 216B', currentRatio:'0.72', debtToEquity:'2.84',
-    totalDebt:'Rs. 62B', totalCash:'Rs. 4.2B', fcf:'Rs. -6.8B', marketCap:'Rs. 18B',
-    revenueGrowth:'-1.8%', earningsGrowth:'-28%', beta:'1.28',
-    week52Note:'Loss-making — gas theft losses and severe circular debt exposure'
-  },
 
-  // ── BANKING ───────────────────────────────────────────────────────
+  // ── BANKING (6) ───────────────────────────────────────────────
   HBL: {
     name:'Habib Bank Ltd', sector:'Banking', industry:'Commercial Banking',
     pe:'7.6', pb:'1.2', eps:'44.20', divYield:'7.0%',
@@ -92,7 +74,7 @@ const FUNDAMENTALS = {
     totalDebt:'Rs. 146B', totalCash:'Rs. 292B', fcf:'Rs. 44B', marketCap:'Rs. 256B',
     revenueGrowth:'18.8%', earningsGrowth:'14.6%', beta:'0.87',
     casaRatio:'78%', nplRatio:'6.1%',
-    week52Note:'Pakistan\'s largest bank — rate cut cycle is a NIM headwind'
+    week52Note:'Pakistan's largest bank — rate cut cycle is a NIM headwind'
   },
   MCB: {
     name:'MCB Bank Ltd', sector:'Banking', industry:'Commercial Banking',
@@ -144,38 +126,8 @@ const FUNDAMENTALS = {
     casaRatio:'71%', nplRatio:'5.2%',
     week52Note:'Fast-growing Islamic banking franchise — Abu Dhabi Group backing'
   },
-  BAHL: {
-    name:'Bank Al Habib Ltd', sector:'Banking', industry:'Commercial Banking',
-    pe:'9.2', pb:'1.8', eps:'22.80', divYield:'5.4%',
-    roe:'20.2%', roa:'1.8%', grossMargin:'N/A', netMargin:'28.4%', opMargin:'52.4%',
-    ebitda:'Rs. 38B', revenue:'Rs. 134B', currentRatio:'N/A', debtToEquity:'7.6',
-    totalDebt:'Rs. 58B', totalCash:'Rs. 106B', fcf:'Rs. 22B', marketCap:'Rs. 144B',
-    revenueGrowth:'16.4%', earningsGrowth:'13.2%', beta:'0.78',
-    casaRatio:'84%', nplRatio:'3.4%',
-    week52Note:'Premium quality mid-tier bank — 84% CASA and lowest NPLs'
-  },
-  MEBL: {
-    name:'Meezan Bank Ltd', sector:'Banking', industry:'Islamic Banking',
-    pe:'12.4', pb:'3.2', eps:'28.60', divYield:'4.2%',
-    roe:'28.4%', roa:'2.4%', grossMargin:'N/A', netMargin:'32.6%', opMargin:'58.4%',
-    ebitda:'Rs. 52B', revenue:'Rs. 160B', currentRatio:'N/A', debtToEquity:'8.2',
-    totalDebt:'Rs. 72B', totalCash:'Rs. 148B', fcf:'Rs. 32B', marketCap:'Rs. 232B',
-    revenueGrowth:'22.4%', earningsGrowth:'18.6%', beta:'0.82',
-    casaRatio:'88%', nplRatio:'2.8%',
-    week52Note:'Pakistan\'s largest Islamic bank — fastest growth and highest ROE'
-  },
-  FABL: {
-    name:'Faysal Bank Ltd', sector:'Banking', industry:'Islamic Banking',
-    pe:'8.4', pb:'1.2', eps:'12.40', divYield:'5.8%',
-    roe:'14.8%', roa:'1.1%', grossMargin:'N/A', netMargin:'22.4%', opMargin:'44.8%',
-    ebitda:'Rs. 24B', revenue:'Rs. 108B', currentRatio:'N/A', debtToEquity:'8.8',
-    totalDebt:'Rs. 48B', totalCash:'Rs. 88B', fcf:'Rs. 12B', marketCap:'Rs. 56B',
-    revenueGrowth:'14.8%', earningsGrowth:'10.4%', beta:'0.96',
-    casaRatio:'68%', nplRatio:'5.8%',
-    week52Note:'Converting to full Islamic banking — transition costs weigh on near-term'
-  },
 
-  // ── FERTILISER ───────────────────────────────────────────────────
+  // ── FERTILISER (3) ────────────────────────────────────────────
   ENGROH: {
     name:'Engro Holdings Ltd', sector:'Conglomerate', industry:'Diversified Industrials',
     pe:'14.4', pb:'1.6', eps:'18.80', divYield:'4.9%',
@@ -203,17 +155,8 @@ const FUNDAMENTALS = {
     revenueGrowth:'12.8%', earningsGrowth:'10.4%', beta:'0.81',
     week52Note:'Enven plant is world-class — gas curtailment is the primary risk'
   },
-  FFBL: {
-    name:'Fauji Fertiliser Bin Qasim', sector:'Fertiliser', industry:'Chemicals',
-    pe:'N/A', pb:'1.4', eps:'-2.80', divYield:'N/A',
-    roe:'-4.9%', roa:'-1.8%', grossMargin:'8.2%', netMargin:'-1.9%', opMargin:'-2.6%',
-    ebitda:'Rs. -1.3B', revenue:'Rs. 70B', currentRatio:'0.81', debtToEquity:'2.92',
-    totalDebt:'Rs. 17B', totalCash:'Rs. 2.4B', fcf:'Rs. -4.4B', marketCap:'Rs. 15B',
-    revenueGrowth:'-4.4%', earningsGrowth:'-25%', beta:'1.28',
-    week52Note:'Loss-making — high debt burden and weak phosphate operations'
-  },
 
-  // ── CEMENT ───────────────────────────────────────────────────────
+  // ── CEMENT (4) ────────────────────────────────────────────────
   LUCK: {
     name:'Lucky Cement Ltd', sector:'Cement', industry:'Building Materials',
     pe:'13.8', pb:'1.8', eps:'64.40', divYield:'3.9%',
@@ -249,74 +192,8 @@ const FUNDAMENTALS = {
     totalDebt:'Rs. 19B', totalCash:'Rs. 1.9B', fcf:'Rs. -2.9B', marketCap:'Rs. 19B',
     revenueGrowth:'-2.6%', earningsGrowth:'-29%', beta:'1.31',
     week52Note:'Nishat Group quality at distressed price — debt paydown is the story'
-  },
-  PIOC: {
-    name:'Pioneer Cement', sector:'Cement', industry:'Building Materials',
-    pe:'16.4', pb:'2.0', eps:'6.80', divYield:'2.1%',
-    roe:'12.4%', roa:'5.8%', grossMargin:'16.2%', netMargin:'8.8%', opMargin:'12.8%',
-    ebitda:'Rs. 5.8B', revenue:'Rs. 38B', currentRatio:'1.38', debtToEquity:'0.54',
-    totalDebt:'Rs. 5.2B', totalCash:'Rs. 2.2B', fcf:'Rs. 1.6B', marketCap:'Rs. 22B',
-    revenueGrowth:'7.2%', earningsGrowth:'-3.8%', beta:'1.19',
-    week52Note:'North Pakistan market — KPK and northern infrastructure exposure'
-  },
-  FCCL: {
-    name:'Fauji Cement Co.', sector:'Cement', industry:'Building Materials',
-    pe:'14.8', pb:'1.4', eps:'3.60', divYield:'2.8%',
-    roe:'9.4%', roa:'4.8%', grossMargin:'15.6%', netMargin:'7.8%', opMargin:'11.4%',
-    ebitda:'Rs. 6.2B', revenue:'Rs. 48B', currentRatio:'1.42', debtToEquity:'0.62',
-    totalDebt:'Rs. 7.4B', totalCash:'Rs. 2.8B', fcf:'Rs. 1.4B', marketCap:'Rs. 24B',
-    revenueGrowth:'6.8%', earningsGrowth:'-2.8%', beta:'1.14',
-    week52Note:'Fauji Group conservative operator — steady but not exciting'
-  },
-
-  // ── TECHNOLOGY ───────────────────────────────────────────────────
-  TRG: {
-    name:'TRG Pakistan Ltd', sector:'Technology', industry:'IT Services & BPO',
-    pe:'22.4', pb:'3.8', eps:'8.40', divYield:'1.2%',
-    roe:'16.8%', roa:'8.2%', grossMargin:'28.4%', netMargin:'12.4%', opMargin:'16.8%',
-    ebitda:'Rs. 12B', revenue:'Rs. 98B', currentRatio:'2.42', debtToEquity:'0.28',
-    totalDebt:'Rs. 4.2B', totalCash:'Rs. 8.4B', fcf:'Rs. 6.8B', marketCap:'Rs. 84B',
-    revenueGrowth:'14.2%', earningsGrowth:'12.4%', beta:'1.38',
-    week52Note:'USD-earning BPO via Ibex — dollar revenues hedge PKR depreciation'
-  },
-  SYS: {
-    name:'Systems Ltd', sector:'Technology', industry:'Software & IT Services',
-    pe:'18.6', pb:'4.2', eps:'18.20', divYield:'1.8%',
-    roe:'22.6%', roa:'14.2%', grossMargin:'32.4%', netMargin:'16.8%', opMargin:'22.4%',
-    ebitda:'Rs. 8.4B', revenue:'Rs. 50B', currentRatio:'3.12', debtToEquity:'0.08',
-    totalDebt:'Rs. 0.8B', totalCash:'Rs. 6.8B', fcf:'Rs. 5.6B', marketCap:'Rs. 62B',
-    revenueGrowth:'18.6%', earningsGrowth:'16.4%', beta:'1.24',
-    week52Note:'Best software co on PSX — near-zero debt with USD export revenues'
-  },
-  NETSOL: {
-    name:'NetSol Technologies', sector:'Technology', industry:'Software & IT Services',
-    pe:'24.2', pb:'3.6', eps:'12.60', divYield:'1.4%',
-    roe:'14.8%', roa:'9.6%', grossMargin:'48.4%', netMargin:'18.4%', opMargin:'24.6%',
-    ebitda:'Rs. 4.8B', revenue:'Rs. 26B', currentRatio:'2.84', debtToEquity:'0.06',
-    totalDebt:'Rs. 0.4B', totalCash:'Rs. 4.2B', fcf:'Rs. 3.4B', marketCap:'Rs. 28B',
-    revenueGrowth:'12.4%', earningsGrowth:'10.8%', beta:'1.18',
-    week52Note:'Global fleet management software — APAC and Europe focused'
-  },
-
-  // ── OTHER ────────────────────────────────────────────────────────
-  PAKT: {
-    name:'Pakistan Tobacco Co.', sector:'Consumer Staples', industry:'Tobacco',
-    pe:'16.8', pb:'12.4', eps:'88.40', divYield:'3.8%',
-    roe:'74.2%', roa:'22.4%', grossMargin:'38.4%', netMargin:'14.2%', opMargin:'20.8%',
-    ebitda:'Rs. 28B', revenue:'Rs. 198B', currentRatio:'0.82', debtToEquity:'1.24',
-    totalDebt:'Rs. 12B', totalCash:'Rs. 6.4B', fcf:'Rs. 12B', marketCap:'Rs. 124B',
-    revenueGrowth:'8.4%', earningsGrowth:'6.2%', beta:'0.68',
-    week52Note:'BAT subsidiary cash machine — high excise duty risk from government'
-  },
-  PNSC: {
-    name:'Pakistan National Shipping', sector:'Transportation', industry:'Marine Shipping',
-    pe:'8.4', pb:'1.2', eps:'42.40', divYield:'6.2%',
-    roe:'14.2%', roa:'8.6%', grossMargin:'24.8%', netMargin:'16.4%', opMargin:'20.2%',
-    ebitda:'Rs. 6.8B', revenue:'Rs. 42B', currentRatio:'2.84', debtToEquity:'0.18',
-    totalDebt:'Rs. 2.8B', totalCash:'Rs. 8.4B', fcf:'Rs. 4.8B', marketCap:'Rs. 38B',
-    revenueGrowth:'6.4%', earningsGrowth:'5.2%', beta:'0.82',
-    week52Note:'State-owned fleet — import recovery and remittance flows positive'
   }
+
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
