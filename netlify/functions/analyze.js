@@ -167,55 +167,77 @@ async function fetchLiveMacro() {
   } catch(e) {}
 
   try {
-    // 6 — Pakistan financial news via free RSS feeds
-    // Only keep articles published within the last 36 hours to prevent day-old news
-    const RSS_FEEDS = [
-      { url: 'https://www.dawn.com/feeds/business-finance',         source: 'Dawn Business'   },
-      { url: 'https://www.brecorder.com/feeds/rss',                 source: 'Business Recorder' },
-      { url: 'https://www.thenews.com.pk/rss/2/29',                 source: 'The News Business' },
-      { url: 'https://tribune.com.pk/feed/business',                source: 'Tribune Business' },
-      { url: 'https://propakistani.pk/feed/',                       source: 'ProPakistani'    },
-    ];
+    // 6 — Pakistan financial news via NewsData.io
+    // Free tier: 200 requests/day, no IP blocking unlike RSS feeds
+    const ndKey = process.env.NEWSDATA_API_KEY;
+    if (ndKey) {
+      const newsUrl = `https://newsdata.io/api/1/news?apikey=${ndKey}&country=pk&category=business&language=en&size=10`;
+      const newsData = await fetchJSON(newsUrl, 6000);
 
-    const rssResults = await Promise.allSettled(
-      RSS_FEEDS.map(feed => fetchXML(feed.url, feed.source, 5000))
-    );
+      if (newsData?.results?.length) {
+        const cutoff = Date.now() - (36 * 60 * 60 * 1000);
+        const keywords = ['economy','psx','sbp','stock','rupee','pkr','oil','imf','budget',
+          'inflation','interest rate','kse','market','investment','sector','energy','bank',
+          'cement','fertiliser','engroh','ogdc','hbl','mcb','dollar','brent','gold','fed',
+          'geopolit','iran','strait','hormuz','tariff','china','fiscal','monetary','karachi',
+          'lahore','pakistan','exchange','rupee','rate','finance','shares','equit'];
 
-    const allArticles = [];
-    rssResults.forEach(r => {
-      if (r.status === 'fulfilled' && r.value) allArticles.push(...r.value);
-    });
+        const scored = newsData.results
+          .map(a => {
+            const pubMs = a.pubDate ? new Date(a.pubDate).getTime() : 0;
+            const text = ((a.title || '') + ' ' + (a.description || '')).toLowerCase();
+            const score = keywords.filter(k => text.includes(k)).length;
+            return {
+              title:       a.title || '',
+              source:      a.source_id || a.source_name || 'Pakistan News',
+              description: (a.description || '').slice(0, 150),
+              publishedAt: a.pubDate || '',
+              date:        pubMs,
+              score
+            };
+          })
+          .filter(a => a.title && a.score > 0)
+          .sort((a, b) => b.date - a.date);
 
-    // Cut-off: only articles from the last 36 hours
-    const cutoff = Date.now() - (36 * 60 * 60 * 1000);
+        macro.news = scored.slice(0, 8);
+      }
+    }
 
-    const keywords = ['economy','psx','sbp','stock','rupee','pkr','oil','imf','budget',
-      'inflation','interest rate','kse','market','investment','sector','energy','bank',
-      'cement','fertiliser','engroh','ogdc','hbl','mcb','dollar','brent','gold','fed',
-      'geopolit','iran','strait','hormuz','tariff','china','fiscal','monetary'];
+    // Fallback to RSS if no NewsData key or no results
+    if (!macro.news?.length) {
+      const RSS_FEEDS = [
+        { url: 'https://www.dawn.com/feeds/business-finance', source: 'Dawn Business' },
+        { url: 'https://www.thenews.com.pk/rss/2/29',         source: 'The News Business' },
+      ];
+      const rssResults = await Promise.allSettled(
+        RSS_FEEDS.map(feed => fetchXML(feed.url, feed.source, 5000))
+      );
+      const allArticles = [];
+      rssResults.forEach(r => { if (r.status === 'fulfilled' && r.value) allArticles.push(...r.value); });
 
-    const scored = allArticles
-      .filter(a => {
-        // Must have a parseable date AND be within cutoff
-        if (!a.date || a.date === 0) return true; // keep if date unparseable
-        return a.date >= cutoff;
-      })
-      .map(a => {
-        const text = (a.title + ' ' + (a.description || '')).toLowerCase();
-        const score = keywords.filter(k => text.includes(k)).length;
-        return { ...a, score };
-      })
-      .filter(a => a.score > 0)
-      .sort((a, b) => b.date - a.date || b.score - a.score); // newest first, then by relevance
+      const keywords = ['economy','psx','sbp','stock','rupee','pkr','oil','imf','budget',
+        'inflation','interest rate','kse','market','investment','sector','energy','bank'];
+      const cutoff = Date.now() - (36 * 60 * 60 * 1000);
 
-    macro.news = scored.slice(0, 8).map(a => ({
-      title:       a.title,
-      source:      a.source,
-      description: a.description?.slice(0, 150),
-      publishedAt: a.publishedAt,
-      date:        a.date
-    }));
-  } catch(e) {}
+      const scored = allArticles
+        .filter(a => !a.date || a.date === 0 || a.date >= cutoff)
+        .map(a => {
+          const text = (a.title + ' ' + (a.description || '')).toLowerCase();
+          const score = keywords.filter(k => text.includes(k)).length;
+          return { ...a, score };
+        })
+        .filter(a => a.score > 0)
+        .sort((a, b) => b.date - a.date || b.score - a.score);
+
+      macro.news = scored.slice(0, 8).map(a => ({
+        title: a.title, source: a.source,
+        description: a.description?.slice(0, 150),
+        publishedAt: a.publishedAt, date: a.date
+      }));
+    }
+  } catch(e) {
+    console.error('News fetch error:', e.message);
+  }
 
   return macro;
 }
