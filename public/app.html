@@ -178,11 +178,15 @@ body {
   padding: 0 0 44px; z-index: 201;
   max-height: 76vh; overflow-y: auto;
   box-shadow: var(--float-shadow);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
 }
 .sheet-bar { width: 32px; height: 3px; background: var(--rim2); border-radius: 2px; margin: 12px auto 20px; }
 .sheet-ttl { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t3); padding: 0 20px 10px; }
-.si { display: flex; align-items: center; justify-content: space-between; padding: 13px 20px; cursor: pointer; transition: background 0.1s; }
+.si { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; cursor: pointer; transition: background 0.1s; min-height: 64px; -webkit-tap-highlight-color: transparent; }
 .si:hover, .si.on { background: rgba(255,255,255,0.03); }
+.si:active { background: rgba(255,255,255,0.06); }
 .si-l { display: flex; align-items: center; gap: 13px; }
 .si-av {
   width: 40px; height: 40px; border-radius: 50%;
@@ -274,7 +278,6 @@ body {
 .ai-loading { display: flex; align-items: center; gap: 10px; color: var(--t3); font-size: 12px; }
 .spin { width: 13px; height: 13px; border: 1.5px solid var(--rim2); border-top-color: var(--pb); border-radius: 50%; flex-shrink: 0; animation: rot .7s linear infinite; }
 @keyframes rot { to { transform: rotate(360deg); } }
-@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── SIGNALS ── */
 .sigs-wrap { padding: 20px 20px 24px; }
@@ -528,11 +531,11 @@ body {
 
 <!-- Bottom navigation -->
 <nav class="bnav" id="bnav">
-  <a href="/" class="bnav-item" id="bnav-home">
+  <div class="bnav-item on" id="bnav-home" onclick="switchSection('home')">
     <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
     <span>HOME</span>
-  </a>
-  <div class="bnav-item on" id="bnav-stocks" onclick="switchSection('stocks')">
+  </div>
+  <div class="bnav-item" id="bnav-stocks" onclick="switchSection('stocks')">
     <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16 7 22 7 22 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span>STOCKS</span>
   </div>
@@ -550,7 +553,7 @@ body {
 // ── AUTH ──────────────────────────────────────────────────
 // AUTH_ENFORCED = false  →  app loads for everyone (current state)
 // AUTH_ENFORCED = true   →  set this once Supabase is live and users are signing up
-const AUTH_ENFORCED = true;
+const AUTH_ENFORCED = false;
 
 (function() {
   if (!AUTH_ENFORCED) return; // gate is off — app loads normally
@@ -583,10 +586,12 @@ function signOut() {
 
 // ── POPULAR PSX STOCKS (for quick browse) ──────────────────
 const POPULAR = {
-  'Energy & Oil': ['OGDC','PPL','PSO','MARI','APL','HASCOL'],
-  'Banking':      ['HBL','MCB','UBL','NBP','ABL','BAFL'],
-  'Fertiliser':   ['ENGROH','FFC','EFERT'],
-  'Cement':       ['LUCK','MLCF','CHCC','DGKC']
+  'Energy & Oil':    ['OGDC','PPL','PSO','MARI','APL','HASCOL','SNGP','SSGC'],
+  'Banking':         ['HBL','MCB','UBL','NBP','ABL','BAFL','BAHL','MEBL','FABL'],
+  'Fertiliser':      ['ENGROH','FFBL','FFC','EFERT'],
+  'Cement':          ['LUCK','MLCF','CHCC','DGKC','PIOC','FCCL'],
+  'Technology':      ['TRG','SYS','NETSOL'],
+  'Other':           ['PAKT','PNSC']
 };
 
 const ALL_TICKERS = Object.values(POPULAR).flat();
@@ -847,28 +852,26 @@ async function loadStock(ticker) {
   renderLoading(ticker);
 
   try {
-    // Pass any live price we already have from prices.js so stock.js
-    // doesn't need to call PSX Terminal again (which gets blocked)
-    const lp = livePrices[ticker] || null;
-
     const res = await fetch('/.netlify/functions/stock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker, macroContext: MACRO, livePrice: lp })
+      body: JSON.stringify({ ticker, macroContext: MACRO })
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      renderError(ticker, data.error || 'Could not load ' + ticker + '. Please try again.');
+    if (res.status === 404) {
+      const err = await res.json();
+      renderError(ticker, err.error);
       return;
     }
 
-    stockCache[ticker]   = data.stockData;
+    if (!res.ok) throw new Error('Server error');
+
+    const data = await res.json();
+    stockCache[ticker]  = data.stockData;
     verdictCache[ticker] = data.verdict;
     render(ticker, data.stockData, data.verdict);
 
-    // Keep livePrices in sync
+    // Update pill with latest price
     if (data.stockData?.price) {
       livePrices[ticker] = {
         price:  data.stockData.price,
@@ -877,8 +880,7 @@ async function loadStock(ticker) {
       };
     }
   } catch(e) {
-    console.error('loadStock error:', e);
-    renderError(ticker, 'Unable to connect. Please check your internet connection and try again.');
+    renderError(ticker, 'Unable to connect. Please check your connection and try again.');
   }
 }
 
@@ -940,9 +942,23 @@ function buildSheet() {
       const chgDisplay   = lp ? `${lp.dir==='up'?'+':''}${lp.change}%` : '';
       const chgClass     = lp ? (lp.dir==='up'?'up':'dn') : '';
       d.innerHTML = `<div class="si-l"><div class="si-av">${ticker.slice(0,3)}</div><div><div class="si-tick">${ticker}</div><div class="si-name">${getShortName(ticker)}</div></div></div><div><div class="si-pr">${priceDisplay}</div><div class="si-ch ${chgClass}">${chgDisplay}</div></div>`;
-      const handler = (e) => { e.preventDefault(); e.stopPropagation(); select(ticker); };
-      d.addEventListener('click', handler);
-      d.addEventListener('touchend', handler, { passive: false });
+
+      // Click handler (desktop)
+      d.addEventListener('click', () => select(ticker));
+
+      // Touch handler — only fire if finger didn't scroll (movement < 8px)
+      let touchStartY = 0;
+      d.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+      d.addEventListener('touchend', (e) => {
+        const moved = Math.abs(e.changedTouches[0].clientY - touchStartY);
+        if (moved < 8) { // true tap, not a scroll
+          e.preventDefault();
+          select(ticker);
+        }
+      }, { passive: false });
+
       list.appendChild(d);
     });
   });
@@ -988,13 +1004,18 @@ function buildSheet() {
 
 function getShortName(ticker) {
   const names = {
-    OGDC:'Oil & Gas Dev Co', PPL:'Pakistan Petroleum', PSO:'Pakistan State Oil',
-    MARI:'Mari Petroleum',   APL:'Attock Petroleum',   HASCOL:'Hascol Petroleum',
-    HBL:'Habib Bank Ltd',    MCB:'MCB Bank',            UBL:'United Bank',
-    NBP:'National Bank',     ABL:'Allied Bank',         BAFL:'Bank Al Falah',
-    ENGROH:'Engro Holdings', FFC:'Fauji Fertiliser',    EFERT:'Engro Fertilisers',
-    LUCK:'Lucky Cement',     MLCF:'Maple Leaf Cement',  CHCC:'Cherat Cement',
-    DGKC:'D.G. Khan Cement'
+    OGDC:'Oil & Gas Dev Co',PPL:'Pakistan Petroleum',PSO:'Pakistan State Oil',
+    MARI:'Mari Petroleum',APL:'Attock Petroleum',HASCOL:'Hascol Petroleum',
+    SNGP:'Sui Northern Gas',SSGC:'Sui Southern Gas',
+    HBL:'Habib Bank Ltd',MCB:'MCB Bank',UBL:'United Bank',NBP:'National Bank',
+    ABL:'Allied Bank',BAFL:'Bank Al Falah',BAHL:'Bank Al Habib',
+    MEBL:'Meezan Bank',FABL:'Faysal Bank',
+    ENGROH:'Engro Holdings Ltd',FFBL:'Fauji Fertiliser Bin Qasim',
+    FFC:'Fauji Fertiliser Co',EFERT:'Engro Fertilisers',
+    LUCK:'Lucky Cement',MLCF:'Maple Leaf Cement',CHCC:'Cherat Cement',
+    DGKC:'D.G. Khan Cement',PIOC:'Pioneer Cement',FCCL:'Fauji Cement',
+    TRG:'TRG Pakistan',SYS:'Systems Ltd',NETSOL:'NetSol Technologies',
+    PAKT:'Pakistan Tobacco',PNSC:'Pakistan Natl Shipping'
   };
   return names[ticker] || ticker;
 }
@@ -1091,13 +1112,9 @@ function updateSheetTitle() {
 
 // ── INIT ──────────────────────────────────────────────────
 updateSheetTitle();
-// Fetch live prices first, then load default stock so price is available immediately
-fetchLivePrices().then(() => {
-  select('OGDC');
-}).catch(() => {
-  select('OGDC'); // load anyway even if prices fail
-});
+fetchLivePrices();
 setInterval(fetchLivePrices, 60000);
+select('OGDC');
 
 // ── SECTION SWITCHING ────────────────────────────────────
 let currentSection = 'home';
@@ -1114,8 +1131,7 @@ function switchSection(section) {
   document.getElementById('forex-root').style.display  = 'none';
   document.getElementById('ticker-bar').style.display  = 'block';
 
-  // bnav-home is an <a> link — skip it in the section toggle loop
-  ['stocks','crypto','forex'].forEach(s => {
+  ['home','stocks','crypto','forex'].forEach(s => {
     const el = document.getElementById('bnav-' + s);
     if (el) el.classList.toggle('on', s === section);
   });
@@ -1123,10 +1139,10 @@ function switchSection(section) {
   // Update header pill behaviour per section
   const pill = document.getElementById('hdr-pill');
 
-  if (section === 'stocks') {
+  if (section === 'home' || section === 'stocks') {
     document.getElementById('root').style.display = 'block';
     if (pill) { pill.style.display = 'flex'; pill.onclick = openSheet; }
-    openSheet();
+    if (section === 'stocks') openSheet();
   } else if (section === 'crypto') {
     document.getElementById('crypto-root').style.display = 'block';
     if (pill) pill.style.display = 'none';
@@ -1178,7 +1194,6 @@ async function renderCryptoSection() {
       body: JSON.stringify({ action: 'prices' })
     });
     const data = await res.json();
-    if (data.error) throw new Error(data.error);
     if (data.prices) {
       cryptoPrices = data.prices;
       Object.entries(data.prices).forEach(([sym, coin]) => {
@@ -1191,6 +1206,7 @@ async function renderCryptoSection() {
           chgEl.textContent = (isUp ? '+' : '') + coin.change24h;
           chgEl.className = 'coin-chg ' + (isUp ? 'up' : 'dn');
         }
+        // Load cached verdict if available
         if (verdEl && cryptoVerdictCache[sym]) {
           const v = cryptoVerdictCache[sym].verdict;
           verdEl.textContent = v;
@@ -1200,17 +1216,7 @@ async function renderCryptoSection() {
         }
       });
     }
-  } catch(e) {
-    console.error('Crypto prices error:', e.message);
-    const grid = document.getElementById('crypto-grid');
-    if (grid) {
-      grid.innerHTML = `<div style="padding:32px 20px;text-align:center;color:var(--t3)">
-        <div style="font-size:28px;margin-bottom:12px">⚠️</div>
-        <div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:6px">Crypto prices unavailable</div>
-        <div style="font-size:12px;line-height:1.7">FMP data temporarily unavailable.<br>Check back shortly.</div>
-      </div>`;
-    }
-  }
+  } catch(e) {}
 }
 
 async function openCoinDetail(sym) {
