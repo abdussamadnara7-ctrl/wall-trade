@@ -801,17 +801,95 @@ function render(ticker, stockData, verdict) {
   document.getElementById('ask-in').addEventListener('keydown', e => { if(e.key==='Enter') doAsk(); });
 }
 
-// ── BUILD RATIOS FROM STOCK DATA ───────────────────────────
+// ── SECTOR MAP (frontend mirror of backend frameworks) ──────
+const TICKER_SECTOR = {
+  HBL:'BANKING', MCB:'BANKING', UBL:'BANKING', NBP:'BANKING',
+  ABL:'BANKING', BAFL:'BANKING', BAHL:'BANKING', MEBL:'BANKING', FABL:'BANKING',
+  OGDC:'ENERGY_EP', PPL:'ENERGY_EP', MARI:'ENERGY_EP',
+  PSO:'OMC', APL:'OMC', HASCOL:'OMC',
+  EFERT:'FERTILISER', FFC:'FERTILISER', FFBL:'FERTILISER',
+  LUCK:'CEMENT', MLCF:'CEMENT', CHCC:'CEMENT', DGKC:'CEMENT',
+  SYS:'TECH', TRG:'TECH', NETSOL:'TECH',
+  ENGROH:'CONGLOMERATE'
+};
+
+// ── BUILD RATIOS FROM STOCK DATA (SECTOR-AWARE) ─────────────
 function buildRatios(s) {
+  const sector = TICKER_SECTOR[cur] || 'GENERAL';
   const ratios = {};
-  if (s.pe && s.pe !== 'N/A')          ratios['P/E Ratio']     = { v: s.pe + '×',    c: parseFloat(s.pe) < 15 ? 'green' : parseFloat(s.pe) < 25 ? 'amber' : 'red', ctx: 'Price to earnings' };
-  if (s.pb && s.pb !== 'N/A')          ratios['P/B Ratio']     = { v: s.pb + '×',    c: parseFloat(s.pb) < 2 ? 'green' : parseFloat(s.pb) < 4 ? 'amber' : 'red',    ctx: 'Price to book value' };
-  if (s.divYield && s.divYield !== 'N/A') ratios['Div Yield']  = { v: s.divYield,    c: parseFloat(s.divYield) > 5 ? 'green' : 'amber',                               ctx: 'Annual dividend yield' };
-  if (s.roe && s.roe !== 'N/A')        ratios['ROE']           = { v: s.roe,         c: parseFloat(s.roe) > 15 ? 'green' : parseFloat(s.roe) > 8 ? 'amber' : 'red',  ctx: 'Return on equity' };
-  if (s.netMargin && s.netMargin !== 'N/A') ratios['Net Margin'] = { v: s.netMargin, c: parseFloat(s.netMargin) > 15 ? 'green' : parseFloat(s.netMargin) > 5 ? 'amber' : 'red', ctx: 'Net profit margin' };
-  if (s.currentRatio && s.currentRatio !== 'N/A') ratios['Current Ratio'] = { v: s.currentRatio + '×', c: parseFloat(s.currentRatio) > 1.5 ? 'green' : parseFloat(s.currentRatio) > 1 ? 'amber' : 'red', ctx: 'Short-term liquidity' };
-  if (s.debtToEquity && s.debtToEquity !== 'N/A') ratios['Debt / Equity'] = { v: s.debtToEquity, c: parseFloat(s.debtToEquity) < 0.5 ? 'green' : parseFloat(s.debtToEquity) < 1.5 ? 'amber' : 'red', ctx: 'Financial leverage' };
-  if (s.grossMargin && s.grossMargin !== 'N/A') ratios['Gross Margin'] = { v: s.grossMargin, c: parseFloat(s.grossMargin) > 30 ? 'green' : parseFloat(s.grossMargin) > 10 ? 'amber' : 'red', ctx: 'Gross profit margin' };
+
+  // Helper: colour based on value vs threshold
+  const c = (val, good, warn) => {
+    const n = parseFloat(val);
+    if (isNaN(n)) return 'amber';
+    return n >= good ? 'green' : n >= warn ? 'amber' : 'red';
+  };
+  const ci = (val, bad, warn) => { // inverted — lower is better
+    const n = parseFloat(val);
+    if (isNaN(n)) return 'amber';
+    return n <= bad ? 'green' : n <= warn ? 'amber' : 'red';
+  };
+
+  if (sector === 'BANKING') {
+    if (s.pb && s.pb !== 'N/A')           ratios['P/B Ratio']    = { v: s.pb + '×',   c: ci(s.pb, 1.5, 2.5),       ctx: 'Primary valuation — book value multiple' };
+    if (s.roe && s.roe !== 'N/A')         ratios['ROE']          = { v: s.roe,         c: c(s.roe, 18, 12),          ctx: 'Return on equity — core profitability' };
+    if (s.divYield && s.divYield !== 'N/A') ratios['Div Yield']  = { v: s.divYield,    c: c(s.divYield, 6, 4),       ctx: 'Annual dividend yield' };
+    if (s.netMargin && s.netMargin !== 'N/A') ratios['Net Margin'] = { v: s.netMargin, c: c(s.netMargin, 25, 15),    ctx: 'Net profit margin' };
+    if (s.eps && s.eps !== 'N/A')         ratios['EPS']          = { v: 'PKR ' + s.eps, c: 'green',                  ctx: 'Earnings per share' };
+    // Note: D/E and current ratio intentionally excluded for banks
+
+  } else if (sector === 'ENERGY_EP') {
+    if (s.pe && s.pe !== 'N/A')           ratios['P/E Ratio']    = { v: s.pe + '×',   c: ci(s.pe, 10, 15),           ctx: 'E&P trades at discount — <10x is attractive' };
+    if (s.divYield && s.divYield !== 'N/A') ratios['Div Yield']  = { v: s.divYield,   c: c(s.divYield, 6, 4),        ctx: 'Income investors target >6% yield' };
+    if (s.netMargin && s.netMargin !== 'N/A') ratios['Net Margin'] = { v: s.netMargin, c: c(s.netMargin, 35, 20),    ctx: 'High margin sector — <20% is weak' };
+    if (s.roe && s.roe !== 'N/A')         ratios['ROE']          = { v: s.roe,         c: c(s.roe, 15, 8),           ctx: 'Return on equity' };
+    if (s.fcfYield && s.fcfYield !== 'N/A') ratios['FCF Yield']  = { v: s.fcfYield,   c: c(s.fcfYield, 5, 2),       ctx: 'Free cash flow yield — watch vs earnings' };
+    if (s.eps && s.eps !== 'N/A')         ratios['EPS']          = { v: 'PKR ' + s.eps, c: 'green',                  ctx: 'Earnings per share' };
+
+  } else if (sector === 'OMC') {
+    if (s.pe && s.pe !== 'N/A')           ratios['P/E Ratio']    = { v: s.pe + '×',   c: ci(s.pe, 10, 15),           ctx: 'Price to earnings' };
+    if (s.pb && s.pb !== 'N/A')           ratios['P/B Ratio']    = { v: s.pb + '×',   c: ci(s.pb, 1.5, 2.5),        ctx: 'Price to book value' };
+    if (s.netMargin && s.netMargin !== 'N/A') ratios['Net Margin'] = { v: s.netMargin, c: c(s.netMargin, 3, 1),      ctx: 'OMC margins are thin — 1-3% is normal' };
+    if (s.debtToEquity && s.debtToEquity !== 'N/A') ratios['Debt/Equity'] = { v: s.debtToEquity, c: ci(s.debtToEquity, 1, 2), ctx: 'Working capital leverage' };
+    if (s.currentRatio && s.currentRatio !== 'N/A') ratios['Current Ratio'] = { v: s.currentRatio + '×', c: c(s.currentRatio, 1.2, 1), ctx: 'Short-term liquidity' };
+
+  } else if (sector === 'FERTILISER') {
+    if (s.pe && s.pe !== 'N/A')           ratios['P/E Ratio']    = { v: s.pe + '×',   c: ci(s.pe, 10, 15),           ctx: 'Price to earnings' };
+    if (s.divYield && s.divYield !== 'N/A') ratios['Div Yield']  = { v: s.divYield,   c: c(s.divYield, 8, 5),        ctx: 'Core investment case — target >8%' };
+    if (s.roe && s.roe !== 'N/A')         ratios['ROE']          = { v: s.roe,         c: c(s.roe, 25, 15),          ctx: 'High ROE = pricing power + gas advantage' };
+    if (s.netMargin && s.netMargin !== 'N/A') ratios['Net Margin'] = { v: s.netMargin, c: c(s.netMargin, 20, 10),    ctx: 'Net profit margin' };
+    if (s.debtToEquity && s.debtToEquity !== 'N/A') ratios['Debt/Equity'] = { v: s.debtToEquity, c: ci(s.debtToEquity, 0.5, 1.5), ctx: 'Balance sheet strength' };
+
+  } else if (sector === 'CEMENT') {
+    if (s.pe && s.pe !== 'N/A')           ratios['P/E Ratio']    = { v: s.pe + '×',   c: ci(s.pe, 12, 20),           ctx: 'Cyclical sector — valuation swings' };
+    if (s.netMargin && s.netMargin !== 'N/A') ratios['Net Margin'] = { v: s.netMargin, c: c(s.netMargin, 12, 6),     ctx: 'Coal-sensitive — margins swing sharply' };
+    if (s.debtToEquity && s.debtToEquity !== 'N/A') ratios['Debt/Equity'] = { v: s.debtToEquity, c: ci(s.debtToEquity, 1, 2), ctx: 'High leverage risky in downturns' };
+    if (s.roe && s.roe !== 'N/A')         ratios['ROE']          = { v: s.roe,         c: c(s.roe, 15, 8),           ctx: 'Return on equity' };
+    if (s.grossMargin && s.grossMargin !== 'N/A') ratios['Gross Margin'] = { v: s.grossMargin, c: c(s.grossMargin, 25, 12), ctx: 'Gross profit margin' };
+
+  } else if (sector === 'TECH') {
+    if (s.pe && s.pe !== 'N/A')           ratios['P/E Ratio']    = { v: s.pe + '×',   c: ci(s.pe, 20, 35),           ctx: 'Growth premium — higher P/E acceptable' };
+    if (s.roe && s.roe !== 'N/A')         ratios['ROE']          = { v: s.roe,         c: c(s.roe, 15, 8),           ctx: 'Return on equity' };
+    if (s.netMargin && s.netMargin !== 'N/A') ratios['Net Margin'] = { v: s.netMargin, c: c(s.netMargin, 15, 10),    ctx: 'Higher margin = scalable business' };
+    if (s.debtToEquity && s.debtToEquity !== 'N/A') ratios['Debt/Equity'] = { v: s.debtToEquity, c: ci(s.debtToEquity, 0.3, 1), ctx: 'Low debt = quality tech company' };
+
+  } else if (sector === 'CONGLOMERATE') {
+    if (s.pe && s.pe !== 'N/A')           ratios['P/E Ratio']    = { v: s.pe + '×',   c: ci(s.pe, 12, 18),           ctx: 'Holding company — sum-of-parts logic' };
+    if (s.pb && s.pb !== 'N/A')           ratios['P/B Ratio']    = { v: s.pb + '×',   c: ci(s.pb, 1.5, 2.5),        ctx: 'Discount to NAV is normal' };
+    if (s.divYield && s.divYield !== 'N/A') ratios['Div Yield']  = { v: s.divYield,   c: c(s.divYield, 5, 3),        ctx: 'Dividend from subsidiaries (mainly EFERT)' };
+    if (s.roe && s.roe !== 'N/A')         ratios['ROE']          = { v: s.roe,         c: c(s.roe, 12, 7),           ctx: 'Return on equity' };
+
+  } else {
+    // GENERAL fallback
+    if (s.pe && s.pe !== 'N/A')           ratios['P/E Ratio']    = { v: s.pe + '×',   c: ci(s.pe, 15, 25),           ctx: 'Price to earnings' };
+    if (s.pb && s.pb !== 'N/A')           ratios['P/B Ratio']    = { v: s.pb + '×',   c: ci(s.pb, 2, 4),             ctx: 'Price to book value' };
+    if (s.divYield && s.divYield !== 'N/A') ratios['Div Yield']  = { v: s.divYield,   c: c(s.divYield, 5, 3),        ctx: 'Annual dividend yield' };
+    if (s.roe && s.roe !== 'N/A')         ratios['ROE']          = { v: s.roe,         c: c(s.roe, 15, 8),           ctx: 'Return on equity' };
+    if (s.netMargin && s.netMargin !== 'N/A') ratios['Net Margin'] = { v: s.netMargin, c: c(s.netMargin, 15, 5),     ctx: 'Net profit margin' };
+    if (s.currentRatio && s.currentRatio !== 'N/A') ratios['Current Ratio'] = { v: s.currentRatio + '×', c: c(s.currentRatio, 1.5, 1), ctx: 'Short-term liquidity' };
+    if (s.debtToEquity && s.debtToEquity !== 'N/A') ratios['Debt/Equity'] = { v: s.debtToEquity, c: ci(s.debtToEquity, 0.5, 1.5), ctx: 'Financial leverage' };
+  }
+
   return ratios;
 }
 
