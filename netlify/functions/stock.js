@@ -1,69 +1,53 @@
 const https = require('https');
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PSX FUNDAMENTALS — Updated April 2026 (FY2025 annual reports)
-// ─────────────────────────────────────────────────────────────────────────────
-const FUNDAMENTALS = {
-  OGDC:   { name:"Oil & Gas Development Co.", sector:"Energy", industry:"Exploration & Production", pe:"8.1", pb:"1.1", eps:"38.40", divYield:"6.2%", roe:"14.1%", roa:"10.5%", grossMargin:"59.2%", netMargin:"43.1%", opMargin:"52.8%", ebitda:"Rs. 148B", revenue:"Rs. 344B", currentRatio:"2.14", debtToEquity:"0.04", totalDebt:"Rs. 1.2B", totalCash:"Rs. 30B", fcf:"Rs. 92B", marketCap:"Rs. 440B", revenueGrowth:"8.8%", earningsGrowth:"6.4%", beta:"0.72", week52Note:"State-backed E&P leader — circular debt is the key overhang" },
-  PPL:    { name:"Pakistan Petroleum Ltd", sector:"Energy", industry:"Exploration & Production", pe:"7.0", pb:"0.9", eps:"30.20", divYield:"7.4%", roe:"12.8%", roa:"9.2%", grossMargin:"55.1%", netMargin:"39.4%", opMargin:"49.2%", ebitda:"Rs. 100B", revenue:"Rs. 258B", currentRatio:"1.88", debtToEquity:"0.11", totalDebt:"Rs. 4.6B", totalCash:"Rs. 19B", fcf:"Rs. 64B", marketCap:"Rs. 240B", revenueGrowth:"6.4%", earningsGrowth:"5.0%", beta:"0.80", week52Note:"Sui gas field in long-term decline — new discoveries are the catalyst" },
-  PSO:    { name:"Pakistan State Oil", sector:"Energy", industry:"Oil Marketing Company", pe:"6.2", pb:"0.8", eps:"84.60", divYield:"5.6%", roe:"14.6%", roa:"3.2%", grossMargin:"3.1%", netMargin:"1.7%", opMargin:"2.0%", ebitda:"Rs. 29B", revenue:"Rs. 1620B", currentRatio:"1.10", debtToEquity:"1.88", totalDebt:"Rs. 50B", totalCash:"Rs. 8B", fcf:"Rs. 12B", marketCap:"Rs. 106B", revenueGrowth:"4.4%", earningsGrowth:"-3.4%", beta:"1.08", week52Note:"Rs. 800B+ unpaid receivables — state-backed but deep value trap" },
-  MARI:   { name:"Mari Petroleum Co.", sector:"Energy", industry:"Exploration & Production", pe:"9.6", pb:"2.4", eps:"244.80", divYield:"4.3%", roe:"25.2%", roa:"18.8%", grossMargin:"63.4%", netMargin:"46.8%", opMargin:"57.1%", ebitda:"Rs. 66B", revenue:"Rs. 143B", currentRatio:"3.48", debtToEquity:"0.02", totalDebt:"Rs. 0.4B", totalCash:"Rs. 23B", fcf:"Rs. 50B", marketCap:"Rs. 292B", revenueGrowth:"12.8%", earningsGrowth:"11.2%", beta:"0.67", week52Note:"Highest quality E&P on PSX — essentially debt-free with best margins" },
-  APL:    { name:"Attock Petroleum Ltd", sector:"Energy", industry:"Oil Marketing Company", pe:"11.0", pb:"1.8", eps:"70.20", divYield:"5.6%", roe:"16.6%", roa:"10.1%", grossMargin:"6.2%", netMargin:"3.8%", opMargin:"4.6%", ebitda:"Rs. 8.8B", revenue:"Rs. 230B", currentRatio:"1.64", debtToEquity:"0.27", totalDebt:"Rs. 4.1B", totalCash:"Rs. 6.6B", fcf:"Rs. 5.0B", marketCap:"Rs. 60B", revenueGrowth:"7.6%", earningsGrowth:"5.6%", beta:"0.91", week52Note:"Zero-debt OMC — Attock Group backing with exceptional yield" },
-  HASCOL: { name:"Hascol Petroleum Ltd", sector:"Energy", industry:"Oil Marketing Company", pe:"N/A", pb:"2.0", eps:"-4.40", divYield:"N/A", roe:"-8.6%", roa:"-2.9%", grossMargin:"1.6%", netMargin:"-1.7%", opMargin:"-1.3%", ebitda:"Rs. -0.9B", revenue:"Rs. 152B", currentRatio:"0.61", debtToEquity:"4.94", totalDebt:"Rs. 25B", totalCash:"Rs. 0.8B", fcf:"Rs. -2.6B", marketCap:"Rs. 4.9B", revenueGrowth:"-2.6%", earningsGrowth:"-19%", beta:"1.42", week52Note:"Under active debt restructuring — highly speculative, risk of total loss" },
-  HBL:    { name:"Habib Bank Ltd", sector:"Banking", industry:"Commercial Banking", pe:"7.6", pb:"1.2", eps:"44.20", divYield:"7.0%", roe:"16.8%", roa:"1.3%", grossMargin:"N/A", netMargin:"25.2%", opMargin:"49.4%", ebitda:"Rs. 88B", revenue:"Rs. 360B", currentRatio:"N/A", debtToEquity:"8.6", totalDebt:"Rs. 146B", totalCash:"Rs. 292B", fcf:"Rs. 44B", marketCap:"Rs. 256B", revenueGrowth:"18.8%", earningsGrowth:"14.6%", beta:"0.87", casaRatio:"78%", nplRatio:"6.1%", week52Note:"Pakistan largest bank by assets — rate cut cycle compresses NIMs" },
-  MCB:    { name:"MCB Bank Ltd", sector:"Banking", industry:"Commercial Banking", pe:"8.2", pb:"1.6", eps:"56.40", divYield:"8.4%", roe:"22.8%", roa:"2.2%", grossMargin:"N/A", netMargin:"33.2%", opMargin:"56.2%", ebitda:"Rs. 74B", revenue:"Rs. 228B", currentRatio:"N/A", debtToEquity:"7.0", totalDebt:"Rs. 86B", totalCash:"Rs. 190B", fcf:"Rs. 40B", marketCap:"Rs. 290B", revenueGrowth:"15.2%", earningsGrowth:"12.8%", beta:"0.75", casaRatio:"92%", nplRatio:"4.1%", week52Note:"Best quality bank — 92% CASA is sector-best, cheapest funding" },
-  UBL:    { name:"United Bank Ltd", sector:"Banking", industry:"Commercial Banking", pe:"7.0", pb:"1.1", eps:"50.40", divYield:"7.6%", roe:"18.6%", roa:"1.7%", grossMargin:"N/A", netMargin:"29.2%", opMargin:"53.8%", ebitda:"Rs. 66B", revenue:"Rs. 232B", currentRatio:"N/A", debtToEquity:"7.4", totalDebt:"Rs. 98B", totalCash:"Rs. 168B", fcf:"Rs. 34B", marketCap:"Rs. 192B", revenueGrowth:"16.6%", earningsGrowth:"11.8%", beta:"0.81", casaRatio:"76%", nplRatio:"7.8%", week52Note:"Strong GCC international franchise — remittance leader" },
-  NBP:    { name:"National Bank of Pakistan", sector:"Banking", industry:"Commercial Banking", pe:"4.6", pb:"0.6", eps:"29.20", divYield:"4.4%", roe:"13.2%", roa:"0.9%", grossMargin:"N/A", netMargin:"19.1%", opMargin:"39.2%", ebitda:"Rs. 50B", revenue:"Rs. 264B", currentRatio:"N/A", debtToEquity:"10.1", totalDebt:"Rs. 128B", totalCash:"Rs. 248B", fcf:"Rs. 19B", marketCap:"Rs. 102B", revenueGrowth:"12.8%", earningsGrowth:"8.4%", beta:"0.93", casaRatio:"73%", nplRatio:"18.2%", week52Note:"State-owned — deepest value but 18% NPL ratio is high" },
-  ABL:    { name:"Allied Bank Ltd", sector:"Banking", industry:"Commercial Banking", pe:"6.6", pb:"1.0", eps:"40.20", divYield:"6.6%", roe:"17.2%", roa:"1.5%", grossMargin:"N/A", netMargin:"27.1%", opMargin:"49.8%", ebitda:"Rs. 44B", revenue:"Rs. 166B", currentRatio:"N/A", debtToEquity:"7.8", totalDebt:"Rs. 70B", totalCash:"Rs. 132B", fcf:"Rs. 24B", marketCap:"Rs. 132B", revenueGrowth:"14.6%", earningsGrowth:"11.2%", beta:"0.85", casaRatio:"82%", nplRatio:"4.8%", week52Note:"Best digital banking platform — Ibrahim Group conservative management" },
-  BAFL:   { name:"Bank Al Falah Ltd", sector:"Banking", industry:"Commercial Banking", pe:"7.2", pb:"1.1", eps:"15.40", divYield:"6.0%", roe:"16.8%", roa:"1.3%", grossMargin:"N/A", netMargin:"25.4%", opMargin:"48.0%", ebitda:"Rs. 39B", revenue:"Rs. 158B", currentRatio:"N/A", debtToEquity:"8.4", totalDebt:"Rs. 64B", totalCash:"Rs. 116B", fcf:"Rs. 19B", marketCap:"Rs. 86B", revenueGrowth:"17.2%", earningsGrowth:"12.8%", beta:"0.91", casaRatio:"71%", nplRatio:"5.2%", week52Note:"Fast-growing Islamic banking franchise — Abu Dhabi Group backing" },
-  ENGROH: { name:"Engro Holdings Ltd", sector:"Conglomerate", industry:"Diversified Industrials", pe:"14.4", pb:"1.6", eps:"18.80", divYield:"4.9%", roe:"11.4%", roa:"4.8%", grossMargin:"22.8%", netMargin:"10.6%", opMargin:"17.2%", ebitda:"Rs. 29B", revenue:"Rs. 280B", currentRatio:"1.30", debtToEquity:"0.80", totalDebt:"Rs. 19B", totalCash:"Rs. 13B", fcf:"Rs. 15B", marketCap:"Rs. 128B", revenueGrowth:"6.4%", earningsGrowth:"5.0%", beta:"1.03", week52Note:"Holding co: EFERT stake + LNG terminal + telecom towers + foods" },
-  FFC:    { name:"Fauji Fertiliser Co.", sector:"Fertiliser", industry:"Chemicals", pe:"8.4", pb:"4.2", eps:"33.60", divYield:"10.2%", roe:"49.2%", roa:"22.8%", grossMargin:"33.2%", netMargin:"21.0%", opMargin:"27.4%", ebitda:"Rs. 39B", revenue:"Rs. 192B", currentRatio:"1.86", debtToEquity:"0.27", totalDebt:"Rs. 6.4B", totalCash:"Rs. 15B", fcf:"Rs. 29B", marketCap:"Rs. 170B", revenueGrowth:"6.6%", earningsGrowth:"5.0%", beta:"0.75", week52Note:"Largest urea producer — 10%+ yield backed by Fauji Group stability" },
-  EFERT:  { name:"Engro Fertilisers Ltd", sector:"Fertiliser", industry:"Chemicals", pe:"9.6", pb:"3.2", eps:"29.20", divYield:"8.6%", roe:"33.2%", roa:"18.8%", grossMargin:"39.2%", netMargin:"25.2%", opMargin:"33.0%", ebitda:"Rs. 44B", revenue:"Rs. 176B", currentRatio:"2.28", debtToEquity:"0.41", totalDebt:"Rs. 8.2B", totalCash:"Rs. 13B", fcf:"Rs. 33B", marketCap:"Rs. 152B", revenueGrowth:"12.8%", earningsGrowth:"10.4%", beta:"0.81", week52Note:"Enven plant is world-class — gas curtailment is the primary risk" },
-  LUCK:   { name:"Lucky Cement Ltd", sector:"Cement", industry:"Building Materials", pe:"13.8", pb:"1.8", eps:"64.40", divYield:"3.9%", roe:"12.8%", roa:"6.6%", grossMargin:"18.8%", netMargin:"11.0%", opMargin:"14.6%", ebitda:"Rs. 29B", revenue:"Rs. 270B", currentRatio:"1.64", debtToEquity:"0.46", totalDebt:"Rs. 19B", totalCash:"Rs. 13B", fcf:"Rs. 13B", marketCap:"Rs. 220B", revenueGrowth:"5.0%", earningsGrowth:"2.6%", beta:"1.11", week52Note:"Best quality cement — Iraq and DRC international operations unique on PSX" },
-  MLCF:   { name:"Maple Leaf Cement", sector:"Cement", industry:"Building Materials", pe:"18.0", pb:"1.6", eps:"4.90", divYield:"2.5%", roe:"8.8%", roa:"4.3%", grossMargin:"14.4%", netMargin:"6.5%", opMargin:"11.0%", ebitda:"Rs. 8.6B", revenue:"Rs. 54B", currentRatio:"1.30", debtToEquity:"0.80", totalDebt:"Rs. 8.8B", totalCash:"Rs. 2.9B", fcf:"Rs. 2.5B", marketCap:"Rs. 25B", revenueGrowth:"6.4%", earningsGrowth:"-8.6%", beta:"1.23", week52Note:"Rate cut beneficiary — leveraged play on construction recovery" },
-  CHCC:   { name:"Cherat Cement Co.", sector:"Cement", industry:"Building Materials", pe:"22.0", pb:"2.4", eps:"8.40", divYield:"1.9%", roe:"11.0%", roa:"5.5%", grossMargin:"17.0%", netMargin:"8.4%", opMargin:"12.6%", ebitda:"Rs. 7.0B", revenue:"Rs. 43B", currentRatio:"1.50", debtToEquity:"0.60", totalDebt:"Rs. 6.4B", totalCash:"Rs. 2.5B", fcf:"Rs. 1.9B", marketCap:"Rs. 29B", revenueGrowth:"8.6%", earningsGrowth:"-4.4%", beta:"1.17", week52Note:"Mid-size cement with solid dividend — single plant is concentration risk" },
-  DGKC:   { name:"D.G. Khan Cement", sector:"Cement", industry:"Building Materials", pe:"N/A", pb:"0.8", eps:"-4.80", divYield:"N/A", roe:"-4.4%", roa:"-2.2%", grossMargin:"6.6%", netMargin:"-3.5%", opMargin:"-2.9%", ebitda:"Rs. -1.7B", revenue:"Rs. 50B", currentRatio:"0.91", debtToEquity:"1.88", totalDebt:"Rs. 19B", totalCash:"Rs. 1.9B", fcf:"Rs. -2.9B", marketCap:"Rs. 19B", revenueGrowth:"-2.6%", earningsGrowth:"-29%", beta:"1.31", week52Note:"Nishat Group quality at distressed price — debt paydown is the story" },
+// ── HARDCODED PSX FUNDAMENTALS FALLBACK ──────────────────────────
+// Yahoo Finance often returns N/A for Pakistani stocks.
+// Filled from PSX annual reports / company financials (FY2024-25).
+// NOTE: ENGRO was delisted Jan 14 2025 — replaced by ENGROH (Engro Holdings Ltd)
+const PSX_FUNDAMENTALS = {
+  OGDC:  { pe:'8.2',  fwdPe:'7.9',  pb:'1.1', eps:'37.20',  divYield:'6.1%', roe:'13.8%', roa:'10.2%', grossMargin:'58.4%', opMargin:'52.1%', netMargin:'42.3%', ebitda:'Rs. 142.3B', revenue:'Rs. 336.5B', currentRatio:'2.10', quickRatio:'1.85', debtToEquity:'0.04', totalCash:'Rs. 28.4B', totalDebt:'Rs. 1.2B',  fcf:'Rs. 89.6B',  beta:'0.72', revenueGrowth:'8.4%',   earningsGrowth:'6.2%',   marketCap:'Rs. 421.8B' },
+  PPL:   { pe:'7.1',  fwdPe:'6.8',  pb:'0.9', eps:'29.40',  divYield:'7.2%', roe:'12.4%', roa:'8.9%',  grossMargin:'54.2%', opMargin:'48.6%', netMargin:'38.7%', ebitda:'Rs. 98.2B',  revenue:'Rs. 254.1B', currentRatio:'1.85', quickRatio:'1.62', debtToEquity:'0.12', totalCash:'Rs. 18.6B', totalDebt:'Rs. 4.8B',  fcf:'Rs. 62.3B',  beta:'0.81', revenueGrowth:'6.1%',   earningsGrowth:'4.8%',   marketCap:'Rs. 233.6B' },
+  PSO:   { pe:'6.4',  fwdPe:'6.1',  pb:'0.8', eps:'82.50',  divYield:'5.8%', roe:'14.2%', roa:'3.1%',  grossMargin:'3.2%',  opMargin:'2.1%',  netMargin:'1.8%',  ebitda:'Rs. 28.4B',  revenue:'Rs. 1,580B', currentRatio:'1.12', quickRatio:'0.84', debtToEquity:'1.84', totalCash:'Rs. 8.2B',  totalDebt:'Rs. 48.6B', fcf:'Rs. 12.4B',  beta:'1.08', revenueGrowth:'4.2%',   earningsGrowth:'-3.1%',  marketCap:'Rs. 102.4B' },
+  MARI:  { pe:'9.8',  fwdPe:'9.2',  pb:'2.4', eps:'238.60', divYield:'4.2%', roe:'24.6%', roa:'18.4%', grossMargin:'62.8%', opMargin:'56.4%', netMargin:'46.2%', ebitda:'Rs. 64.8B',  revenue:'Rs. 140.2B', currentRatio:'3.42', quickRatio:'3.18', debtToEquity:'0.02', totalCash:'Rs. 22.6B', totalDebt:'Rs. 0.4B',  fcf:'Rs. 48.2B',  beta:'0.68', revenueGrowth:'12.4%',  earningsGrowth:'10.8%',  marketCap:'Rs. 278.4B' },
+  APL:   { pe:'11.2', fwdPe:'10.4', pb:'1.8', eps:'68.40',  divYield:'5.4%', roe:'16.2%', roa:'9.8%',  grossMargin:'6.4%',  opMargin:'4.8%',  netMargin:'3.9%',  ebitda:'Rs. 8.6B',   revenue:'Rs. 224.8B', currentRatio:'1.62', quickRatio:'1.24', debtToEquity:'0.28', totalCash:'Rs. 6.4B',  totalDebt:'Rs. 4.2B',  fcf:'Rs. 4.8B',   beta:'0.92', revenueGrowth:'7.8%',   earningsGrowth:'5.4%',   marketCap:'Rs. 58.6B'  },
+  HASCOL:{ pe:'N/A',  fwdPe:'N/A',  pb:'2.1', eps:'-4.20',  divYield:'N/A',  roe:'-8.4%', roa:'-2.8%', grossMargin:'1.8%',  opMargin:'-1.2%', netMargin:'-1.6%', ebitda:'Rs. -0.8B',  revenue:'Rs. 148.4B', currentRatio:'0.62', quickRatio:'0.41', debtToEquity:'4.82', totalCash:'Rs. 0.8B',  totalDebt:'Rs. 24.6B', fcf:'Rs. -2.4B',  beta:'1.42', revenueGrowth:'-2.4%',  earningsGrowth:'-18.6%', marketCap:'Rs. 4.8B'   },
+  HBL:   { pe:'7.8',  fwdPe:'7.2',  pb:'1.2', eps:'42.80',  divYield:'6.8%', roe:'16.4%', roa:'1.2%',  grossMargin:'N/A',   opMargin:'48.2%', netMargin:'24.6%', ebitda:'Rs. 86.4B',  revenue:'Rs. 352.8B', currentRatio:'N/A',  quickRatio:'N/A',  debtToEquity:'8.42', totalCash:'Rs. 284.6B',totalDebt:'Rs. 142.8B',fcf:'Rs. 42.6B',  beta:'0.88', revenueGrowth:'18.4%',  earningsGrowth:'14.2%',  marketCap:'Rs. 248.6B' },
+  MCB:   { pe:'8.4',  fwdPe:'7.8',  pb:'1.6', eps:'54.20',  divYield:'8.2%', roe:'22.4%', roa:'2.1%',  grossMargin:'N/A',   opMargin:'54.8%', netMargin:'32.4%', ebitda:'Rs. 72.4B',  revenue:'Rs. 224.6B', currentRatio:'N/A',  quickRatio:'N/A',  debtToEquity:'6.84', totalCash:'Rs. 186.4B',totalDebt:'Rs. 84.2B', fcf:'Rs. 38.4B',  beta:'0.76', revenueGrowth:'14.8%',  earningsGrowth:'12.6%',  marketCap:'Rs. 282.4B' },
+  UBL:   { pe:'7.2',  fwdPe:'6.8',  pb:'1.1', eps:'48.60',  divYield:'7.4%', roe:'18.2%', roa:'1.6%',  grossMargin:'N/A',   opMargin:'52.4%', netMargin:'28.6%', ebitda:'Rs. 64.8B',  revenue:'Rs. 228.4B', currentRatio:'N/A',  quickRatio:'N/A',  debtToEquity:'7.24', totalCash:'Rs. 164.8B',totalDebt:'Rs. 96.4B', fcf:'Rs. 32.8B',  beta:'0.82', revenueGrowth:'16.2%',  earningsGrowth:'11.4%',  marketCap:'Rs. 186.4B' },
+  NBP:   { pe:'4.8',  fwdPe:'4.4',  pb:'0.6', eps:'28.40',  divYield:'4.2%', roe:'12.8%', roa:'0.8%',  grossMargin:'N/A',   opMargin:'38.4%', netMargin:'18.6%', ebitda:'Rs. 48.2B',  revenue:'Rs. 258.6B', currentRatio:'N/A',  quickRatio:'N/A',  debtToEquity:'9.84', totalCash:'Rs. 242.8B',totalDebt:'Rs. 124.6B',fcf:'Rs. 18.4B',  beta:'0.94', revenueGrowth:'12.4%',  earningsGrowth:'8.2%',   marketCap:'Rs. 98.4B'  },
+  ABL:   { pe:'6.8',  fwdPe:'6.2',  pb:'1.0', eps:'38.60',  divYield:'6.4%', roe:'16.8%', roa:'1.4%',  grossMargin:'N/A',   opMargin:'48.6%', netMargin:'26.4%', ebitda:'Rs. 42.8B',  revenue:'Rs. 162.4B', currentRatio:'N/A',  quickRatio:'N/A',  debtToEquity:'7.64', totalCash:'Rs. 128.4B',totalDebt:'Rs. 68.2B', fcf:'Rs. 22.6B',  beta:'0.86', revenueGrowth:'14.2%',  earningsGrowth:'10.8%',  marketCap:'Rs. 128.6B' },
+  BAFL:  { pe:'7.4',  fwdPe:'6.8',  pb:'1.1', eps:'14.80',  divYield:'5.8%', roe:'16.4%', roa:'1.2%',  grossMargin:'N/A',   opMargin:'46.8%', netMargin:'24.8%', ebitda:'Rs. 38.4B',  revenue:'Rs. 154.8B', currentRatio:'N/A',  quickRatio:'N/A',  debtToEquity:'8.24', totalCash:'Rs. 112.6B',totalDebt:'Rs. 62.4B', fcf:'Rs. 18.8B',  beta:'0.92', revenueGrowth:'16.8%',  earningsGrowth:'12.4%',  marketCap:'Rs. 84.6B'  },
+  // ENGROH — Engro Holdings Ltd. Listed Jan 14 2025 replacing ENGRO (Engro Corporation)
+  // Holding company structure: owns stakes in EFERT, Engro Polymer, Engro Powergen, Enfrashare
+  ENGROH:{ pe:'14.8', fwdPe:'13.2', pb:'1.6', eps:'18.40',  divYield:'4.8%', roe:'11.2%', roa:'4.6%',  grossMargin:'22.4%', opMargin:'16.8%', netMargin:'10.4%', ebitda:'Rs. 28.6B',  revenue:'Rs. 274.8B', currentRatio:'1.28', quickRatio:'0.94', debtToEquity:'0.82', totalCash:'Rs. 12.4B', totalDebt:'Rs. 18.6B', fcf:'Rs. 14.8B',  beta:'1.04', revenueGrowth:'6.2%',   earningsGrowth:'4.8%',   marketCap:'Rs. 124.8B' },
+  EFERT: { pe:'9.8',  fwdPe:'9.2',  pb:'3.2', eps:'28.40',  divYield:'8.4%', roe:'32.6%', roa:'18.4%', grossMargin:'38.6%', opMargin:'32.4%', netMargin:'24.8%', ebitda:'Rs. 42.8B',  revenue:'Rs. 172.4B', currentRatio:'2.24', quickRatio:'1.86', debtToEquity:'0.42', totalCash:'Rs. 12.6B', totalDebt:'Rs. 8.4B',  fcf:'Rs. 32.4B',  beta:'0.82', revenueGrowth:'12.4%',  earningsGrowth:'10.2%',  marketCap:'Rs. 148.6B' },
+  FFC:   { pe:'8.6',  fwdPe:'8.2',  pb:'4.2', eps:'32.80',  divYield:'9.8%', roe:'48.6%', roa:'22.4%', grossMargin:'32.4%', opMargin:'26.8%', netMargin:'20.6%', ebitda:'Rs. 38.6B',  revenue:'Rs. 188.4B', currentRatio:'1.84', quickRatio:'1.42', debtToEquity:'0.28', totalCash:'Rs. 14.8B', totalDebt:'Rs. 6.4B',  fcf:'Rs. 28.6B',  beta:'0.76', revenueGrowth:'6.4%',   earningsGrowth:'4.8%',   marketCap:'Rs. 166.4B' },
+  FFBL:  { pe:'N/A',  fwdPe:'N/A',  pb:'1.4', eps:'-2.80',  divYield:'N/A',  roe:'-4.8%', roa:'-1.8%', grossMargin:'8.4%',  opMargin:'-2.4%', netMargin:'-1.8%', ebitda:'Rs. -1.2B',  revenue:'Rs. 68.4B',  currentRatio:'0.82', quickRatio:'0.58', debtToEquity:'2.84', totalCash:'Rs. 2.4B',  totalDebt:'Rs. 16.8B', fcf:'Rs. -4.2B',  beta:'1.28', revenueGrowth:'-4.2%',  earningsGrowth:'-24.6%', marketCap:'Rs. 14.8B'  },
+  LUCK:  { pe:'14.2', fwdPe:'12.8', pb:'1.8', eps:'62.40',  divYield:'3.8%', roe:'12.6%', roa:'6.4%',  grossMargin:'18.4%', opMargin:'14.2%', netMargin:'10.8%', ebitda:'Rs. 28.6B',  revenue:'Rs. 264.8B', currentRatio:'1.62', quickRatio:'1.24', debtToEquity:'0.48', totalCash:'Rs. 12.4B', totalDebt:'Rs. 18.6B', fcf:'Rs. 12.8B',  beta:'1.12', revenueGrowth:'4.8%',   earningsGrowth:'2.4%',   marketCap:'Rs. 214.8B' },
+  MLCF:  { pe:'18.4', fwdPe:'16.2', pb:'1.6', eps:'4.80',   divYield:'2.4%', roe:'8.6%',  roa:'4.2%',  grossMargin:'14.2%', opMargin:'10.8%', netMargin:'6.4%',  ebitda:'Rs. 8.4B',   revenue:'Rs. 52.6B',  currentRatio:'1.28', quickRatio:'0.86', debtToEquity:'0.82', totalCash:'Rs. 2.8B',  totalDebt:'Rs. 8.6B',  fcf:'Rs. 2.4B',   beta:'1.24', revenueGrowth:'6.2%',   earningsGrowth:'-8.4%',  marketCap:'Rs. 24.8B'  },
+  CHCC:  { pe:'22.6', fwdPe:'18.4', pb:'2.4', eps:'8.20',   divYield:'1.8%', roe:'10.8%', roa:'5.4%',  grossMargin:'16.8%', opMargin:'12.4%', netMargin:'8.2%',  ebitda:'Rs. 6.8B',   revenue:'Rs. 42.4B',  currentRatio:'1.48', quickRatio:'1.02', debtToEquity:'0.62', totalCash:'Rs. 2.4B',  totalDebt:'Rs. 6.2B',  fcf:'Rs. 1.8B',   beta:'1.18', revenueGrowth:'8.4%',   earningsGrowth:'-4.2%',  marketCap:'Rs. 28.4B'  },
+  DGKC:  { pe:'N/A',  fwdPe:'N/A',  pb:'0.8', eps:'-4.60',  divYield:'N/A',  roe:'-4.2%', roa:'-2.1%', grossMargin:'6.4%',  opMargin:'-2.8%', netMargin:'-3.4%', ebitda:'Rs. -1.6B',  revenue:'Rs. 48.4B',  currentRatio:'0.92', quickRatio:'0.64', debtToEquity:'1.84', totalCash:'Rs. 1.8B',  totalDebt:'Rs. 18.4B', fcf:'Rs. -2.8B',  beta:'1.32', revenueGrowth:'-2.4%',  earningsGrowth:'-28.6%', marketCap:'Rs. 18.4B'  },
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HTTP HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
-function fetchJSON(url, ms = 5000) {
-  return new Promise(resolve => {
-    const t = setTimeout(() => resolve(null), ms);
-    https.get(url, { headers: { 'User-Agent': 'WallTrade/1.0', 'Accept': 'application/json' } }, res => {
-      let b = '';
-      res.on('data', c => b += c);
-      res.on('end', () => { clearTimeout(t); try { resolve(JSON.parse(b)); } catch { resolve(null); } });
-    }).on('error', () => { clearTimeout(t); resolve(null); });
-  });
-}
-
-function fetchRSS(url, source, ms = 4000) {
-  return new Promise(resolve => {
-    const t = setTimeout(() => resolve([]), ms);
-    https.get(url, { headers: { 'User-Agent': 'WallTrade/1.0', 'Accept': 'application/rss+xml,text/xml' } }, res => {
-      let b = '';
-      res.on('data', c => b += c);
+// ── HELPERS ────────────────────────────────────────────────────
+function fetchJSON(url, headers = {}) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), 6000);
+    https.get(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WallTrade/1.0)', ...headers }
+    }, res => {
+      let body = '';
+      res.on('data', c => body += c);
       res.on('end', () => {
-        clearTimeout(t);
-        try {
-          const items = b.match(/<item>([\s\S]*?)<\/item>/gi) || [];
-          const articles = items.slice(0, 6).map(item => {
-            const title   = (item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/i) || item.match(/<title>(.*?)<\/title>/i) || [])[1] || '';
-            const pubDate = (item.match(/<pubDate>(.*?)<\/pubDate>/i) || [])[1] || '';
-            return { title: title.trim().replace(/&amp;/g,'&').replace(/&#39;/g,"'"), source, pubDate, date: pubDate ? new Date(pubDate).getTime() : 0 };
-          }).filter(a => a.title);
-          resolve(articles);
-        } catch { resolve([]); }
+        clearTimeout(timer);
+        try { resolve(JSON.parse(body)); } catch(e) { resolve(null); }
       });
-    }).on('error', () => { clearTimeout(t); resolve([]); });
+    }).on('error', () => { clearTimeout(timer); resolve(null); });
   });
 }
 
 function callAnthropic(body) {
   return new Promise((resolve, reject) => {
-    const hardTimeout = setTimeout(() => reject(new Error('Anthropic timeout')), 22000);
     const data = JSON.stringify(body);
     const req = https.request({
       hostname: 'api.anthropic.com',
@@ -78,253 +62,250 @@ function callAnthropic(body) {
     }, res => {
       let b = '';
       res.on('data', c => b += c);
-      res.on('end', () => { clearTimeout(hardTimeout); try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
+      res.on('end', () => { try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
     });
-    req.on('error', e => { clearTimeout(hardTimeout); reject(e); });
+    req.on('error', reject);
     req.write(data);
     req.end();
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GET STOCK DATA — price passed from frontend, fundamentals from DB
-// ─────────────────────────────────────────────────────────────────────────────
-function getStockData(ticker, livePrice) {
-  const fb = FUNDAMENTALS[ticker];
-  if (!fb) return null;
-  return {
-    ticker,
-    name: fb.name, sector: fb.sector, industry: fb.industry,
-    price:      livePrice?.price     || null,
-    change:     livePrice?.change    || null,
-    dir:        livePrice?.dir       || 'up',
-    high:       livePrice?.high      || null,
-    low:        livePrice?.low       || null,
-    volume:     livePrice?.volume    || null,
-    week52High: livePrice?.week52High || null,
-    week52Low:  livePrice?.week52Low  || null,
-    pe: fb.pe, pb: fb.pb, eps: fb.eps, divYield: fb.divYield,
-    roe: fb.roe, roa: fb.roa, grossMargin: fb.grossMargin,
-    netMargin: fb.netMargin, opMargin: fb.opMargin,
-    ebitda: fb.ebitda, revenue: fb.revenue,
-    currentRatio: fb.currentRatio, debtToEquity: fb.debtToEquity,
-    totalDebt: fb.totalDebt, totalCash: fb.totalCash,
-    fcf: fb.fcf, marketCap: fb.marketCap,
-    revenueGrowth: fb.revenueGrowth, earningsGrowth: fb.earningsGrowth,
-    beta: fb.beta,
-    casaRatio:  fb.casaRatio  || null,
-    nplRatio:   fb.nplRatio   || null,
-    week52Note: fb.week52Note || '',
-  };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// LIVE MACRO FETCHER — oil, gold, PKR, DXY, KSE-100, sector news
-// ─────────────────────────────────────────────────────────────────────────────
-async function fetchLiveMacro(ticker) {
-  const fmpKey = process.env.FMP_API_KEY;
-  const macro  = { oil: null, gold: null, pkrusd: null, dxy: null, kse100: null, sp500: null, news: [] };
-
-  const chartChange = (r) => {
-    const closes = r?.chart?.result?.[0]?.indicators?.quote?.[0]?.close?.filter(v => v != null);
-    if (!closes || closes.length < 2) return null;
-    const cur = closes[closes.length - 1], prev = closes[closes.length - 2];
-    return { price: cur.toFixed(2), change: ((cur - prev) / prev * 100).toFixed(2) };
-  };
-
-  const [oilR, goldR, dxyR, kseR, pkrR, sp500R] = await Promise.all([
-    fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/BZ%3DF?interval=1d&range=2d'),
-    fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?interval=1d&range=2d'),
-    fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?interval=1d&range=2d'),
-    fetchJSON('https://query1.finance.yahoo.com/v8/finance/chart/%5EKSE?interval=1d&range=2d'),
-    fmpKey ? fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=USDPKR&apikey=${fmpKey}`) : Promise.resolve(null),
-    fmpKey ? fetchJSON(`https://financialmodelingprep.com/stable/quote?symbol=%5EGSPC&apikey=${fmpKey}`) : Promise.resolve(null),
-  ]);
-
-  const oil = chartChange(oilR);   if (oil)  macro.oil    = { ...oil,  label: 'Brent Crude (USD/bbl)' };
-  const gold = chartChange(goldR); if (gold) macro.gold   = { price: Math.round(parseFloat(gold.price)).toString(), change: gold.change, label: 'Gold (USD/oz)' };
-  const dxy = chartChange(dxyR);   if (dxy)  macro.dxy    = { ...dxy,  label: 'USD Index (DXY)' };
-  const kse = chartChange(kseR);   if (kse)  macro.kse100 = { price: Math.round(parseFloat(kse.price)).toLocaleString(), change: kse.change, label: 'KSE-100 Index' };
-
-  const pkrArr = Array.isArray(pkrR) ? pkrR : null;
-  if (pkrArr?.[0]?.price) macro.pkrusd = { rate: parseFloat(pkrArr[0].price).toFixed(2), label: 'PKR per USD' };
-
-  const sp = Array.isArray(sp500R) ? sp500R[0] : null;
-  if (sp?.price) macro.sp500 = { price: sp.price.toFixed(2), change: (sp.changesPercentage || 0).toFixed(2) };
-
-  // Sector-relevant Pakistan financial news
-  const SECTOR_KEYWORDS = {
-    'Energy':      ['oil','brent','crude','ogdc','ppl','pso','mari','energy','petroleum','circular debt','omc'],
-    'Banking':     ['bank','hbl','mcb','ubl','nbp','abl','bafl','interest rate','sbp','npl','casa','nim'],
-    'Fertiliser':  ['fertiliser','fertilizer','urea','engro','engroh','efert','ffc','gas','agriculture'],
-    'Cement':      ['cement','luck','mlcf','chcc','dgkc','construction','cpec','psdp','coal'],
-    'Conglomerate':['engro','engroh','lng','fertiliser','polymer','diversified'],
-  };
-  const fb = FUNDAMENTALS[ticker];
-  const sectorKeys = SECTOR_KEYWORDS[fb?.sector] || [];
-  const allKeys = [...new Set([...sectorKeys, 'psx','kse','imf','pakistan economy','sbp','rupee','pkr','inflation','dollar','budget','fiscal','monetary'])];
-
+// ── FETCH LIVE PRICE FROM PSX TERMINAL ────────────────────────
+async function getPSXPrice(ticker) {
   try {
-    const feeds = [
-      { url: 'https://www.brecorder.com/feeds/rss',        source: 'Business Recorder' },
-      { url: 'https://www.dawn.com/feeds/business-finance', source: 'Dawn Business' },
-      { url: 'https://tribune.com.pk/feed/business',       source: 'Tribune Business' },
-      { url: 'https://www.thenews.com.pk/rss/2/29',        source: 'The News Business' },
-    ];
-    const rssResults = await Promise.allSettled(feeds.map(f => fetchRSS(f.url, f.source, 4000)));
-    const cutoff = Date.now() - (48 * 60 * 60 * 1000);
-    const all = rssResults.flatMap(r => r.status === 'fulfilled' ? r.value : []);
-    macro.news = all
-      .filter(a => !a.date || a.date >= cutoff)
-      .map(a => ({ ...a, score: allKeys.filter(k => a.title.toLowerCase().includes(k)).length }))
-      .filter(a => a.score > 0)
-      .sort((a, b) => b.date - a.date || b.score - a.score)
-      .slice(0, 6);
-  } catch(e) {}
-
-  return macro;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DCF — simplified dividend discount model, Pakistan-calibrated
-// ─────────────────────────────────────────────────────────────────────────────
-function computeDCF(s, livePrice) {
-  try {
-    const eps   = parseFloat(s.eps);
-    const price = parseFloat(livePrice?.price || 0);
-    if (!eps || eps <= 0 || !price || price <= 0) return null;
-
-    const PARAMS = {
-      'Energy':      { g1: 0.06, g2: 0.04, gT: 0.03, r: 0.14 },
-      'Banking':     { g1: 0.12, g2: 0.08, gT: 0.04, r: 0.15 },
-      'Fertiliser':  { g1: 0.07, g2: 0.05, gT: 0.03, r: 0.14 },
-      'Cement':      { g1: 0.08, g2: 0.05, gT: 0.03, r: 0.15 },
-      'Conglomerate':{ g1: 0.08, g2: 0.05, gT: 0.03, r: 0.14 },
-    };
-    const p = PARAMS[s.sector] || { g1: 0.07, g2: 0.05, gT: 0.03, r: 0.15 };
-    const payout = s.sector === 'Banking' ? 0.60 : 0.70;
-
-    let pv = 0, curEPS = eps;
-    for (let yr = 1; yr <= 10; yr++) {
-      curEPS *= (1 + (yr <= 5 ? p.g1 : p.g2));
-      pv += (curEPS * payout) / Math.pow(1 + p.r, yr);
-    }
-    const tv  = (curEPS * (1 + p.gT) * payout) / (p.r - p.gT);
-    const pvTV = tv / Math.pow(1 + p.r, 10);
-    const iv   = pv + pvTV;
-    const upside = ((iv - price) / price * 100).toFixed(1);
-
+    const data = await fetchJSON(
+      `https://psxterminal.com/api/ticks/stock/${ticker}`,
+      { 'Origin': 'https://psxterminal.com', 'Referer': 'https://psxterminal.com/' }
+    );
+    const d = data?.data ?? data;
+    if (!d?.price && !d?.last && !d?.close) return null;
+    const price  = d.price ?? d.last ?? d.close;
+    const open   = d.open ?? price;
+    const change = open ? ((price - open) / open * 100) : 0;
     return {
-      intrinsicValue: iv.toFixed(2),
-      currentPrice:   price.toFixed(2),
-      upside:         upside + '%',
-      marginOfSafety: ((iv - price) / iv * 100).toFixed(1) + '%',
-      dcfVerdict:     parseFloat(upside) > 20 ? 'Undervalued' : parseFloat(upside) < -20 ? 'Overvalued' : 'Fair Value',
-      assumptions:    `Discount rate ${(p.r*100).toFixed(0)}% | Growth: ${(p.g1*100).toFixed(0)}% → ${(p.g2*100).toFixed(0)}% → ${(p.gT*100).toFixed(0)}% terminal | Payout ${(payout*100).toFixed(0)}%`,
+      price:     parseFloat(price).toFixed(2),
+      change:    change.toFixed(2),
+      changeAmt: (price - open).toFixed(2),
+      high:      d.high?.toFixed?.(2) ?? null,
+      low:       d.low?.toFixed?.(2) ?? null,
+      volume:    d.volume?.toLocaleString?.() ?? null,
+      dir:       change >= 0 ? 'up' : 'dn'
     };
   } catch(e) { return null; }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VERDICT CACHE
-// ─────────────────────────────────────────────────────────────────────────────
+// ── FETCH FULL STOCK DATA ──────────────────────────────────────
+async function getStockData(ticker) {
+  // Get live price from PSX Terminal + fundamentals from hardcoded fallback
+  const [livePrice, fmpData] = await Promise.all([
+    getPSXPrice(ticker),
+    getFMPData(ticker)
+  ]);
+
+  const fb = PSX_FUNDAMENTALS[ticker];
+
+  // Need at least fundamentals to show something
+  if (!fb && !fmpData) return null;
+
+  const name = ticker === 'ENGROH' ? 'Engro Holdings Ltd'
+             : ticker === 'OGDC'   ? 'Oil & Gas Dev Co Ltd'
+             : ticker === 'PPL'    ? 'Pakistan Petroleum Ltd'
+             : ticker === 'HBL'    ? 'Habib Bank Ltd'
+             : ticker === 'MCB'    ? 'MCB Bank Ltd'
+             : ticker === 'LUCK'   ? 'Lucky Cement Ltd'
+             : ticker;
+
+  const sector = ['HBL','MCB','UBL','NBP','ABL','BAFL','BAHL','MEBL','FABL'].includes(ticker) ? 'Commercial Banks'
+               : ['OGDC','PPL','MARI'].includes(ticker) ? 'Oil & Gas Exploration'
+               : ['PSO','APL','HASCOL'].includes(ticker) ? 'Oil & Gas Marketing'
+               : ['EFERT','FFC','FFBL'].includes(ticker) ? 'Fertilizer'
+               : ['LUCK','MLCF','CHCC','DGKC'].includes(ticker) ? 'Cement'
+               : ['SYS','TRG','NETSOL'].includes(ticker) ? 'Technology'
+               : ticker === 'ENGROH' ? 'Holding Company'
+               : 'Pakistan Stock Exchange';
+
+  // Merge: live price + FMP ratios + hardcoded fundamentals fallback
+  const merged = { ...fb, ...(fmpData || {}) };
+
+  return {
+    ticker,
+    name,
+    sector,
+    industry: '',
+    // Live price from PSX Terminal (may be null outside market hours)
+    price:     livePrice?.price     ?? null,
+    change:    livePrice?.change    ?? null,
+    changeAmt: livePrice?.changeAmt ?? null,
+    high:      livePrice?.high      ?? null,
+    low:       livePrice?.low       ?? null,
+    volume:    livePrice?.volume    ?? null,
+    week52High: null,
+    week52Low:  null,
+    dir:       livePrice?.dir ?? 'up',
+    dataSource: livePrice ? 'PSX Terminal' : 'fallback',
+    // Fundamentals from FMP (if available) with hardcoded fallback
+    pe:           merged.pe          ?? 'N/A',
+    fwdPe:        merged.fwdPe       ?? 'N/A',
+    pb:           merged.pb          ?? 'N/A',
+    eps:          merged.eps         ?? 'N/A',
+    divYield:     merged.divYield    ?? 'N/A',
+    roe:          merged.roe         ?? 'N/A',
+    roa:          merged.roa         ?? 'N/A',
+    grossMargin:  merged.grossMargin ?? 'N/A',
+    opMargin:     merged.opMargin    ?? 'N/A',
+    netMargin:    merged.netMargin   ?? 'N/A',
+    ebitdaMargin: merged.ebitdaMargin?? 'N/A',
+    ebitda:       merged.ebitda      ?? 'N/A',
+    revenue:      merged.revenue     ?? 'N/A',
+    currentRatio: merged.currentRatio?? 'N/A',
+    quickRatio:   merged.quickRatio  ?? 'N/A',
+    debtToEquity: merged.debtToEquity?? 'N/A',
+    totalCash:    merged.totalCash   ?? 'N/A',
+    totalDebt:    merged.totalDebt   ?? 'N/A',
+    fcf:          merged.fcf         ?? 'N/A',
+    fcfYield:     merged.fcfYield    ?? 'N/A',
+    beta:         merged.beta        ?? 'N/A',
+    revenueGrowth:  merged.revenueGrowth  ?? 'N/A',
+    earningsGrowth: merged.earningsGrowth ?? 'N/A',
+    marketCap:    merged.marketCap   ?? 'N/A',
+    ev_ebitda:    merged.ev_ebitda   ?? 'N/A',
+    roic:         merged.roic        ?? 'N/A',
+    payoutRatio:  merged.payoutRatio ?? 'N/A',
+    ps:           merged.ps          ?? 'N/A',
+    interestCover:merged.interestCover?? 'N/A',
+  };
+}
+
+// ── FMP FUNDAMENTALS (optional enrichment) ────────────────────
+async function getFMPData(ticker) {
+  const key = process.env.FMP_API_KEY;
+  if (!key) return null;
+  try {
+    const [metrics, ratios] = await Promise.all([
+      fetchJSON(`https://financialmodelingprep.com/api/v3/key-metrics-ttm/${ticker}.KA?apikey=${key}`),
+      fetchJSON(`https://financialmodelingprep.com/api/v3/ratios-ttm/${ticker}.KA?apikey=${key}`)
+    ]);
+    if (!ratios?.[0]) return null;
+    const m = metrics?.[0] || {}, r = ratios[0];
+    const pct = v => v != null ? (v * 100).toFixed(1) + '%' : null;
+    const fmt = (v, d=2) => v != null ? Number(v).toFixed(d) : null;
+    return {
+      pe:           fmt(r.peRatioTTM),
+      pb:           fmt(r.priceToBookRatioTTM),
+      ps:           fmt(r.priceToSalesRatioTTM),
+      ev_ebitda:    fmt(m.enterpriseValueOverEBITDATTM),
+      roe:          pct(r.returnOnEquityTTM),
+      roa:          pct(r.returnOnAssetsTTM),
+      roic:         pct(m.roicTTM),
+      grossMargin:  pct(r.grossProfitMarginTTM),
+      netMargin:    pct(r.netProfitMarginTTM),
+      ebitdaMargin: pct(r.ebitdaMarginTTM),
+      debtToEquity: fmt(r.debtEquityRatioTTM),
+      currentRatio: fmt(r.currentRatioTTM),
+      quickRatio:   fmt(r.quickRatioTTM),
+      interestCover:fmt(m.interestCoverageTTM),
+      divYield:     pct(r.dividendYieldTTM),
+      payoutRatio:  pct(r.payoutRatioTTM),
+      fcfYield:     pct(m.freeCashFlowYieldTTM),
+      eps:          fmt(r.epsTTM),
+    };
+  } catch(e) { return null; }
+}
+
+// ── VERDICT CACHE (in-memory, resets per function instance) ───
 const verdictCache = {};
-const CACHE_TTL    = 4 * 60 * 60 * 1000; // 4 hours
+const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
 function getCached(ticker) {
   const c = verdictCache[ticker];
-  if (!c || Date.now() - c.ts > CACHE_TTL) { delete verdictCache[ticker]; return null; }
+  if (!c) return null;
+  if (Date.now() - c.timestamp > CACHE_TTL) {
+    delete verdictCache[ticker];
+    return null;
+  }
   return c.data;
 }
-function setCache(ticker, data) { verdictCache[ticker] = { data, ts: Date.now() }; }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GENERATE VERDICT — full macro + news + DCF intelligence
-// ─────────────────────────────────────────────────────────────────────────────
-async function generateVerdict(s, livePrice, macroCtx) {
-  const cached = getCached(s.ticker);
+function setCache(ticker, data) {
+  verdictCache[ticker] = { data, timestamp: Date.now() };
+}
+
+// ── GENERATE AI VERDICT + FULL ANALYSIS ──────────────────────
+async function generateVerdict(stockData, macroContext) {
+  const cached = getCached(stockData.ticker);
   if (cached) return { ...cached, cached: true };
 
-  const today = new Date().toLocaleDateString('en-PK', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const prompt = `You are a sharp financial analyst covering Pakistani equities for Wall-Trade, an AI-powered PSX analysis platform for retail investors.
 
-  const bankNote = s.casaRatio
-    ? `\nBANKING METRICS:\n• CASA Ratio: ${s.casaRatio} | NPL Ratio: ${s.nplRatio}\n• NOTE: D/E of ${s.debtToEquity} is deposit-funded — completely normal for banks. Judge on CASA, NPL, ROE, NIM instead.`
-    : '';
+LIVE STOCK DATA FOR ${stockData.ticker} — ${stockData.name}:
+Sector: ${stockData.sector} | Industry: ${stockData.industry}
+Price: PKR ${stockData.price} (${stockData.change}% today) | 52W Range: ${stockData.week52Low} – ${stockData.week52High}
+Market Cap: ${stockData.marketCap} | Volume: ${stockData.volume}
 
-  const prompt = `You are a senior equity analyst at a top-tier investment bank. Today is ${today}. Produce a complete research verdict on ${s.ticker}.
+VALUATION:
+P/E: ${stockData.pe}x | Fwd P/E: ${stockData.fwdPe}x | P/B: ${stockData.pb}x | P/S: ${stockData.ps}x | EPS: PKR ${stockData.eps}
+Dividend Yield: ${stockData.divYield}
 
-═══ SECTION 1 — LIVE MARKET INTELLIGENCE ═══
-${macroCtx}
+PROFITABILITY:
+ROE: ${stockData.roe} | ROA: ${stockData.roa} | Gross Margin: ${stockData.grossMargin} | Net Margin: ${stockData.netMargin}
+EBITDA: ${stockData.ebitda} | Revenue: ${stockData.revenue}
 
-═══ SECTION 2 — COMPANY FUNDAMENTALS (FY2025) ═══
-${s.name} | ${s.sector} | ${s.industry}
-Price: PKR ${s.price || 'unavailable'} (${s.change || '??'}% today) | Vol: ${s.volume || 'N/A'}
-52W Range: PKR ${s.week52Low || '?'} – ${s.week52High || '?'}
+FINANCIAL HEALTH:
+Current Ratio: ${stockData.currentRatio} | Quick Ratio: ${stockData.quickRatio} | D/E: ${stockData.debtToEquity}
+Total Cash: ${stockData.totalCash} | Total Debt: ${stockData.totalDebt} | Free Cash Flow: ${stockData.fcf}
 
-VALUATION: P/E ${s.pe}x | P/B ${s.pb}x | EPS PKR ${s.eps} | Div Yield ${s.divYield}
-PROFITABILITY: ROE ${s.roe} | ROA ${s.roa} | Gross Margin ${s.grossMargin} | Net Margin ${s.netMargin} | Op Margin ${s.opMargin}
-FINANCIALS: Current Ratio ${s.currentRatio} | D/E ${s.debtToEquity} | FCF ${s.fcf} | Cash ${s.totalCash} | Debt ${s.totalDebt}
-SCALE: Revenue ${s.revenue} | EBITDA ${s.ebitda} | Market Cap ${s.marketCap}
-GROWTH: Revenue ${s.revenueGrowth} | Earnings ${s.earningsGrowth} | Beta ${s.beta}${bankNote}
-ANALYST NOTE: ${s.week52Note}
+GROWTH:
+Revenue Growth: ${stockData.revenueGrowth} | Earnings Growth: ${stockData.earningsGrowth} | Beta: ${stockData.beta}
 
-═══ ANALYST REQUIREMENTS ═══
-1. Use the REAL numbers above — no generalisations
-2. Connect today's oil/PKR/rates to this specific company's margins and revenues
-3. Reference any news headlines that move the needle for this stock
-4. Use the DCF signal to comment on valuation
-5. Give a clear, opinionated verdict — no fence-sitting
+${macroContext}
 
-Return ONLY valid JSON:
+Generate a complete analysis. Return ONLY this JSON (no markdown, no extra text):
 {
   "verdict": "Positive" or "Neutral" or "Caution",
-  "score": <1-10>,
-  "headline": "<verdict>: <sharp conviction statement max 14 words>",
-  "body": "<180-220 words. Para 1: verdict + 2 strongest drivers with real numbers. Para 2: macro linkage — today oil/PKR/rates and how they affect THIS stock specifically, reference any relevant news. Para 3: valuation — multiples vs sector + DCF direction. Final sentence: the one risk that could change the thesis. No jargon. No buy/sell advice.>",
+  "score": <number 1-10>,
+  "headline": "<verdict word>: <sharp one-line reason, max 12 words>",
+  "body": "<120-150 words. State verdict clearly. Cover 2-3 strongest drivers only. One meaningful risk. Connect financials to Pakistan macro. Short paragraphs, mobile-friendly. No jargon. No buy/sell advice.>",
   "insights": [
-    {"icon":"<emoji>","value":"<metric + number>","label":"<plain English meaning max 10 words>","color":"green"},
-    {"icon":"<emoji>","value":"<metric + number>","label":"<plain English meaning max 10 words>","color":"green"},
-    {"icon":"<emoji>","value":"<risk or concern>","label":"<plain English meaning max 10 words>","color":"amber"}
+    {"icon": "<emoji>", "value": "<metric value>", "label": "<plain English explanation, max 12 words>", "color": "green|amber|red|purple"},
+    {"icon": "<emoji>", "value": "<metric value>", "label": "<plain English explanation, max 12 words>", "color": "green|amber|red|purple"},
+    {"icon": "<emoji>", "value": "<metric value>", "label": "<plain English explanation, max 12 words>", "color": "green|amber|red|purple"}
   ],
   "signals": [
-    {"label":"<2-4 word signal>","type":"green"},
-    {"label":"<2-4 word signal>","type":"amber"},
-    {"label":"<2-4 word signal>","type":"purple"},
-    {"label":"<2-4 word signal>","type":"green"}
+    {"label": "<2-3 word signal>", "type": "green|amber|red|purple"}
   ],
-  "scores": { "Financial health":<1-10>, "Macro environment":<1-10>, "Growth outlook":<1-10>, "Risk level":<1-10> },
+  "scores": {
+    "Financial health": <1-10>,
+    "Macro environment": <1-10>,
+    "Growth outlook": <1-10>,
+    "Risk level": <1-10>
+  },
   "factors": [
-    {"icon":"<emoji>","title":"<max 6 words>","detail":"<3 sentences, specific numbers, Pakistan cause-effect, plain English>"},
-    {"icon":"<emoji>","title":"<max 6 words>","detail":"<3 sentences, specific numbers, Pakistan cause-effect, plain English>"},
-    {"icon":"<emoji>","title":"<max 6 words>","detail":"<3 sentences, specific numbers, Pakistan cause-effect, plain English>"}
+    {"icon": "<emoji>", "title": "<factor title>", "detail": "<2-3 sentences plain English explanation>"},
+    {"icon": "<emoji>", "title": "<factor title>", "detail": "<2-3 sentences plain English explanation>"},
+    {"icon": "<emoji>", "title": "<factor title>", "detail": "<2-3 sentences plain English explanation>"}
   ],
-  "summary": "<one sharp conviction sentence>"
+  "summary": "<one sentence overall summary for score card>"
 }`;
 
   try {
     const result = await callAnthropic({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 1600,
-      system: 'You are a senior PSX equity analyst at a tier-1 investment bank. Always use the actual numbers from the data. Connect macro to stock-level impact with precision. Take a clear stance. Return only valid JSON.',
+      max_tokens: 1500,
+      system: `You are a senior analyst covering PSX equities. You generate accurate, data-driven analysis for retail investors in Pakistan. Always base your verdict on the actual numbers provided. Be specific — use real figures from the data. Never be generic.`,
       messages: [{ role: 'user', content: prompt }]
     });
 
     const raw = result.content?.map(i => i.text || '').join('').replace(/```json|```/g, '').trim();
-    const m = raw.match(/\{[\s\S]*\}/);
-    if (!m) throw new Error('No JSON in response');
-    const verdict = JSON.parse(m[0]);
-    setCache(s.ticker, verdict);
-    console.log(`[stock] ${s.ticker}: ${verdict.verdict} ${verdict.score}/10`);
+    const verdict = JSON.parse(raw);
+    setCache(stockData.ticker, verdict);
     return verdict;
   } catch(e) {
-    console.error('[stock] AI error:', e.message);
+    console.error('AI error:', e.message);
     return null;
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HANDLER
-// ─────────────────────────────────────────────────────────────────────────────
+// ── MAIN HANDLER ──────────────────────────────────────────────
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin':  '*',
@@ -337,61 +318,36 @@ exports.handler = async (event) => {
 
   let payload;
   try { payload = JSON.parse(event.body); }
-  catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request body' }) }; }
+  catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request' }) }; }
 
-  const { ticker, livePrice } = payload;
+  const { ticker, macroContext } = payload;
+
   if (!ticker || typeof ticker !== 'string' || ticker.length > 10) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid ticker' }) };
   }
 
-  const t = ticker.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  console.log(`[stock] ${t} | price: ${livePrice?.price || 'none'}`);
+  const cleanTicker = ticker.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-  const stockData = getStockData(t, livePrice || null);
+  // Fetch stock data
+  const stockData = await getStockData(cleanTicker);
   if (!stockData) {
-    return { statusCode: 404, headers, body: JSON.stringify({ error: `${t} not in coverage. Try: OGDC, PPL, PSO, MARI, HBL, MCB, UBL, NBP, ABL, BAFL, ENGROH, FFC, EFERT, LUCK, MLCF, CHCC, DGKC, APL, HASCOL` }) };
+    return {
+      statusCode: 404,
+      headers,
+      body: JSON.stringify({ error: `No data found for ${cleanTicker}. Check the ticker and try again.` })
+    };
   }
 
-  // Fetch live macro + run DCF in parallel, cap at 6s
-  const [liveMacro] = await Promise.all([
-    Promise.race([fetchLiveMacro(t), new Promise(r => setTimeout(() => r({}), 6000))])
-  ]);
-
-  const dcf = computeDCF(stockData, livePrice);
-  const today = new Date().toLocaleDateString('en-PK', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-
-  // Build macro context string
-  let macroCtx = `LIVE MARKET DATA (${today}):\n`;
-  if (liveMacro.oil)    macroCtx += `• Brent Crude: $${liveMacro.oil.price}/bbl (${Number(liveMacro.oil.change)>=0?'+':''}${liveMacro.oil.change}%) — impacts Pakistan current account, OMC margins, E&P revenues\n`;
-  if (liveMacro.gold)   macroCtx += `• Gold: $${liveMacro.gold.price}/oz (${Number(liveMacro.gold.change)>=0?'+':''}${liveMacro.gold.change}%) — global risk sentiment\n`;
-  if (liveMacro.pkrusd) macroCtx += `• PKR/USD: ${liveMacro.pkrusd.rate} — affects import costs, dollar-linked revenues, inflation\n`;
-  if (liveMacro.dxy)    macroCtx += `• USD Index (DXY): ${liveMacro.dxy.price} (${Number(liveMacro.dxy.change)>=0?'+':''}${liveMacro.dxy.change}%) — stronger DXY pressures PKR\n`;
-  if (liveMacro.kse100) macroCtx += `• KSE-100: ${liveMacro.kse100.price} pts (${Number(liveMacro.kse100.change)>=0?'UP':'DOWN'} ${Math.abs(liveMacro.kse100.change)}% today)\n`;
-  if (liveMacro.sp500)  macroCtx += `• S&P 500: ${liveMacro.sp500.price} (${Number(liveMacro.sp500.change)>=0?'+':''}${liveMacro.sp500.change}%) — global risk-on/off\n`;
-
-  macroCtx += `\nPAKISTAN MACRO:\n`;
-  macroCtx += `• SBP Rate: 10.50% | Aggressive easing from 22% peak — 11 cuts since mid-2024\n`;
-  macroCtx += `• IMF EFF: Active — energy reform, circular debt reduction, DISCO privatisation\n`;
-  macroCtx += `• CPI: ~8-9% (down from 38% peak) | Current account: near-balanced\n`;
-  macroCtx += `• Circular debt: Rs. 2.3tn+ power sector | KSE-100: near record highs\n`;
-
-  if (liveMacro.news?.length) {
-    macroCtx += `\nLATEST NEWS (factor these into analysis):\n`;
-    liveMacro.news.forEach((n, i) => { macroCtx += `${i+1}. [${n.source}] ${n.title}\n`; });
-  }
-
-  if (dcf) {
-    macroCtx += `\nDCF MODEL:\n`;
-    macroCtx += `• Intrinsic Value: PKR ${dcf.intrinsicValue} | Current: PKR ${dcf.currentPrice}\n`;
-    macroCtx += `• Implied Upside: ${dcf.upside} | Signal: ${dcf.dcfVerdict}\n`;
-    macroCtx += `• Assumptions: ${dcf.assumptions}\n`;
-  }
-
-  const verdict = await generateVerdict(stockData, livePrice, macroCtx);
+  // Generate AI verdict
+  const verdict = await generateVerdict(stockData, macroContext || '');
 
   return {
     statusCode: 200,
     headers,
-    body: JSON.stringify({ stockData, verdict, dcf: dcf || null, timestamp: new Date().toISOString() })
+    body: JSON.stringify({
+      stockData,
+      verdict,
+      timestamp: new Date().toISOString()
+    })
   };
 };
