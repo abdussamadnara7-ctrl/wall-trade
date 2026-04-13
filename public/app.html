@@ -420,6 +420,15 @@ body {
 /* push main content above bottom nav */
 #root, #crypto-root, #forex-root { padding-bottom: 80px; }
 
+/* smooth section transitions */
+#root, #crypto-root, #forex-root {
+  animation: fadeIn 0.18s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ── CRYPTO GRID ── */
 .crypto-grid { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
 .coin-card {
@@ -1116,6 +1125,12 @@ function closeSheet() {
 function select(ticker) {
   closeSheet();
   cur = ticker.toUpperCase(); tab = 'overview';
+  currentSection = 'home';
+  // Update nav — home is active when viewing a stock
+  ['home','stocks','crypto','forex'].forEach(s => {
+    const el = document.getElementById('bnav-' + s);
+    if (el) el.classList.toggle('on', s === 'home');
+  });
   document.getElementById('pill-av').textContent = cur.slice(0,3);
   document.getElementById('pill-lbl').textContent = cur;
   loadStock(cur);
@@ -1203,31 +1218,48 @@ const COIN_NAMES = {
 };
 
 function switchSection(section) {
+  // Close sheet if open
+  closeSheet();
+
+  const prev = currentSection;
   currentSection = section;
-  document.getElementById('root').style.display       = 'none';
+
+  // Hide all sections
+  document.getElementById('root').style.display        = 'none';
   document.getElementById('crypto-root').style.display = 'none';
   document.getElementById('forex-root').style.display  = 'none';
-  document.getElementById('ticker-bar').style.display  = 'block';
 
+  // Update nav active state
   ['home','stocks','crypto','forex'].forEach(s => {
     const el = document.getElementById('bnav-' + s);
     if (el) el.classList.toggle('on', s === section);
   });
 
-  // Update header pill behaviour per section
   const pill = document.getElementById('hdr-pill');
 
-  if (section === 'home' || section === 'stocks') {
+  if (section === 'home') {
     document.getElementById('root').style.display = 'block';
     if (pill) { pill.style.display = 'flex'; pill.onclick = openSheet; }
-    if (section === 'stocks') openSheet();
+    // Scroll smoothly to top — this is the key difference from STOCKS
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  } else if (section === 'stocks') {
+    document.getElementById('root').style.display = 'block';
+    if (pill) { pill.style.display = 'flex'; pill.onclick = openSheet; }
+    // Open stock picker only when arriving from a different section
+    // If already on home/stocks just open the sheet
+    openSheet();
+
   } else if (section === 'crypto') {
     document.getElementById('crypto-root').style.display = 'block';
     if (pill) pill.style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'instant' });
     renderCryptoSection();
+
   } else if (section === 'forex') {
     document.getElementById('forex-root').style.display = 'block';
     if (pill) pill.style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'instant' });
     renderForexSection();
   }
 }
@@ -1442,13 +1474,15 @@ async function renderForexSection() {
           <div class="fx-pair-name">
             <span class="fx-flag">${fx.flag}</span>
             <div>
-              <div class="fx-pair">${fx.pair}</div>
+              <div class="fx-pair">${fx.key}</div>
               <div class="fx-label">${fx.label}</div>
             </div>
           </div>
           <div class="fx-rate-block">
             <div class="fx-rate">PKR ${fx.rateRound}</div>
-            <div class="fx-sub">1 ${fx.base} = PKR ${fx.rateRound}</div>
+            <div class="fx-sub" style="color:${fx.dir==='up'?'var(--gb)':fx.dir==='dn'?'var(--ra)':'var(--t3)'}">
+              ${fx.change != null ? (fx.dir==='up'?'▲':'▼') + ' ' + Math.abs(fx.change) + '%' : '1 ' + fx.base + ' = PKR ' + fx.rateRound}
+            </div>
           </div>
         </div>
         <div class="fx-context">${fx.context}</div>
