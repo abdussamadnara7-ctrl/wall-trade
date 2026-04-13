@@ -22,7 +22,6 @@ const PSX_FUNDAMENTALS = {
   ENGROH:{ pe:'14.8', fwdPe:'13.2', pb:'1.6', eps:'18.40',  divYield:'4.8%', roe:'11.2%', roa:'4.6%',  grossMargin:'22.4%', opMargin:'16.8%', netMargin:'10.4%', ebitda:'Rs. 28.6B',  revenue:'Rs. 274.8B', currentRatio:'1.28', quickRatio:'0.94', debtToEquity:'0.82', totalCash:'Rs. 12.4B', totalDebt:'Rs. 18.6B', fcf:'Rs. 14.8B',  beta:'1.04', revenueGrowth:'6.2%',   earningsGrowth:'4.8%',   marketCap:'Rs. 124.8B' },
   EFERT: { pe:'9.8',  fwdPe:'9.2',  pb:'3.2', eps:'28.40',  divYield:'8.4%', roe:'32.6%', roa:'18.4%', grossMargin:'38.6%', opMargin:'32.4%', netMargin:'24.8%', ebitda:'Rs. 42.8B',  revenue:'Rs. 172.4B', currentRatio:'2.24', quickRatio:'1.86', debtToEquity:'0.42', totalCash:'Rs. 12.6B', totalDebt:'Rs. 8.4B',  fcf:'Rs. 32.4B',  beta:'0.82', revenueGrowth:'12.4%',  earningsGrowth:'10.2%',  marketCap:'Rs. 148.6B' },
   FFC:   { pe:'8.6',  fwdPe:'8.2',  pb:'4.2', eps:'32.80',  divYield:'9.8%', roe:'48.6%', roa:'22.4%', grossMargin:'32.4%', opMargin:'26.8%', netMargin:'20.6%', ebitda:'Rs. 38.6B',  revenue:'Rs. 188.4B', currentRatio:'1.84', quickRatio:'1.42', debtToEquity:'0.28', totalCash:'Rs. 14.8B', totalDebt:'Rs. 6.4B',  fcf:'Rs. 28.6B',  beta:'0.76', revenueGrowth:'6.4%',   earningsGrowth:'4.8%',   marketCap:'Rs. 166.4B' },
-  FFBL:  { pe:'N/A',  fwdPe:'N/A',  pb:'1.4', eps:'-2.80',  divYield:'N/A',  roe:'-4.8%', roa:'-1.8%', grossMargin:'8.4%',  opMargin:'-2.4%', netMargin:'-1.8%', ebitda:'Rs. -1.2B',  revenue:'Rs. 68.4B',  currentRatio:'0.82', quickRatio:'0.58', debtToEquity:'2.84', totalCash:'Rs. 2.4B',  totalDebt:'Rs. 16.8B', fcf:'Rs. -4.2B',  beta:'1.28', revenueGrowth:'-4.2%',  earningsGrowth:'-24.6%', marketCap:'Rs. 14.8B'  },
   LUCK:  { pe:'14.2', fwdPe:'12.8', pb:'1.8', eps:'62.40',  divYield:'3.8%', roe:'12.6%', roa:'6.4%',  grossMargin:'18.4%', opMargin:'14.2%', netMargin:'10.8%', ebitda:'Rs. 28.6B',  revenue:'Rs. 264.8B', currentRatio:'1.62', quickRatio:'1.24', debtToEquity:'0.48', totalCash:'Rs. 12.4B', totalDebt:'Rs. 18.6B', fcf:'Rs. 12.8B',  beta:'1.12', revenueGrowth:'4.8%',   earningsGrowth:'2.4%',   marketCap:'Rs. 214.8B' },
   MLCF:  { pe:'18.4', fwdPe:'16.2', pb:'1.6', eps:'4.80',   divYield:'2.4%', roe:'8.6%',  roa:'4.2%',  grossMargin:'14.2%', opMargin:'10.8%', netMargin:'6.4%',  ebitda:'Rs. 8.4B',   revenue:'Rs. 52.6B',  currentRatio:'1.28', quickRatio:'0.86', debtToEquity:'0.82', totalCash:'Rs. 2.8B',  totalDebt:'Rs. 8.6B',  fcf:'Rs. 2.4B',   beta:'1.24', revenueGrowth:'6.2%',   earningsGrowth:'-8.4%',  marketCap:'Rs. 24.8B'  },
   CHCC:  { pe:'22.6', fwdPe:'18.4', pb:'2.4', eps:'8.20',   divYield:'1.8%', roe:'10.8%', roa:'5.4%',  grossMargin:'16.8%', opMargin:'12.4%', netMargin:'8.2%',  ebitda:'Rs. 6.8B',   revenue:'Rs. 42.4B',  currentRatio:'1.48', quickRatio:'1.02', debtToEquity:'0.62', totalCash:'Rs. 2.4B',  totalDebt:'Rs. 6.2B',  fcf:'Rs. 1.8B',   beta:'1.18', revenueGrowth:'8.4%',   earningsGrowth:'-4.2%',  marketCap:'Rs. 28.4B'  },
@@ -115,12 +114,11 @@ async function getStockData(ticker) {
              : ticker === 'LUCK'   ? 'Lucky Cement Ltd'
              : ticker;
 
-  const sector = ['HBL','MCB','UBL','NBP','ABL','BAFL','BAHL','MEBL','FABL'].includes(ticker) ? 'Commercial Banks'
+  const sector = ['HBL','MCB','UBL','NBP','ABL','BAFL'].includes(ticker) ? 'Commercial Banks'
                : ['OGDC','PPL','MARI'].includes(ticker) ? 'Oil & Gas Exploration'
                : ['PSO','APL','HASCOL'].includes(ticker) ? 'Oil & Gas Marketing'
-               : ['EFERT','FFC','FFBL'].includes(ticker) ? 'Fertilizer'
+               : ['EFERT','FFC',].includes(ticker) ? 'Fertilizer'
                : ['LUCK','MLCF','CHCC','DGKC'].includes(ticker) ? 'Cement'
-               : ['SYS','TRG','NETSOL'].includes(ticker) ? 'Technology'
                : ticker === 'ENGROH' ? 'Holding Company'
                : 'Pakistan Stock Exchange';
 
