@@ -1,163 +1,192 @@
 // ── WALL-TRADE FOREX FUNCTION ─────────────────────────────────
-// Strategy:
-//  1. Fetch USDPKR, GBPUSD, EURUSD, USDCNY from FMP (these exist on Starter)
-//  2. SAR & AED are USD-pegged (fixed rates) — compute from USDPKR
-//  3. Construct all 6 PKR cross-rates with correct arithmetic
-//  4. Fallback to open.er-api.com if FMP fails completely
-//
-// BUG HISTORY (fixed):
-//  - app.html uses fx.pair but old code returned fx.key → now returns fx.pair
-//  - Cross-rate math was inverted: pkrPerForeign = usdpkr / usdPerForeign (not multiply)
-//  - USDGBP was fetched when GBPUSD was needed → now fetches correct symbols
+// Strategy: get USDPKR from ExchangeRate-API (reliable, free)
+//           get major pairs (GBPUSD, EURUSD etc.) from FMP (paid)
+//           calculate all PKR crosses from those two sources
+// This is the correct architecture — PKR crosses aren't in FMP directly
 
 const https = require('https');
 
-function get(url, ms = 7000) {
-  return new Promise(resolve => {
-    const t = setTimeout(() => { console.log(`FX TIMEOUT: ${url.slice(0,60)}`); resolve(null); }, ms);
-    https.get(url, { headers: { 'User-Agent': 'WallTrade/1.0', 'Accept': 'application/json' } }, res => {
+function fetchJSON(url) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), 7000);
+    https.get(url, { headers: { 'User-Agent': 'WallTrade/1.0' } }, res => {
       let body = '';
       res.on('data', c => body += c);
       res.on('end', () => {
-        clearTimeout(t);
-        console.log(`FX ${url.slice(0,60)} → HTTP ${res.statusCode}, len ${body.length}`);
-        try { resolve(JSON.parse(body)); } catch { resolve(null); }
+        clearTimeout(timer);
+        try { resolve(JSON.parse(body)); } catch(e) { resolve(null); }
       });
-    }).on('error', e => { clearTimeout(t); console.log('FX ERR:', e.message); resolve(null); });
+    }).on('error', () => { clearTimeout(timer); resolve(null); });
   });
 }
 
-// ── FX PAIR METADATA ─────────────────────────────────────────
-// pair = display name shown in app.html (fx.pair)
-const FX_PAIRS = [
+// ── FX PAIR CONFIG ────────────────────────────────────────────
+// fmpSymbol = FMP symbol for USD vs this currency (always exists in FMP)
+// For USD itself, fmpSymbol is null (rate = 1 by definition)
+const FX_CONFIG = [
   {
-    pair: 'USD/PKR', flag: '🇺🇸🇵🇰', base: 'USD', label: 'US Dollar',
-    context: 'The primary benchmark. SBP manages a controlled float against the dollar. Drives import costs, CPI inflation, and all dollar-linked stock revenues (OGDC, PPL, MARI).'
+    key: 'PKR/USD',
+    fmpSymbol: null,          // USDPKR comes directly from ExchangeRate-API
+    base: 'USD', flag: '🇺🇸',
+    label: 'US Dollar',
+    context: 'Primary benchmark. SBP managed float. Drives import costs, CPI inflation, and all dollar-denominated stock revenues (OGDC, PPL, MARI).'
   },
   {
-    pair: 'SAR/PKR', flag: '🇸🇦🇵🇰', base: 'SAR', label: 'Saudi Riyal',
-    context: 'Largest remittance corridor — ~3.5M Pakistanis work in Saudi Arabia. SAR is pegged to USD at 3.75, so it effectively tracks PKR/USD movements.'
+    key: 'PKR/SAR',
+    fmpSymbol: 'USDSAR',     // SAR is pegged to USD at ~3.75 — FMP has USDSAR
+    base: 'SAR', flag: '🇸🇦',
+    label: 'Saudi Riyal',
+    context: 'Largest remittance corridor — ~3.5M Pakistanis in KSA send billions home monthly. SAR pegged to USD at 3.75.'
   },
   {
-    pair: 'AED/PKR', flag: '🇦🇪🇵🇰', base: 'AED', label: 'UAE Dirham',
-    context: 'Second-largest remittance source. AED is pegged to USD at 3.672. Large Pakistani business and professional community in Dubai and Abu Dhabi.'
+    key: 'PKR/AED',
+    fmpSymbol: 'USDAED',     // AED pegged to USD at ~3.67 — FMP has USDAED
+    base: 'AED', flag: '🇦🇪',
+    label: 'UAE Dirham',
+    context: 'Second-largest remittance source. AED pegged to USD at 3.672. Large Pakistani business and diaspora in Dubai.'
   },
   {
-    pair: 'GBP/PKR', flag: '🇬🇧🇵🇰', base: 'GBP', label: 'British Pound',
-    context: 'UK hosts one of the largest Pakistani diaspora communities. GBP fluctuates with Bank of England policy. Strengthens when UK economy outperforms.'
+    key: 'PKR/GBP',
+    fmpSymbol: 'GBPUSD',     // GBPUSD = how many USD per 1 GBP — FMP has this
+    base: 'GBP', flag: '🇬🇧',
+    label: 'British Pound',
+    context: 'UK-Pakistan diaspora remittances. GBP moves with Bank of England policy decisions.'
   },
   {
-    pair: 'EUR/PKR', flag: '🇪🇺🇵🇰', base: 'EUR', label: 'Euro',
-    context: 'EU is a major trade partner. Pakistani textile and leather exports are partly invoiced in EUR. ECB rate decisions drive EUR strength or weakness.'
+    key: 'PKR/EUR',
+    fmpSymbol: 'EURUSD',     // EURUSD = how many USD per 1 EUR — FMP has this
+    base: 'EUR', flag: '🇪🇺',
+    label: 'Euro',
+    context: 'EU is a major trade partner. Pakistani textile exports partially invoiced in EUR.'
   },
   {
-    pair: 'CNY/PKR', flag: '🇨🇳🇵🇰', base: 'CNY', label: 'Chinese Yuan',
-    context: 'CPEC debt and bilateral trade. China is Pakistan\'s largest import source. A stronger CNY increases CPEC loan repayment costs in PKR terms.'
+    key: 'PKR/CNY',
+    fmpSymbol: 'USDCNY',     // USDCNY = how many CNY per 1 USD — FMP has this
+    base: 'CNY', flag: '🇨🇳',
+    label: 'Chinese Yuan',
+    context: 'CPEC & bilateral trade. China is Pakistan\'s largest trading partner. CNY moves increase CPEC debt costs in PKR.'
   },
 ];
 
-// ── FETCH RATES VIA FMP ───────────────────────────────────────
-// FMP Starter has: USDPKR, GBPUSD, EURUSD, USDCNY (USD base pairs)
-// We do NOT fetch SARPKR/AEDPKR directly — they rarely exist in FMP
-async function fetchFmpRates(apiKey) {
-  // Fetch: USDPKR (PKR per 1 USD), GBPUSD (USD per 1 GBP), EURUSD (USD per 1 EUR), USDCNY (CNY per 1 USD)
-  const symbols = 'USDPKR,GBPUSD,EURUSD,USDCNY';
-  const data = await get(
-    `https://financialmodelingprep.com/stable/quote?symbol=${symbols}&apikey=${apiKey}`
-  );
-
-  if (!Array.isArray(data) || data.length === 0) return null;
-
-  const bySymbol = {};
-  data.forEach(q => {
-    if (q.symbol && q.price) bySymbol[q.symbol] = q;
-  });
-
-  const usdpkrQ = bySymbol['USDPKR'];
-  if (!usdpkrQ?.price) return null; // Can't build anything without USDPKR
-
-  const usdPkr  = parseFloat(usdpkrQ.price);    // e.g. 278.5  (1 USD = 278.5 PKR)
-  const gbpUsd  = bySymbol['GBPUSD']?.price ? parseFloat(bySymbol['GBPUSD'].price) : null;  // e.g. 1.27 (1 GBP = 1.27 USD)
-  const eurUsd  = bySymbol['EURUSD']?.price ? parseFloat(bySymbol['EURUSD'].price) : null;  // e.g. 1.08
-  const usdCny  = bySymbol['USDCNY']?.price ? parseFloat(bySymbol['USDCNY'].price) : null;  // e.g. 7.23 (1 USD = 7.23 CNY)
-
-  // ── CROSS-RATE ARITHMETIC ─────────────────────────────────
-  // PKR per 1 foreign unit:
-  //   USD:  usdPkr                    (direct)
-  //   SAR:  usdPkr / 3.75            (SAR pegged: 1 USD = 3.75 SAR → 1 SAR = usdPkr/3.75)
-  //   AED:  usdPkr / 3.672           (AED pegged: 1 USD = 3.672 AED)
-  //   GBP:  usdPkr * gbpUsd          (1 GBP = gbpUsd USD → 1 GBP = usdPkr * gbpUsd PKR)
-  //   EUR:  usdPkr * eurUsd          (same logic)
-  //   CNY:  usdPkr / usdCny          (1 USD = usdCny CNY → 1 CNY = usdPkr/usdCny PKR)
-
-  const usdChg = usdpkrQ.changesPercentage != null ? parseFloat(usdpkrQ.changesPercentage) : null;
-
-  const rateMap = {
-    'USD/PKR': { rate: usdPkr,                    chg: usdChg, source: 'FMP live' },
-    'SAR/PKR': { rate: usdPkr / 3.75,             chg: usdChg, source: 'FMP cross (SAR peg)' },
-    'AED/PKR': { rate: usdPkr / 3.672,            chg: usdChg, source: 'FMP cross (AED peg)' },
-    'GBP/PKR': gbpUsd  ? { rate: usdPkr * gbpUsd,  chg: bySymbol['GBPUSD']?.changesPercentage != null ? parseFloat(bySymbol['GBPUSD'].changesPercentage) : null, source: 'FMP cross' } : null,
-    'EUR/PKR': eurUsd  ? { rate: usdPkr * eurUsd,  chg: bySymbol['EURUSD']?.changesPercentage != null ? parseFloat(bySymbol['EURUSD'].changesPercentage) : null, source: 'FMP cross' } : null,
-    'CNY/PKR': usdCny  ? { rate: usdPkr / usdCny,  chg: null, source: 'FMP cross' } : null,
-  };
-
-  console.log(`FX rates computed: USD=${usdPkr.toFixed(2)} SAR=${(usdPkr/3.75).toFixed(2)} GBP=${gbpUsd?(usdPkr*gbpUsd).toFixed(2):'?'}`);
-  return rateMap;
+// ── FETCH USDPKR FROM EXCHANGERATE-API (free, always reliable) ──
+async function getUSDPKR() {
+  try {
+    const data = await fetchJSON('https://open.er-api.com/v6/latest/USD');
+    if (data?.rates?.PKR) return parseFloat(data.rates.PKR);
+  } catch(e) {}
+  return null;
 }
 
-// ── FALLBACK: ExchangeRate-API (free, no key needed) ──────────
-async function fetchFallbackRates() {
-  const data = await get('https://open.er-api.com/v6/latest/USD', 6000);
-  if (!data?.rates?.PKR) return null;
+// ── FETCH MAJOR FX PAIRS FROM FMP ────────────────────────────
+async function getMajorPairs(key) {
+  // Collect all FMP symbols we need (excluding null/USD)
+  const symbols = FX_CONFIG
+    .filter(f => f.fmpSymbol)
+    .map(f => f.fmpSymbol)
+    .join(',');
 
-  const usdPkr = parseFloat(data.rates.PKR);
-  const gbpUsd = data.rates.GBP ? 1 / parseFloat(data.rates.GBP) : null; // er-api gives USD per GBP inverted
-  const eurUsd = data.rates.EUR ? 1 / parseFloat(data.rates.EUR) : null;
-  const usdCny = data.rates.CNY ? parseFloat(data.rates.CNY) : null;
+  try {
+    const data = await fetchJSON(
+      `https://financialmodelingprep.com/stable/quote?symbol=${symbols}&apikey=${key}`
+    );
+    if (!Array.isArray(data)) return {};
 
-  // er-api rates are units per USD, so rates.GBP = GBP per 1 USD (e.g. 0.787)
-  // So: 1 GBP = 1/0.787 USD = 1.27 USD → pkrPerGbp = usdPkr * (1/rates.GBP)
-  const gbpRate = data.rates.GBP ? usdPkr / parseFloat(data.rates.GBP) : null;
-  const eurRate = data.rates.EUR ? usdPkr / parseFloat(data.rates.EUR) : null;
-  const cnyRate = data.rates.CNY ? usdPkr / parseFloat(data.rates.CNY) : null;
-
-  console.log(`FX fallback (er-api): USD=${usdPkr.toFixed(2)}`);
-
-  return {
-    'USD/PKR': { rate: usdPkr,           chg: null, source: 'er-api fallback' },
-    'SAR/PKR': { rate: usdPkr / 3.75,    chg: null, source: 'er-api cross (SAR peg)' },
-    'AED/PKR': { rate: usdPkr / 3.672,   chg: null, source: 'er-api cross (AED peg)' },
-    'GBP/PKR': gbpRate ? { rate: gbpRate, chg: null, source: 'er-api cross' } : null,
-    'EUR/PKR': eurRate ? { rate: eurRate, chg: null, source: 'er-api cross' } : null,
-    'CNY/PKR': cnyRate ? { rate: cnyRate, chg: null, source: 'er-api cross' } : null,
-  };
+    const result = {};
+    data.forEach(q => {
+      if (q.symbol && q.price) result[q.symbol] = q.price;
+    });
+    return result;
+  } catch(e) {
+    return {};
+  }
 }
 
-// ── BUILD FINAL RESPONSE OBJECT ───────────────────────────────
-function buildRates(rateMap) {
+// ── CALCULATE PKR CROSS RATE ──────────────────────────────────
+// usdpkr    = how many PKR per 1 USD           e.g. 278.5
+// fmpPrice  = FMP quote for fmpSymbol
+// fmpSymbol = e.g. 'GBPUSD', 'USDSAR', 'USDCNY'
+// base      = the foreign currency e.g. 'GBP', 'SAR', 'CNY'
+//
+// For GBPUSD (= USD per GBP):  PKR per GBP = usdpkr × GBPUSD
+// For USDSAR (= SAR per USD):  PKR per SAR = usdpkr / USDSAR
+// For USDAED (= AED per USD):  PKR per AED = usdpkr / USDAED
+// For EURUSD (= USD per EUR):  PKR per EUR = usdpkr × EURUSD
+// For USDCNY (= CNY per USD):  PKR per CNY = usdpkr / USDCNY
+
+function calcPKRCross(usdpkr, fmpSymbol, fmpPrice) {
+  if (!usdpkr || !fmpPrice) return null;
+  const p = parseFloat(fmpPrice);
+  if (!p || isNaN(p)) return null;
+
+  // Symbols where FMP gives "USD per 1 foreign" (multiply by usdpkr)
+  const usdPerForeign = ['GBPUSD', 'EURUSD', 'AUDUSD', 'NZDUSD'];
+  // Symbols where FMP gives "foreign per 1 USD" (divide into usdpkr)
+  const foreignPerUsd = ['USDSAR', 'USDAED', 'USDCNY', 'USDJPY', 'USDCHF'];
+
+  if (usdPerForeign.includes(fmpSymbol)) {
+    return usdpkr * p;        // e.g. PKR/GBP = 278.5 × 1.27 = 353.7
+  } else if (foreignPerUsd.includes(fmpSymbol)) {
+    return usdpkr / p;        // e.g. PKR/SAR = 278.5 / 3.75 = 74.3
+  }
+  return null;
+}
+
+// ── BUILD ALL 6 RATES ─────────────────────────────────────────
+async function getAllFxRates(key) {
+  // Fetch both sources in parallel
+  const [usdpkr, majorPairs] = await Promise.all([
+    getUSDPKR(),
+    getMajorPairs(key)
+  ]);
+
+  if (!usdpkr) return null; // Can't proceed without USDPKR
+
   const results = {};
 
-  FX_PAIRS.forEach(cfg => {
-    const r = rateMap[cfg.pair];
-    if (!r || !r.rate || isNaN(r.rate) || r.rate <= 0) return;
+  FX_CONFIG.forEach(cfg => {
+    let pkrRate = null;
 
-    const rateNum = parseFloat(r.rate);
-    results[cfg.pair] = {
-      pair:      cfg.pair,        // ← app.html uses fx.pair
-      flag:      cfg.flag,
-      base:      cfg.base,
-      label:     cfg.label,
-      context:   cfg.context,
-      rate:      rateNum.toFixed(4),
-      rateRound: rateNum.toFixed(2),
-      change:    r.chg != null ? parseFloat(r.chg).toFixed(2) : null,
-      dir:       r.chg != null ? (parseFloat(r.chg) >= 0 ? 'up' : 'dn') : null,
-      display:   `1 ${cfg.base} = PKR ${rateNum.toFixed(2)}`,
-      source:    r.source
-    };
+    if (cfg.base === 'USD') {
+      // USDPKR direct
+      pkrRate = usdpkr;
+    } else if (cfg.fmpSymbol) {
+      // Calculate cross rate from USDPKR + FMP major pair
+      const fmpPrice = majorPairs[cfg.fmpSymbol];
+
+      if (fmpPrice) {
+        pkrRate = calcPKRCross(usdpkr, cfg.fmpSymbol, fmpPrice);
+      } else {
+        // FMP didn't return this pair — use hardcoded pegs for SAR/AED
+        // (these are fixed pegs, so hardcoding is accurate)
+        if (cfg.base === 'SAR') pkrRate = usdpkr / 3.7500; // SAR fixed peg
+        if (cfg.base === 'AED') pkrRate = usdpkr / 3.6725; // AED fixed peg
+      }
+    }
+
+    if (pkrRate && pkrRate > 0) {
+      results[cfg.key] = {
+        key:       cfg.key,
+        flag:      cfg.flag,
+        base:      cfg.base,
+        label:     cfg.label,
+        context:   cfg.context,
+        rate:      pkrRate.toFixed(4),
+        rateRound: pkrRate.toFixed(2),
+        display:   `1 ${cfg.base} = PKR ${pkrRate.toFixed(2)}`,
+        source:    cfg.base === 'USD' ? 'ExchangeRate-API'
+                 : cfg.fmpSymbol && majorPairs[cfg.fmpSymbol] ? 'FMP × ExchangeRate-API'
+                 : 'Fixed peg × ExchangeRate-API'
+      };
+    }
   });
 
-  return Object.keys(results).length >= 3 ? results : null;
+  // Return in consistent order
+  const ordered = {};
+  FX_CONFIG.forEach(cfg => {
+    if (results[cfg.key]) ordered[cfg.key] = results[cfg.key];
+  });
+
+  return Object.keys(ordered).length >= 1 ? ordered : null;
 }
 
 // ── MAIN HANDLER ─────────────────────────────────────────────
@@ -172,46 +201,36 @@ exports.handler = async (event) => {
 
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: CORS, body: '' };
 
-  const apiKey = process.env.FMP_API_KEY;
+  const key = process.env.FMP_API_KEY;
+  if (!key) return { statusCode: 503, headers: CORS, body: JSON.stringify({ error: 'FMP API key not configured' }) };
 
-  // Try FMP first, fall back to er-api
-  let rateMap = null;
+  let payload = {};
+  try { payload = JSON.parse(event.body || '{}'); } catch(e) {}
 
-  if (apiKey) {
-    rateMap = await fetchFmpRates(apiKey);
-  }
+  if (!payload.action || payload.action === 'rates') {
+    const rates = await getAllFxRates(key);
 
-  if (!rateMap) {
-    console.log('FMP failed or no key — trying er-api fallback');
-    rateMap = await fetchFallbackRates();
-  }
+    if (!rates) {
+      return {
+        statusCode: 503, headers: CORS,
+        body: JSON.stringify({ error: 'Could not fetch PKR rate. Please try again in a moment.' })
+      };
+    }
 
-  if (!rateMap) {
     return {
-      statusCode: 503,
-      headers: CORS,
-      body: JSON.stringify({ error: 'FX rates temporarily unavailable. Please try again in a moment.' })
-    };
-  }
-
-  const rates = buildRates(rateMap);
-  if (!rates) {
-    return {
-      statusCode: 503,
-      headers: CORS,
-      body: JSON.stringify({ error: 'Could not compute FX rates. Please try again.' })
+      statusCode: 200, headers: CORS,
+      body: JSON.stringify({
+        rates,
+        pairs:   FX_CONFIG.map(f => f.key),
+        sbpNote: 'Interbank mid-market rates. Open market rates in Pakistan may differ by PKR 1–3.',
+        sources: 'PKR base rate: ExchangeRate-API · Major pairs: FMP',
+        timestamp: new Date().toISOString()
+      })
     };
   }
 
   return {
-    statusCode: 200,
-    headers: CORS,
-    body: JSON.stringify({
-      rates,
-      pairs:     Object.keys(rates),
-      sbpNote:   'Interbank mid-market rates. Open market rates in Pakistan may differ by PKR 1–3. Check your bank for transaction rates.',
-      source:    apiKey ? 'Financial Modeling Prep (FMP)' : 'ExchangeRate-API',
-      timestamp: new Date().toISOString()
-    })
+    statusCode: 400, headers: CORS,
+    body: JSON.stringify({ error: 'Invalid action. Use: rates' })
   };
 };
