@@ -1204,17 +1204,19 @@ function updateSheetTitle() {
 }
 
 // ── INIT ──────────────────────────────────────────────────
+let currentSection = 'home';
+const COIN_NAMES = {
+  BTC:'Bitcoin', ETH:'Ethereum', SOL:'Solana', XRP:'XRP',
+  BNB:'BNB', ADA:'Cardano', AVAX:'Avalanche', DOT:'Polkadot',
+  LINK:'Chainlink', MATIC:'Polygon'
+};
+
 updateSheetTitle();
 fetchLivePrices();
 setInterval(fetchLivePrices, 60000);
 select('OGDC');
 
 // ── SECTION SWITCHING ────────────────────────────────────
-let currentSection = 'home';
-const COIN_NAMES = {
-  BTC:'Bitcoin', ETH:'Ethereum', SOL:'Solana', XRP:'XRP',
-  BNB:'BNB', ADA:'Cardano', AVAX:'Avalanche', DOT:'Polkadot',
-  LINK:'Chainlink', MATIC:'Polygon'
 };
 
 function switchSection(section) {
