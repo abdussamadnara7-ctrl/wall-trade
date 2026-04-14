@@ -74,7 +74,7 @@ function callAnthropic(body) {
 async function getPSXPrice(ticker) {
   try {
     const data = await fetchJSON(
-      `https://psxterminal.com/api/ticks/stock/${ticker}`,
+      `https://psxterminal.com/api/ticks/REG/${ticker}`,
       {
         'Origin':  'https://psxterminal.com',
         'Referer': 'https://psxterminal.com/',
