@@ -1,156 +1,183 @@
 const https = require('https');
 
 // ── HELPERS ────────────────────────────────────────────────────
-function fetchJSON(url, headers = {}) {
+function fetchJSON(url, extraHeaders = {}, ms = 6000) {
   return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve(null), 6000);
-    https.get(url, {
-      headers: { 'User-Agent': 'WallTrade/1.0', ...headers }
+    const timer = setTimeout(() => { resolve(null); }, ms);
+    const req = https.get(url, {
+      headers: {
+        'User-Agent':  'Mozilla/5.0 (compatible; WallTrade/1.0)',
+        'Accept':      'application/json',
+        ...extraHeaders
+      }
     }, res => {
       let body = '';
       res.on('data', c => body += c);
       res.on('end', () => {
         clearTimeout(timer);
+        console.log(`${url.slice(0, 70)} → ${res.statusCode} len=${body.length}`);
         try { resolve(JSON.parse(body)); } catch(e) { resolve(null); }
       });
-    }).on('error', () => { clearTimeout(timer); resolve(null); });
+    });
+    req.on('error', e => { clearTimeout(timer); console.log('ERR:', e.message); resolve(null); });
   });
 }
 
-// ── PSX PRICES VIA PSX TERMINAL ───────────────────────────────
+// ── PSX STOCK PRICES — PSX Terminal ───────────────────────────
+// Confirmed working from Netlify with these exact headers
 async function getPSXPrices(tickers) {
   const results = {};
+  const PSX_HEADERS = {
+    'Origin':  'https://psxterminal.com',
+    'Referer': 'https://psxterminal.com/',
+    'Accept':  'application/json, text/plain, */*'
+  };
+
   const fetches = tickers.map(ticker =>
     fetchJSON(
       `https://psxterminal.com/api/ticks/stock/${ticker}`,
-      { 'Origin': 'https://psxterminal.com', 'Referer': 'https://psxterminal.com/' }
+      PSX_HEADERS, 5000
     ).then(data => ({ ticker, data }))
   );
+
   const responses = await Promise.allSettled(fetches);
+
   responses.forEach(r => {
     if (r.status !== 'fulfilled') return;
     const { ticker, data } = r.value;
     if (!data) return;
+
     const d = data?.data ?? data;
     const price = d?.price ?? d?.last ?? d?.close;
-    if (!price) return;
-    const open   = d.open ?? price;
-    const change = open ? ((price - open) / open * 100) : 0;
+    if (!price || isNaN(parseFloat(price))) return;
+
+    const open = d.open ?? price;
+    // PSX Terminal changePercent may be decimal (0.012) or percent (1.2)
+    let change;
+    if (d.changePercent != null) {
+      const raw = parseFloat(d.changePercent);
+      change = Math.abs(raw) < 1.0 ? raw * 100 : raw;
+    } else {
+      change = open ? ((price - open) / open * 100) : 0;
+    }
+
     results[ticker] = {
       price:     parseFloat(price).toFixed(2),
       change:    change.toFixed(2),
-      changeAmt: (price - open).toFixed(2),
-      high:      d.high ? parseFloat(d.high).toFixed(2) : null,
-      low:       d.low  ? parseFloat(d.low).toFixed(2)  : null,
+      changeAmt: (parseFloat(price) - parseFloat(open)).toFixed(2),
+      high:      d.high  ? parseFloat(d.high).toFixed(2)  : null,
+      low:       d.low   ? parseFloat(d.low).toFixed(2)   : null,
       volume:    d.volume ?? null,
       dir:       change >= 0 ? 'up' : 'dn',
       currency:  'PKR'
     };
   });
+
+  console.log(`PSX prices: ${Object.keys(results).length}/${tickers.length} loaded`);
   return results;
 }
 
-// ── KSE-100 INDEX (PSX Terminal) ──────────────────────────────
+// ── KSE-100 INDEX — PSX Terminal ──────────────────────────────
 async function getKSE100() {
   try {
     const data = await fetchJSON(
       'https://psxterminal.com/api/ticks/IDX/KSE100',
-      { 'Origin': 'https://psxterminal.com', 'Referer': 'https://psxterminal.com/' }
+      { 'Origin': 'https://psxterminal.com', 'Referer': 'https://psxterminal.com/', 'Accept': 'application/json, text/plain, */*' },
+      5000
     );
     const d = data?.data ?? data;
-    if (!d?.price && !d?.last && !d?.close) return null;
-    const price  = parseFloat(d.price ?? d.last ?? d.close);
-    const open   = parseFloat(d.open ?? price);
-    const change = open ? ((price - open) / open * 100) : 0;
+    const price = d?.price ?? d?.last ?? d?.close;
+    if (!price || Number(price) < 10000) return null;
+
+    let change;
+    if (d.changePercent != null) {
+      const raw = parseFloat(d.changePercent);
+      change = Math.abs(raw) < 1.0 ? raw * 100 : raw;
+    } else {
+      const open = d.open ?? price;
+      change = open ? ((price - open) / open * 100) : 0;
+    }
+
     return {
-      price:  Math.round(price).toLocaleString(),
-      raw:    Math.round(price),
+      price:  Math.round(parseFloat(price)).toLocaleString(),
+      raw:    Math.round(parseFloat(price)),
       change: change.toFixed(2),
       dir:    change >= 0 ? 'up' : 'dn'
     };
   } catch(e) { return null; }
 }
 
-// ── COMMODITIES VIA FMP (Brent + Gold) ───────────────────────
-// Uses FMP which works from Netlify — Yahoo Finance blocks server IPs
+// ── COMMODITIES: BRENT + GOLD — FMP ───────────────────────────
 async function getCommodities(key) {
+  if (!key) return {};
   const results = {};
-  if (!key) return results;
   try {
-    // Batch: BZUSD = Brent crude, GCUSD = Gold spot
     const data = await fetchJSON(
       `https://financialmodelingprep.com/stable/quote?symbol=BZUSD,GCUSD&apikey=${key}`
     );
-    if (Array.isArray(data)) {
-      data.forEach(q => {
-        if (!q?.price) return;
-        if (q.symbol === 'BZUSD') {
-          results.brent = {
-            price:  parseFloat(q.price).toFixed(2),
-            change: parseFloat(q.changesPercentage ?? 0).toFixed(2),
-            dir:    (q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn'
-          };
-        }
-        if (q.symbol === 'GCUSD') {
-          results.gold = {
-            price:  Math.round(q.price).toString(),
-            change: parseFloat(q.changesPercentage ?? 0).toFixed(2),
-            dir:    (q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn'
-          };
-        }
-      });
-    }
+    if (!Array.isArray(data)) return results;
+    data.forEach(q => {
+      if (!q?.price) return;
+      const change = parseFloat(q.changesPercentage ?? 0);
+      if (q.symbol === 'BZUSD') {
+        results.brent = { price: parseFloat(q.price).toFixed(2), change: change.toFixed(2), dir: change >= 0 ? 'up' : 'dn' };
+      }
+      if (q.symbol === 'GCUSD') {
+        results.gold = { price: Math.round(q.price).toString(), change: change.toFixed(2), dir: change >= 0 ? 'up' : 'dn' };
+      }
+    });
   } catch(e) {}
   return results;
 }
 
-// ── PKR/USD VIA FMP ───────────────────────────────────────────
+// ── PKR/USD — FMP ─────────────────────────────────────────────
 async function getPKRUSD(key) {
   if (!key) return null;
   try {
     const data = await fetchJSON(
       `https://financialmodelingprep.com/stable/quote?symbol=USDPKR&apikey=${key}`
     );
-    const rate = Array.isArray(data) ? data[0]?.price : null;
-    if (rate) return { rate: parseFloat(rate).toFixed(2) };
+    const q = Array.isArray(data) ? data[0] : null;
+    if (q?.price) return { rate: parseFloat(q.price).toFixed(2) };
   } catch(e) {}
   return null;
 }
 
-// ── CRYPTO PRICES VIA FMP ─────────────────────────────────────
-async function getCrypto(key) {
-  if (!key) return [];
-  try {
-    const symbols = 'BTCUSD,ETHUSD,SOLUSD,XRPUSD,BNBUSD';
-    const data = await fetchJSON(
-      `https://financialmodelingprep.com/stable/quote?symbol=${symbols}&apikey=${key}`
-    );
-    if (!Array.isArray(data)) return [];
-    return data.map(q => ({
-      symbol:  q.symbol?.replace('USD',''),
-      price:   parseFloat(q.price).toFixed(2),
-      change:  parseFloat(q.changesPercentage ?? 0).toFixed(2),
-      change24h: (parseFloat(q.changesPercentage ?? 0) >= 0 ? '+' : '') + parseFloat(q.changesPercentage ?? 0).toFixed(2) + '%',
-      dir:     (q.changesPercentage ?? 0) >= 0 ? 'up' : 'dn'
-    })).filter(c => c.symbol);
-  } catch(e) { return []; }
-}
-
-// ── S&P 500 VIA FMP ───────────────────────────────────────────
+// ── S&P 500 — FMP ─────────────────────────────────────────────
 async function getSP500(key) {
   if (!key) return null;
   try {
     const data = await fetchJSON(
       `https://financialmodelingprep.com/stable/quote?symbol=SPY&apikey=${key}`
     );
-    if (Array.isArray(data) && data[0]?.price) {
+    const q = Array.isArray(data) ? data[0] : null;
+    if (!q?.price) return null;
+    return {
+      price:  parseFloat(q.price).toFixed(2),
+      change: parseFloat(q.changesPercentage ?? 0).toFixed(2)
+    };
+  } catch(e) { return null; }
+}
+
+// ── CRYPTO — FMP ──────────────────────────────────────────────
+async function getCrypto(key) {
+  if (!key) return [];
+  try {
+    const data = await fetchJSON(
+      `https://financialmodelingprep.com/stable/quote?symbol=BTCUSD,ETHUSD,SOLUSD,XRPUSD,BNBUSD&apikey=${key}`
+    );
+    if (!Array.isArray(data)) return [];
+    return data.filter(q => q?.price).map(q => {
+      const change = parseFloat(q.changesPercentage ?? 0);
       return {
-        price:  parseFloat(data[0].price).toFixed(2),
-        change: parseFloat(data[0].changesPercentage ?? 0).toFixed(2)
+        symbol:    q.symbol.replace('USD', ''),
+        price:     parseFloat(q.price).toFixed(2),
+        change:    change.toFixed(2),
+        change24h: (change >= 0 ? '+' : '') + change.toFixed(2) + '%',
+        dir:       change >= 0 ? 'up' : 'dn'
       };
-    }
-  } catch(e) {}
-  return null;
+    });
+  } catch(e) { return []; }
 }
 
 // ── MAIN HANDLER ──────────────────────────────────────────────
@@ -169,7 +196,6 @@ exports.handler = async (event) => {
 
   const key = process.env.FMP_API_KEY;
 
-  // Only allow the 19 supported PSX stocks
   const ALLOWED = [
     'OGDC','PPL','PSO','MARI','APL','HASCOL',
     'HBL','MCB','UBL','NBP','ABL','BAFL',
@@ -179,7 +205,6 @@ exports.handler = async (event) => {
 
   const requestedTickers = (payload.tickers || ALLOWED).filter(t => ALLOWED.includes(t));
 
-  // Fetch everything in parallel
   const [psxPrices, kse100, commodities, pkrusd, sp500, crypto] = await Promise.all([
     getPSXPrices(requestedTickers),
     getKSE100(),
