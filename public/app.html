@@ -1142,7 +1142,7 @@ async function fetchLivePrices() {
     const res = await fetch('/.netlify/functions/prices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tickers: ALL_TICKERS })
+      body: JSON.stringify({ tickers: ['OGDC','PPL','PSO','MARI','APL','HASCOL','HBL','MCB','UBL','NBP','ABL','BAFL','ENGROH','FFC','EFERT','LUCK','MLCF','CHCC','DGKC'] })
     });
     if (!res.ok) return;
     const data = await res.json();
