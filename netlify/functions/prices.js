@@ -185,11 +185,13 @@ exports.handler = async (event) => {
     // Energy & Oil
     'OGDC','PPL','PSO','MARI','APL','HASCOL',
     // Banking
-    'HBL','MCB','UBL','NBP','ABL','BAFL',
+    'HBL','MCB','UBL','NBP','ABL','BAFL','BAHL','MEBL','FABL',
     // Fertiliser — ENGROH replaces ENGRO (delisted Jan 2025)
-    'ENGROH','FFC','EFERT',
+    'ENGROH','FFBL','FFC','EFERT',
     // Cement
-    'LUCK','MLCF','CHCC','DGKC',
+    'LUCK','MLCF','CHCC','DGKC','PIOC','FCCL',
+    // Tech & Other
+    'TRG','SYS','NETSOL','PAKT','PNSC','SNGP','SSGC'
   ];
 
   const requestedTickers = (payload.tickers || ALLOWED).filter(t => ALLOWED.includes(t));
