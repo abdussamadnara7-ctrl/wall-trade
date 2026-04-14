@@ -562,7 +562,7 @@ body {
 // ── AUTH ──────────────────────────────────────────────────
 // AUTH_ENFORCED = false  →  app loads for everyone (current state)
 // AUTH_ENFORCED = true   →  set this once Supabase is live and users are signing up
-const AUTH_ENFORCED = true;
+const AUTH_ENFORCED = false;
 
 (function() {
   if (!AUTH_ENFORCED) return; // gate is off — app loads normally
@@ -595,15 +595,12 @@ function signOut() {
 
 // ── POPULAR PSX STOCKS (for quick browse) ──────────────────
 const POPULAR = {
-  'Energy & Oil':    ['OGDC','PPL','PSO','MARI','APL','HASCOL','SNGP','SSGC'],
-  'Banking':         ['HBL','MCB','UBL','NBP','ABL','BAFL','BAHL','MEBL','FABL'],
-  'Fertiliser':      ['ENGROH','FFBL','FFC','EFERT'],
-  'Cement':          ['LUCK','MLCF','CHCC','DGKC','PIOC','FCCL'],
-  'Technology':      ['TRG','SYS','NETSOL'],
-  'Other':           ['PAKT','PNSC']
+  'Energy & Oil': ['OGDC','PPL','PSO','MARI','APL','HASCOL'],
+  'Banking':      ['HBL','MCB','UBL','NBP','ABL','BAFL'],
+  'Fertiliser':   ['ENGROH','FFC','EFERT'],
+  'Cement':       ['LUCK','MLCF','CHCC','DGKC']
 };
-
-const ALL_TICKERS = Object.values(POPULAR).flat();
+const ALL_TICKERS = ['OGDC','PPL','PSO','MARI','APL','HASCOL','HBL','MCB','UBL','NBP','ABL','BAFL','ENGROH','FFC','EFERT','LUCK','MLCF','CHCC','DGKC'];
 
 // ── STATE ──────────────────────────────────────────────────
 let cur = 'OGDC';
@@ -1142,13 +1139,13 @@ async function fetchLivePrices() {
     const res = await fetch('/.netlify/functions/prices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tickers: ['OGDC','PPL','PSO','MARI','APL','HASCOL','HBL','MCB','UBL','NBP','ABL','BAFL','ENGROH','FFC','EFERT','LUCK','MLCF','CHCC','DGKC'] })
+      body: JSON.stringify({ tickers: ALL_TICKERS })
     });
     if (!res.ok) return;
     const data = await res.json();
     if (data.prices) {
       Object.assign(livePrices, data.prices);
-      updateTickerBar(data.prices, data.kse100);
+      updateTickerBar(data.prices, data.kse100, data.crypto);
       if (livePrices[cur]) renderLivePrice(cur);
     }
   } catch(e) {}
@@ -1166,7 +1163,7 @@ function renderLivePrice(ticker) {
   }
 }
 
-function updateTickerBar(prices, kse100) {
+function updateTickerBar(prices, kse100, crypto) {
   if (kse100) {
     const kseVal = document.getElementById('kse-val');
     const kseChg = document.getElementById('kse-chg');
@@ -1180,7 +1177,7 @@ function updateTickerBar(prices, kse100) {
   const track = document.getElementById('ticker-track');
   if (!track) return;
 
-  const items = ALL_TICKERS.map(ticker => {
+  const stockItems = ALL_TICKERS.map(ticker => {
     const lp = prices[ticker];
     if (!lp) return '';
     const isUp = lp.dir === 'up';
@@ -1192,9 +1189,20 @@ function updateTickerBar(prices, kse100) {
     </div>`;
   }).filter(Boolean).join('');
 
+  const cryptoItems = (crypto||[]).slice(0,3).map(c => {
+    const isUp = c.dir === 'up';
+    return `<div class="ticker-item">
+      <div class="ticker-dot" style="background:var(--aa)"></div>
+      <span class="ticker-name">${c.symbol}</span>
+      <span class="ticker-price">$${Number(c.price).toLocaleString()}</span>
+      <span class="ticker-chg ${isUp?'up':'dn'}">${isUp?'+':''}${c.change}%</span>
+    </div>`;
+  }).join('');
+
   const kseHtml = kse100 ? `<div class="kse-badge"><span class="kse-label">KSE-100</span><span class="kse-value" id="kse-val">${kse100.price}</span><span class="ticker-chg ${kse100.dir==='up'?'up':'dn'}" id="kse-chg">${parseFloat(kse100.change)>=0?'+':''}${kse100.change}%</span></div>` : '';
 
-  track.innerHTML = kseHtml + items + items;
+  const content = kseHtml + stockItems + cryptoItems;
+  track.innerHTML = content + content;
 }
 
 // ── SHEET TITLE UPDATE ─────────────────────────────────────
@@ -1217,7 +1225,6 @@ setInterval(fetchLivePrices, 60000);
 select('OGDC');
 
 // ── SECTION SWITCHING ────────────────────────────────────
-};
 
 function switchSection(section) {
   // Close sheet if open
