@@ -42,12 +42,12 @@ exports.handler = async (event) => {
 
   if (!key) return { statusCode: 503, headers: CORS, body: JSON.stringify({ error: 'FMP_API_KEY not set' }) };
 
-  // ── Try FMP batch quote ───────────────────────────────────
+  // ── FMP batch-forex-quotes (correct endpoint for Starter plan) ──
   const symbols = FX_PAIRS.map(p => p.sym).join(',');
-  console.log('Fetching FMP symbols:', symbols);
+  console.log('Fetching FMP forex symbols:', symbols);
 
   const raw = await fetchJSON(
-    `https://financialmodelingprep.com/stable/quote?symbol=${symbols}&apikey=${key}`
+    `https://financialmodelingprep.com/stable/batch-forex-quotes?apikey=${key}`
   );
 
   console.log('FMP raw type:', typeof raw, Array.isArray(raw) ? `array[${raw.length}]` : JSON.stringify(raw)?.slice(0,200));
