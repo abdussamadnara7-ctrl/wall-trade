@@ -131,51 +131,29 @@ async function getKSE100() {
   } catch(e) { return null; }
 }
 
-// ── COMMODITIES: BRENT + GOLD — FMP ───────────────────────────
+// ── COMMODITIES: BRENT + GOLD — FMP batch-commodity-quotes ───
 async function getCommodities(key) {
   if (!key) return {};
   const results = {};
-
-  // Try spot prices first (BZUSD = Brent, GCUSD = Gold spot)
   try {
     const data = await get(
-      `https://financialmodelingprep.com/stable/quote?symbol=BZUSD,GCUSD&apikey=${key}`
+      `https://financialmodelingprep.com/stable/batch-commodity-quotes?apikey=${key}`
     );
-    if (Array.isArray(data) && data.length > 0) {
-      data.forEach(q => {
-        if (!q?.price) return;
-        const change = parseFloat(q.changesPercentage ?? 0);
-        if (q.symbol === 'BZUSD') {
-          results.brent = { price: parseFloat(q.price).toFixed(2), change: change.toFixed(2), dir: change >= 0 ? 'up' : 'dn' };
-        }
-        if (q.symbol === 'GCUSD') {
-          results.gold = { price: Math.round(q.price).toString(), change: change.toFixed(2), dir: change >= 0 ? 'up' : 'dn' };
-        }
-      });
-    }
-  } catch(e) {}
-
-  // Fallback: ETFs if spot not on this FMP plan (USO ≈ oil, GLD ≈ gold/10)
-  if (!results.brent || !results.gold) {
-    try {
-      const needed = [!results.brent && 'USO', !results.gold && 'GLD'].filter(Boolean).join(',');
-      const etf = await get(`https://financialmodelingprep.com/stable/quote?symbol=${needed}&apikey=${key}`);
-      if (Array.isArray(etf)) {
-        etf.forEach(q => {
-          if (!q?.price) return;
-          const ch = parseFloat(q.changesPercentage ?? 0);
-          if (q.symbol === 'USO' && !results.brent) {
-            results.brent = { price: (parseFloat(q.price) * 6.7).toFixed(2), change: ch.toFixed(2), dir: ch >= 0 ? 'up' : 'dn' };
-          }
-          if (q.symbol === 'GLD' && !results.gold) {
-            results.gold = { price: Math.round(parseFloat(q.price) * 10).toString(), change: ch.toFixed(2), dir: ch >= 0 ? 'up' : 'dn' };
-          }
-        });
+    if (!Array.isArray(data)) return results;
+    data.forEach(q => {
+      if (!q?.symbol || q?.price == null) return;
+      const change = parseFloat(q.changesPercentage ?? q.change ?? 0);
+      // Brent crude
+      if (q.symbol === 'BZUSD' || q.symbol === 'BRENTOIL' || q.symbol === 'BRENTOIL-FUT') {
+        results.brent = { price: parseFloat(q.price).toFixed(2), change: change.toFixed(2), dir: change >= 0 ? 'up' : 'dn' };
       }
-    } catch(e) {}
-  }
-
-  console.log('Commodities:', JSON.stringify(results));
+      // Gold
+      if (q.symbol === 'GCUSD' || q.symbol === 'GOLD' || q.symbol === 'XAUUSD') {
+        results.gold = { price: Math.round(q.price).toString(), change: change.toFixed(2), dir: change >= 0 ? 'up' : 'dn' };
+      }
+    });
+    console.log('Commodities:', JSON.stringify(results));
+  } catch(e) { console.log('Commodities error:', e.message); }
   return results;
 }
 
@@ -204,25 +182,30 @@ async function getSP500(key) {
   } catch(e) { return null; }
 }
 
-// ── CRYPTO — FMP ──────────────────────────────────────────────
+// ── CRYPTO — FMP batch-crypto-quotes ─────────────────────────
 async function getCrypto(key) {
   if (!key) return [];
+  const WANT = ['BTCUSD','ETHUSD','SOLUSD','XRPUSD','BNBUSD'];
   try {
     const data = await get(
-      `https://financialmodelingprep.com/stable/quote?symbol=BTCUSD,ETHUSD,SOLUSD,XRPUSD,BNBUSD&apikey=${key}`
+      `https://financialmodelingprep.com/stable/batch-crypto-quotes?apikey=${key}`
     );
     if (!Array.isArray(data)) return [];
-    return data.filter(q => q?.price).map(q => {
-      const change = parseFloat(q.changesPercentage ?? 0);
-      return {
-        symbol:    q.symbol.replace('USD', ''),
-        price:     parseFloat(q.price).toFixed(2),
-        change:    change.toFixed(2),
-        change24h: (change >= 0 ? '+' : '') + change.toFixed(2) + '%',
-        dir:       change >= 0 ? 'up' : 'dn'
-      };
-    });
-  } catch(e) { return []; }
+    const results = data
+      .filter(q => q?.symbol && WANT.includes(q.symbol) && q?.price != null)
+      .map(q => {
+        const change = parseFloat(q.changesPercentage ?? q.change ?? 0);
+        return {
+          symbol:    q.symbol.replace('USD', ''),
+          price:     parseFloat(q.price).toFixed(2),
+          change:    change.toFixed(2),
+          change24h: (change >= 0 ? '+' : '') + change.toFixed(2) + '%',
+          dir:       change >= 0 ? 'up' : 'dn'
+        };
+      });
+    console.log(`Crypto: ${results.map(c=>c.symbol).join(',')}`);
+    return results;
+  } catch(e) { console.log('Crypto error:', e.message); return []; }
 }
 
 // ── MAIN HANDLER ──────────────────────────────────────────────
