@@ -29,7 +29,7 @@ const PSX_HEADERS = {
   'Accept-Language': 'en-US,en;q=0.9'
 };
 
-// ── PSX STOCK PRICES — PSX Terminal ───────────────────────────
+// ── PSX STOCK PRICES ───────────────────────────────────────────
 async function getPSXPrices(tickers) {
   const results = {};
   const BATCH = 5;
@@ -107,140 +107,56 @@ async function getKSE100() {
   } catch(e) { return null; }
 }
 
-// ── COMMODITIES: BRENT + GOLD — FMP batch-commodity-quotes ────
-// FMP Starter confirmed endpoint: /stable/batch-commodity-quotes
-// Known working symbols: OUSX (Brent), GCUSD (Gold), CLUSD (WTI)
+// ── COMMODITIES: BRENT + GOLD — FMP individual quotes ─────────
+// batch-commodity-quotes returns 402 on Starter plan
+// Individual /stable/quote confirmed working (same as crypto)
+// Try multiple symbols since FMP naming varies
 async function getCommodities(key) {
   if (!key) return {};
   const results = {};
 
-  try {
-    const data = await get(
-      `https://financialmodelingprep.com/stable/batch-commodity-quotes?apikey=${key}`
-    );
+  // Try symbol variants in order — stop at first success
+  const BRENT_SYMBOLS = ['BZUSD', 'OUSX', 'CLUSD', 'WTIUSD'];
+  const GOLD_SYMBOLS  = ['GCUSD', 'XAUUSD', 'GOLDUSD'];
 
-    console.log('Commodities raw type:', typeof data, Array.isArray(data) ? `array[${data.length}]` : 'not array');
-    if (Array.isArray(data) && data.length > 0) {
-      // Log first few symbols to identify correct ones
-      console.log('Commodity symbols sample:', data.slice(0, 10).map(q => q.symbol).join(','));
+  // Fetch all candidates in parallel
+  const allSymbols = [...BRENT_SYMBOLS, ...GOLD_SYMBOLS];
+  const fetches = await Promise.all(
+    allSymbols.map(sym =>
+      get(`https://financialmodelingprep.com/stable/quote?symbol=${sym}&apikey=${key}`, {}, 6000)
+        .then(d => ({ sym, q: Array.isArray(d) ? d[0] : null }))
+    )
+  );
+
+  // Find first working Brent symbol
+  for (const sym of BRENT_SYMBOLS) {
+    const match = fetches.find(f => f.sym === sym);
+    const q = match?.q;
+    if (q?.price && parseFloat(q.price) > 30 && parseFloat(q.price) < 200) {
+      const chg = parseFloat(q.changesPercentage ?? 0);
+      results.brent = { price: parseFloat(q.price).toFixed(2), change: chg.toFixed(2), dir: chg >= 0 ? 'up' : 'dn' };
+      console.log(`Brent (FMP ${sym}): $${q.price}`);
+      break;
     }
-
-    if (!Array.isArray(data)) return results;
-
-    data.forEach(q => {
-      if (!q?.symbol || q?.price == null) return;
-      const sym = q.symbol.toUpperCase();
-      const change = parseFloat(q.changesPercentage ?? q.change ?? 0);
-      const price = parseFloat(q.price);
-
-      // Brent crude — try multiple possible symbols
-      if (['BZUSD','OUSX','BZO','BRENTOIL','BRENT','CLUSD','WTIUSD','OILUS'].includes(sym)) {
-        if (!results.brent) { // take first match
-          results.brent = {
-            price:  price.toFixed(2),
-            change: change.toFixed(2),
-            dir:    change >= 0 ? 'up' : 'dn',
-            symbol: sym
-          };
-          console.log(`Brent found: ${sym} = $${price}`);
-        }
-      }
-
-      // Gold — try multiple possible symbols
-      if (['GCUSD','XAUUSD','GOLD','GOLDS','GCQ'].includes(sym)) {
-        if (!results.gold) {
-          results.gold = {
-            price:  Math.round(price).toString(),
-            change: change.toFixed(2),
-            dir:    change >= 0 ? 'up' : 'dn',
-            symbol: sym
-          };
-          console.log(`Gold found: ${sym} = $${price}`);
-        }
-      }
-    });
-
-    // If Brent not found by symbol, find by price range ($60-$120 = likely oil)
-    if (!results.brent && Array.isArray(data)) {
-      const oilCandidate = data.find(q => {
-        const p = parseFloat(q.price);
-        return p > 50 && p < 150 && (
-          q.symbol?.includes('CL') || q.symbol?.includes('BZ') ||
-          q.symbol?.includes('OIL') || q.symbol?.includes('WTI') ||
-          q.symbol?.includes('BRENT')
-        );
-      });
-      if (oilCandidate) {
-        const change = parseFloat(oilCandidate.changesPercentage ?? oilCandidate.change ?? 0);
-        results.brent = {
-          price:  parseFloat(oilCandidate.price).toFixed(2),
-          change: change.toFixed(2),
-          dir:    change >= 0 ? 'up' : 'dn',
-          symbol: oilCandidate.symbol
-        };
-        console.log(`Brent fallback: ${oilCandidate.symbol} = $${oilCandidate.price}`);
-      }
-    }
-
-    // If Gold not found by symbol, find by price range ($1800-$3500 = likely gold)
-    if (!results.gold && Array.isArray(data)) {
-      const goldCandidate = data.find(q => {
-        const p = parseFloat(q.price);
-        return p > 1500 && p < 4000 && (
-          q.symbol?.includes('GC') || q.symbol?.includes('XAU') ||
-          q.symbol?.includes('GOLD')
-        );
-      });
-      if (goldCandidate) {
-        const change = parseFloat(goldCandidate.changesPercentage ?? goldCandidate.change ?? 0);
-        results.gold = {
-          price:  Math.round(parseFloat(goldCandidate.price)).toString(),
-          change: change.toFixed(2),
-          dir:    change >= 0 ? 'up' : 'dn',
-          symbol: goldCandidate.symbol
-        };
-        console.log(`Gold fallback: ${goldCandidate.symbol} = $${goldCandidate.price}`);
-      }
-    }
-
-  } catch(e) { console.log('Commodities error:', e.message); }
-
-  // ── Yahoo Finance fallback if FMP commodities fail ──────────
-  if (!results.brent) {
-    try {
-      const d = await get('https://query1.finance.yahoo.com/v8/finance/chart/BZ=F?interval=1d&range=2d', {}, 5000);
-      if (d?.chart?.result?.[0]) {
-        const closes = d.chart.result[0].indicators?.quote?.[0]?.close?.filter(v => v != null);
-        if (closes?.length >= 2) {
-          const cur = closes[closes.length - 1], prev = closes[closes.length - 2];
-          const chg = ((cur - prev) / prev * 100);
-          results.brent = { price: cur.toFixed(2), change: chg.toFixed(2), dir: chg >= 0 ? 'up' : 'dn', symbol: 'BZ=F' };
-          console.log(`Brent Yahoo fallback: $${cur.toFixed(2)}`);
-        }
-      }
-    } catch(e) {}
   }
 
-  if (!results.gold) {
-    try {
-      const d = await get('https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=2d', {}, 5000);
-      if (d?.chart?.result?.[0]) {
-        const closes = d.chart.result[0].indicators?.quote?.[0]?.close?.filter(v => v != null);
-        if (closes?.length >= 2) {
-          const cur = closes[closes.length - 1], prev = closes[closes.length - 2];
-          const chg = ((cur - prev) / prev * 100);
-          results.gold = { price: Math.round(cur).toString(), change: chg.toFixed(2), dir: chg >= 0 ? 'up' : 'dn', symbol: 'GC=F' };
-          console.log(`Gold Yahoo fallback: $${Math.round(cur)}`);
-        }
-      }
-    } catch(e) {}
+  // Find first working Gold symbol
+  for (const sym of GOLD_SYMBOLS) {
+    const match = fetches.find(f => f.sym === sym);
+    const q = match?.q;
+    if (q?.price && parseFloat(q.price) > 1000 && parseFloat(q.price) < 5000) {
+      const chg = parseFloat(q.changesPercentage ?? 0);
+      results.gold = { price: Math.round(parseFloat(q.price)).toString(), change: chg.toFixed(2), dir: chg >= 0 ? 'up' : 'dn' };
+      console.log(`Gold (FMP ${sym}): $${q.price}`);
+      break;
+    }
   }
 
   console.log('Commodities result:', JSON.stringify(results));
   return results;
 }
 
-// ── PKR/USD — FMP ─────────────────────────────────────────────
+// ── PKR/USD — FMP individual quote (confirmed 200) ─────────────
 async function getPKRUSD(key) {
   if (!key) return null;
   try {
@@ -248,21 +164,10 @@ async function getPKRUSD(key) {
     const q = Array.isArray(data) ? data[0] : null;
     if (q?.price) return { rate: parseFloat(q.price).toFixed(2) };
   } catch(e) {}
-
-  // Fallback: batch-forex-quotes
-  try {
-    const key2 = process.env.FMP_API_KEY;
-    const data = await get(`https://financialmodelingprep.com/stable/batch-forex-quotes?apikey=${key2}`);
-    if (Array.isArray(data)) {
-      const pkr = data.find(q => q.symbol === 'USDPKR');
-      if (pkr?.price) return { rate: parseFloat(pkr.price).toFixed(2) };
-    }
-  } catch(e) {}
-
   return null;
 }
 
-// ── S&P 500 — FMP ─────────────────────────────────────────────
+// ── S&P 500 — FMP individual quote (confirmed 200) ─────────────
 async function getSP500(key) {
   if (!key) return null;
   try {
@@ -276,68 +181,34 @@ async function getSP500(key) {
   } catch(e) { return null; }
 }
 
-// ── CRYPTO — FMP batch-crypto-quotes ─────────────────────────
-// FMP Starter confirmed endpoint: /stable/batch-crypto-quotes
-// Symbols format: BTCUSD, ETHUSD, etc.
+// ── CRYPTO — FMP individual quotes (confirmed 200 in logs) ─────
+// batch-crypto-quotes returns 402 on Starter plan — individual quotes work fine
 async function getCrypto(key) {
   if (!key) return [];
 
   const WANT = ['BTCUSD', 'ETHUSD', 'SOLUSD', 'XRPUSD', 'BNBUSD'];
+
+  const individual = await Promise.all(
+    WANT.map(sym =>
+      get(`https://financialmodelingprep.com/stable/quote?symbol=${sym}&apikey=${key}`, {}, 6000)
+        .then(d => ({ sym, q: Array.isArray(d) ? d[0] : null }))
+    )
+  );
+
   const results = [];
-
-  try {
-    // Try batch endpoint first
-    const data = await get(
-      `https://financialmodelingprep.com/stable/batch-crypto-quotes?apikey=${key}`
-    );
-
-    console.log('Crypto batch type:', typeof data, Array.isArray(data) ? `array[${data.length}]` : 'not array');
-
-    if (Array.isArray(data) && data.length > 0) {
-      console.log('Crypto sample symbols:', data.slice(0, 5).map(q => q.symbol).join(','));
-
-      WANT.forEach(sym => {
-        const q = data.find(d => d.symbol === sym);
-        if (q?.price != null) {
-          const change = parseFloat(q.changesPercentage ?? q.change ?? 0);
-          results.push({
-            symbol:    sym.replace('USD', ''),
-            price:     parseFloat(q.price).toFixed(2),
-            change:    change.toFixed(2),
-            change24h: (change >= 0 ? '+' : '') + change.toFixed(2) + '%',
-            dir:       change >= 0 ? 'up' : 'dn'
-          });
-          console.log(`Crypto ${sym}: $${q.price}`);
-        }
+  individual.forEach(({ sym, q }) => {
+    if (q?.price != null && parseFloat(q.price) > 0) {
+      const change = parseFloat(q.changesPercentage ?? 0);
+      results.push({
+        symbol:    sym.replace('USD', ''),
+        price:     parseFloat(q.price).toFixed(2),
+        change:    change.toFixed(2),
+        change24h: (change >= 0 ? '+' : '') + change.toFixed(2) + '%',
+        dir:       change >= 0 ? 'up' : 'dn'
       });
+      console.log(`Crypto ${sym}: $${q.price}`);
     }
-
-    // If batch failed, try individual quotes
-    if (results.length === 0) {
-      console.log('Crypto batch empty — trying individual quotes');
-      const individual = await Promise.all(
-        WANT.map(sym =>
-          get(`https://financialmodelingprep.com/stable/quote?symbol=${sym}&apikey=${key}`, {}, 5000)
-            .then(d => ({ sym, data: Array.isArray(d) ? d[0] : d }))
-        )
-      );
-
-      individual.forEach(({ sym, data: q }) => {
-        if (q?.price != null && parseFloat(q.price) > 0) {
-          const change = parseFloat(q.changesPercentage ?? q.changesPercentage ?? 0);
-          results.push({
-            symbol:    sym.replace('USD', ''),
-            price:     parseFloat(q.price).toFixed(2),
-            change:    change.toFixed(2),
-            change24h: (change >= 0 ? '+' : '') + change.toFixed(2) + '%',
-            dir:       change >= 0 ? 'up' : 'dn'
-          });
-          console.log(`Crypto ${sym} individual: $${q.price}`);
-        }
-      });
-    }
-
-  } catch(e) { console.log('Crypto error:', e.message); }
+  });
 
   console.log(`Crypto result: ${results.map(c => c.symbol).join(',')}`);
   return results;
@@ -368,14 +239,13 @@ exports.handler = async (event) => {
 
   const requestedTickers = (payload.tickers || ALLOWED).filter(t => ALLOWED.includes(t));
 
-  // Run all in parallel
-  const [psxResult, kse100Result] = await Promise.all([
+  const [psxPrices, kse100] = await Promise.all([
     getPSXPrices(requestedTickers),
     getKSE100()
   ]);
 
   const [commodities, pkrusd, sp500, crypto] = await Promise.all([
-    getCommodities(key),
+    getCommodities(key),  // FMP individual quotes
     getPKRUSD(key),
     getSP500(key),
     getCrypto(key)
@@ -385,8 +255,8 @@ exports.handler = async (event) => {
     statusCode: 200,
     headers,
     body: JSON.stringify({
-      prices:      psxResult,
-      kse100:      kse100Result,
+      prices:      psxPrices,
+      kse100:      kse100,
       commodities: commodities,
       pkrusd:      pkrusd,
       sp500:       sp500,
