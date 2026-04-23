@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Wall-Trade — Live FX Rates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090f;--bg1:#0f0f18;--bg2:#141420;--bg3:#1c1c2e;
+  --rim:rgba(255,255,255,0.06);--rim2:rgba(255,255,255,0.1);
+  --t1:#eeedf8;--t2:rgba(238,237,248,0.5);--t3:rgba(238,237,248,0.25);--t4:rgba(238,237,248,0.1);
+  --ga:#5fffc0;--gb:#22d98a;--pa:#c4b5fd;--pb:#8b5cf6;
+  --ra:#ff8080;--rb:#ef4444;--aa:#fbbf24;--bb:#3b82f6;
+  --card-shadow:0 0 0 1px var(--rim2),0 2px 8px rgba(0,0,0,0.5);
+}
+html{background:var(--bg)}
+body{
+  background:var(--bg);color:var(--t1);
+  font-family:'Geist','SF Pro Display',system-ui,sans-serif;
+  font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:90px;
+}
+::-webkit-scrollbar{width:0}
+
+/* ── HEADER ── */
+.hdr{
+  position:sticky;top:0;z-index:80;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;
+  background:rgba(9,9,15,0.9);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--rim);
+}
+.logo{
+  font-size:18px;font-weight:700;letter-spacing:-0.04em;
+  background:linear-gradient(130deg,var(--ga),var(--pa));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hdr-tag{font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);margin-top:2px}
+
+/* ── PAGE HEADER ── */
+.page-hdr{padding:24px 20px 20px}
+.page-hdr h1{font-size:26px;font-weight:700;letter-spacing:-0.03em;color:var(--t1);margin-bottom:6px}
+.page-hdr p{font-size:13px;color:var(--t3);line-height:1.6}
+
+/* ── FX CARDS ── */
+.fx-grid{padding:0 20px;display:flex;flex-direction:column;gap:10px}
+.fx-card{
+  background:var(--bg1);border:1px solid var(--rim);
+  border-radius:16px;padding:18px 20px;
+  transition:background 0.15s;
+}
+.fx-card:hover{background:var(--bg2)}
+.fx-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.fx-left{display:flex;align-items:center;gap:10px}
+.fx-flag{font-size:22px}
+.fx-pair{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--t3)}
+.fx-label{font-size:14px;font-weight:600;color:var(--t1);margin-top:2px}
+.fx-rate-block{text-align:right}
+.fx-rate{font-size:26px;font-weight:700;letter-spacing:-0.03em;color:var(--t1)}
+.fx-chg{font-size:12px;font-weight:600;margin-top:3px}
+.fx-context{font-size:12px;color:var(--t3);line-height:1.55;padding-top:10px;border-top:1px solid var(--rim);margin-top:6px}
+.up{color:#22d98a}.dn{color:#ff8080}
+
+/* ── LOADING / ERROR ── */
+.state-box{padding:60px 20px;text-align:center;color:var(--t3)}
+.spin{
+  width:20px;height:20px;border:2px solid var(--rim2);
+  border-top-color:var(--pb);border-radius:50%;
+  animation:rot 0.7s linear infinite;
+  display:inline-block;margin-bottom:12px;
+}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ── SBP NOTE ── */
+.sbp-note{
+  margin:16px 20px 8px;padding:12px 16px;
+  background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.15);
+  border-radius:12px;font-size:12px;color:var(--t2);line-height:1.6;
+}
+
+/* ── BOTTOM NAV ── */
+.bnav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:430px;
+  display:flex;align-items:center;justify-content:space-around;
+  background:rgba(9,9,15,0.96);backdrop-filter:blur(20px);
+  border-top:1px solid var(--rim2);
+  padding:8px 0 max(env(safe-area-inset-bottom,0px),8px);
+  z-index:100;
+}
+.bnav-item{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 16px;cursor:pointer;text-decoration:none;
+  color:var(--t3);transition:color 0.15s;
+  font-size:9px;font-weight:700;letter-spacing:0.06em;
+}
+.bnav-item.on{color:#22d98a}
+.bnav-item svg{transition:color 0.15s}
+
+/* ── TIMESTAMP ── */
+.ts{padding:12px 20px 4px;font-size:10px;color:var(--t3);text-align:right}
+.disc{font-size:10px;color:var(--t3);text-align:center;padding:8px 20px 20px;line-height:1.7}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div>
+    <div class="logo">Wall-Trade</div>
+    <div class="hdr-tag">Live FX Rates</div>
+  </div>
+  <div style="font-size:9px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--t3);display:flex;align-items:center;gap:5px">
+    <div style="width:5px;height:5px;border-radius:50%;background:#22d98a;animation:pulse 2s ease-in-out infinite"></div>
+    LIVE
+  </div>
+</header>
+
+<div class="page-hdr">
+  <h1>Forex Rates</h1>
+  <p>The 6 currency pairs that matter most to Pakistani investors, businesses &amp; the diaspora.</p>
+</div>
+
+<div id="fx-grid" class="fx-grid">
+  <div class="state-box">
+    <div class="spin"></div>
+    <div>Loading live rates…</div>
+  </div>
+</div>
+
+<div class="sbp-note" id="sbp-note" style="display:none">
+  ⚠️ Interbank mid-market rates. Open market rates in Pakistan may differ by PKR 1–3. SBP sets the managed float — check your bank for transaction rates.
+</div>
+
+<div class="ts" id="ts"></div>
+<div class="disc">Rates: FMP · Updated every 2 minutes · Not financial advice</div>
+
+<!-- Bottom Nav -->
+<nav class="bnav">
+  <a href="/" class="bnav-item">
+    <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    <span>HOME</span>
+  </a>
+  <a href="/app.html" class="bnav-item">
+    <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16 7 22 7 22 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>STOCKS</span>
+  </a>
+  <a href="/crypto.html" class="bnav-item">
+    <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M9.5 2H14.5C16.7 2 17.5 3.3 17.5 5C17.5 6.7 16.3 7.7 14.8 7.9C16.5 8 17.8 9.2 17.8 11C17.8 12.9 16.6 14.5 14.5 14.5H9.5V2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 8H14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7 2V14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7 17V22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 17H15C17 17 18 18 18 19.5C18 21 17 22 15 22H10V17Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    <span>CRYPTO</span>
+  </a>
+  <a href="/fx.html" class="bnav-item on">
+    <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 3C12 3 8 7 8 12C8 17 12 21 12 21" stroke="currentColor" stroke-width="1.8"/><path d="M12 3C12 3 16 7 16 12C16 17 12 21 12 21" stroke="currentColor" stroke-width="1.8"/><path d="M3 12H21" stroke="currentColor" stroke-width="1.8"/></svg>
+    <span>FOREX</span>
+  </a>
+</nav>
+
+<style>
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+</style>
+
+<script>
+const FX_PAIRS = [
+  { key:'PKR/USD', base:'USD', flag:'🇺🇸', label:'US Dollar',    context:'Primary benchmark. SBP managed float. Most transactions reference this rate.' },
+  { key:'PKR/SAR', base:'SAR', flag:'🇸🇦', label:'Saudi Riyal',  context:'Largest remittance corridor — ~3.5M Pakistanis work in Saudi Arabia.' },
+  { key:'PKR/AED', base:'AED', flag:'🇦🇪', label:'UAE Dirham',   context:'Second-largest remittance source. AED is pegged to USD at 3.6725.' },
+  { key:'PKR/GBP', base:'GBP', flag:'🇬🇧', label:'British Pound',context:'UK-Pakistan diaspora remittances. Largest bilateral corridor in Europe.' },
+  { key:'PKR/EUR', base:'EUR', flag:'🇪🇺', label:'Euro',          context:'EU trade partner. Pakistani textile exports are often invoiced in EUR.' },
+  { key:'PKR/CNY', base:'CNY', flag:'🇨🇳', label:'Chinese Yuan', context:'CPEC & bilateral trade. China is Pakistan\'s largest trading partner.' },
+];
+
+async function loadRates() {
+  const grid = document.getElementById('fx-grid');
+  try {
+    const res = await fetch('/.netlify/functions/forex', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'rates' })
+    });
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    if (data.error) {
+      grid.innerHTML = `<div class="state-box" style="color:#ff8080">⚠️ ${data.error}<br><br><span style="font-size:12px;color:var(--t3)">Please try again in a moment.</span></div>`;
+      return;
+    }
+
+    if (!data.rates || Object.keys(data.rates).length === 0) {
+      grid.innerHTML = `<div class="state-box">No rate data available — please try again.</div>`;
+      return;
+    }
+
+    // Render cards in our preferred order
+    grid.innerHTML = FX_PAIRS.map(pair => {
+      const fx = data.rates[pair.key];
+      if (!fx) return '';
+
+      const chgNum = fx.change != null ? parseFloat(fx.change) : null;
+      const chgHtml = chgNum != null
+        ? `<div class="fx-chg ${chgNum >= 0 ? 'up' : 'dn'}">${chgNum >= 0 ? '▲' : '▼'} ${Math.abs(chgNum).toFixed(2)}%</div>`
+        : `<div class="fx-chg" style="color:var(--t3)">1 ${pair.base} = PKR ${fx.rateRound}</div>`;
+
+      return `
+        <div class="fx-card">
+          <div class="fx-top">
+            <div class="fx-left">
+              <span class="fx-flag">${pair.flag}</span>
+              <div>
+                <div class="fx-pair">${pair.key}</div>
+                <div class="fx-label">${pair.label}</div>
+              </div>
+            </div>
+            <div class="fx-rate-block">
+              <div class="fx-rate">PKR ${fx.rateRound}</div>
+              ${chgHtml}
+            </div>
+          </div>
+          <div class="fx-context">${pair.context}</div>
+        </div>`;
+    }).filter(Boolean).join('');
+
+    // Show SBP note and timestamp
+    document.getElementById('sbp-note').style.display = 'block';
+    if (data.timestamp) {
+      const ts = new Date(data.timestamp);
+      document.getElementById('ts').textContent =
+        'Updated ' + ts.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' }) +
+        ' · Source: ' + (data.source || 'FMP');
+    }
+
+  } catch(e) {
+    console.error('FX error:', e);
+    grid.innerHTML = `<div class="state-box" style="color:#ff8080">⚠️ Failed to load rates.<br><br><span style="font-size:12px;color:var(--t3)">Check your connection and try again.</span></div>`;
+  }
+}
+
+// Load on page start, refresh every 2 minutes
+loadRates();
+setInterval(loadRates, 120000);
+</script>
+</body>
+</html>
