@@ -25,35 +25,104 @@ function callAnthropic(body) {
   });
 }
 
-function fetchFMP(path, timeoutMs = 4000) {
-  const key = process.env.FMP_API_KEY;
-  if (!key) return Promise.resolve(null);
-  const sep = path.includes('?') ? '&' : '?';
-  const url = `https://financialmodelingprep.com/stable/${path}${sep}apikey=${key}`;
+function fetchURL(url, timeoutMs = 6000) {
   return new Promise((resolve) => {
-    const timer = setTimeout(() => { console.log('FMP timeout:', path.slice(0,40)); resolve(null); }, timeoutMs);
-    https.get(url, { headers: { 'Accept': 'application/json' } }, res => {
+    const timer = setTimeout(() => { console.log('TIMEOUT:', url.slice(0, 60)); resolve(null); }, timeoutMs);
+    const req = https.get(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; WallTrade/1.0)'
+      }
+    }, res => {
       let body = '';
       res.on('data', c => body += c);
       res.on('end', () => {
         clearTimeout(timer);
-        console.log(`FMP ${path.slice(0,40)} → ${res.statusCode}`);
+        console.log(`${url.slice(0, 65)} → ${res.statusCode} len=${body.length}`);
         try { resolve(JSON.parse(body)); } catch(e) { resolve(null); }
       });
-    }).on('error', (e) => { clearTimeout(timer); resolve(null); });
+    });
+    req.on('error', e => { clearTimeout(timer); console.log('ERR:', e.message); resolve(null); });
   });
 }
+
+function fetchFMP(path, timeoutMs = 5000) {
+  const key = process.env.FMP_API_KEY;
+  if (!key) return Promise.resolve(null);
+  const sep = path.includes('?') ? '&' : '?';
+  return fetchURL(`https://financialmodelingprep.com/stable/${path}${sep}apikey=${key}`, timeoutMs);
+}
+
+// ── COINGECKO ID MAP — free API, no key needed, works from Netlify ──
+const COINGECKO_IDS = {
+  BTC:   'bitcoin',
+  ETH:   'ethereum',
+  SOL:   'solana',
+  XRP:   'ripple',
+  BNB:   'binancecoin',
+  ADA:   'cardano',
+  AVAX:  'avalanche-2',
+  DOT:   'polkadot',
+  MATIC: 'matic-network',
+  LINK:  'chainlink'
+};
 
 // Cache
 const cache = {};
 const CACHE_TTL = 20 * 60 * 1000; // 20 mins
 
-// Coin → FMP news symbol map
-const COIN_NEWS_SYMBOL = {
-  BTC: 'BTCUSD', ETH: 'ETHUSD', SOL: 'SOLUSD', BNB: 'BNBUSD',
-  XRP: 'XRPUSD', ADA: 'ADAUSD', DOGE: 'DOGEUSD', DOT: 'DOTUSD',
-  AVAX: 'AVAXUSD', MATIC: 'MATICUSD'
-};
+// ── FETCH PRICE: FMP first, CoinGecko fallback ─────────────────
+async function fetchCoinPrice(symbol) {
+  const fmpSymbol = `${symbol}USD`;
+
+  // Try FMP individual quote first (confirmed 200 for BTC/ETH/SOL/XRP/BNB)
+  try {
+    const data = await fetchFMP(`quote?symbol=${fmpSymbol}`, 5000);
+    const q = Array.isArray(data) ? data[0] : null;
+    if (q?.price && Number(q.price) > 0) {
+      const change = parseFloat(q.changesPercentage ?? q.changesPercentage ?? 0);
+      console.log(`${symbol} via FMP: $${q.price}`);
+      return {
+        price:     Number(q.price).toFixed(symbol === 'BTC' ? 2 : 4),
+        change:    change.toFixed(2),
+        yearHigh:  q.yearHigh,
+        yearLow:   q.yearLow,
+        marketCap: q.marketCap,
+        volume:    q.volume,
+        dayHigh:   q.dayHigh,
+        dayLow:    q.dayLow,
+        priceAvg50:  q.priceAvg50,
+        priceAvg200: q.priceAvg200,
+        source:    'FMP'
+      };
+    }
+  } catch(e) {}
+
+  // CoinGecko fallback — free, no key, works for ALL 10 coins
+  const cgId = COINGECKO_IDS[symbol];
+  if (cgId) {
+    try {
+      const data = await fetchURL(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${cgId}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true`,
+        6000
+      );
+      const coin = data?.[cgId];
+      if (coin?.usd && coin.usd > 0) {
+        const change = coin.usd_24h_change ?? 0;
+        console.log(`${symbol} via CoinGecko: $${coin.usd}`);
+        return {
+          price:     Number(coin.usd).toFixed(coin.usd >= 1 ? 2 : 6),
+          change:    change.toFixed(2),
+          marketCap: coin.usd_market_cap,
+          volume:    coin.usd_24h_vol,
+          source:    'CoinGecko'
+        };
+      }
+    } catch(e) { console.log(`CoinGecko ${symbol} error:`, e.message); }
+  }
+
+  return null;
+}
 
 exports.handler = async (event) => {
   const headers = {
@@ -70,108 +139,64 @@ exports.handler = async (event) => {
   catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request' }) }; }
 
   const { symbol, question } = payload;
-  let { price, change } = payload;
-  if (!symbol) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Symbol required' }) }; 
+  if (!symbol) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Symbol required' }) };
 
-  const cacheKey = question ? `q_${symbol}_${question.slice(0,40)}` : `v_${symbol}`;
+  const sym = symbol.toUpperCase();
+
+  // Check cache
+  const cacheKey = question ? `q_${sym}_${question.slice(0, 40)}` : `v_${sym}`;
   const cached = cache[cacheKey];
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
-    console.log(`Cache hit: ${symbol}`);
+    console.log(`Cache hit: ${sym}`);
     return { statusCode: 200, headers, body: JSON.stringify(cached.data) };
   }
 
-  const fmpSymbol = `${symbol}USD`;
-  const newsSymbol = COIN_NEWS_SYMBOL[symbol] || fmpSymbol;
+  // ── FETCH LIVE PRICE ───────────────────────────────────────
+  const priceData = await fetchCoinPrice(sym);
 
-  // Fire all FMP calls in parallel — full quote + news + history
-  const [quoteData, newsData, histData] = await Promise.all([
-    fetchFMP(`quote?symbol=${fmpSymbol}`, 5000),
-    fetchFMP(`news/crypto?symbols=${newsSymbol}&limit=5`, 4000),
-    fetchFMP(`historical-price-eod/light?symbol=${fmpSymbol}`, 4000)
-  ]);
-
-  // Extract price — handle both changePercentage and changesPercentage field names
-  const q = Array.isArray(quoteData) ? quoteData[0] : quoteData;
-  if (q?.price && Number(q.price) > 0) {
-    price = Number(q.price).toFixed(2);
-    change = Number(q.changePercentage ?? q.changesPercentage ?? 0).toFixed(2);
-    console.log(`${symbol} from full quote: $${price} (${change}%)`);
-  } else if (!price || price === '0' || Number(price) === 0) {
-    // Fallback: try quote-short
-    console.log(`${symbol}: full quote empty (status may be 402 or empty array), trying quote-short...`);
-    const short = await fetchFMP(`quote-short?symbol=${fmpSymbol}`, 4000);
-    const sq = Array.isArray(short) ? short[0] : short;
-    if (sq?.price && Number(sq.price) > 0) {
-      price = Number(sq.price).toFixed(2);
-      change = Number(sq.changesPercentage ?? 0).toFixed(2);
-      console.log(`${symbol} from quote-short: $${price}`);
-    } else {
-      console.log(`${symbol}: both quote and quote-short failed — no price`);
-    }
+  if (!priceData || !priceData.price || Number(priceData.price) === 0) {
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        error: 'price_unavailable',
+        message: `Live price for ${sym} is temporarily unavailable. Please try again shortly.`
+      })
+    };
   }
 
-  // Hard stop — no point calling Claude with no price
-  if (!price || price === '0' || Number(price) === 0) {
-    return { statusCode: 200, headers, body: JSON.stringify({
-      error: 'price_unavailable',
-      message: `Live price for ${symbol} is temporarily unavailable. Please try again shortly.`
-    })};
-  }
+  const price  = priceData.price;
+  const change = priceData.change;
 
-
-  // Build rich market data context
+  // Build market data context
   const marketData = [];
-  if (q) {
-    if (q.yearHigh)    marketData.push(`52W High: $${Number(q.yearHigh).toLocaleString()}`);
-    if (q.yearLow)     marketData.push(`52W Low: $${Number(q.yearLow).toLocaleString()}`);
-    if (q.marketCap)   marketData.push(`Market Cap: $${(q.marketCap/1e9).toFixed(1)}B`);
-    if (q.priceAvg50)  marketData.push(`50-Day MA: $${Number(q.priceAvg50).toLocaleString()} (${Number(price) > q.priceAvg50 ? 'ABOVE — bullish' : 'BELOW — bearish'})`);
-    if (q.priceAvg200) marketData.push(`200-Day MA: $${Number(q.priceAvg200).toLocaleString()} (${Number(price) > q.priceAvg200 ? 'ABOVE — long-term bullish' : 'BELOW — long-term bearish'})`);
-    if (q.volume)      marketData.push(`24h Volume: $${(q.volume/1e9).toFixed(2)}B`);
-    if (q.dayHigh && q.dayLow) marketData.push(`Today's Range: $${Number(q.dayLow).toLocaleString()} – $${Number(q.dayHigh).toLocaleString()}`);
-  }
+  if (priceData.yearHigh)    marketData.push(`52W High: $${Number(priceData.yearHigh).toLocaleString()}`);
+  if (priceData.yearLow)     marketData.push(`52W Low: $${Number(priceData.yearLow).toLocaleString()}`);
+  if (priceData.marketCap)   marketData.push(`Market Cap: $${(priceData.marketCap / 1e9).toFixed(1)}B`);
+  if (priceData.priceAvg50)  marketData.push(`50-Day MA: $${Number(priceData.priceAvg50).toLocaleString()} (${Number(price) > priceData.priceAvg50 ? 'ABOVE — bullish' : 'BELOW — bearish'})`);
+  if (priceData.priceAvg200) marketData.push(`200-Day MA: $${Number(priceData.priceAvg200).toLocaleString()} (${Number(price) > priceData.priceAvg200 ? 'ABOVE — long-term bullish' : 'BELOW — long-term bearish'})`);
+  if (priceData.volume)      marketData.push(`24h Volume: $${(priceData.volume / 1e9).toFixed(2)}B`);
+  if (priceData.dayHigh && priceData.dayLow) marketData.push(`Today's Range: $${Number(priceData.dayLow).toLocaleString()} – $${Number(priceData.dayHigh).toLocaleString()}`);
 
-  // 30-day price change from history
-  const hist = Array.isArray(histData) ? histData : histData?.historical;
-  if (hist?.length >= 30) {
-    const price30ago = hist[29]?.close || hist[hist.length-1]?.close;
-    if (price30ago) {
-      const change30d = ((Number(price) - price30ago) / price30ago * 100).toFixed(1);
-      marketData.push(`30-Day Change: ${change30d > 0 ? '+' : ''}${change30d}%`);
-    }
-  }
-
-  // Latest news headlines
-  const newsHeadlines = [];
-  if (Array.isArray(newsData) && newsData.length) {
-    newsData.slice(0, 4).forEach(n => {
-      if (n.title) newsHeadlines.push(`[${n.publisher}] ${n.title}`);
-    });
-  }
-
-  const PAKISTAN_CONTEXT = `Pakistan investor context: PKR/USD ~278. Crypto is in a legal grey area — SBP hasn't banned it but it's unregulated. Many Pakistanis use crypto as a USD hedge against PKR depreciation and for cross-border remittances. P2P trading on Binance is most common access method. High inflation history makes Pakistani investors particularly interested in store-of-value assets.`;
+  const PAKISTAN_CONTEXT = `Pakistan investor context: PKR/USD ~278. Crypto is unregulated but accessible via P2P on Binance. Many Pakistanis use crypto as a USD hedge against PKR depreciation. High inflation history makes store-of-value assets appealing.`;
 
   let prompt;
   if (question) {
-    prompt = `You are a crypto analyst. A Pakistani investor asks about ${symbol}: "${question}"
+    prompt = `You are a crypto analyst. A Pakistani investor asks about ${sym}: "${question}"
 
-LIVE MARKET DATA:
+LIVE MARKET DATA (source: ${priceData.source}):
 Price: $${price} (${change}% today)
 ${marketData.join('\n')}
-
-${newsHeadlines.length ? `LATEST NEWS:\n${newsHeadlines.join('\n')}` : ''}
 
 ${PAKISTAN_CONTEXT}
 
-Answer in 3-4 sentences. Reference the live data above. Explain what it means specifically for Pakistani investors. No financial advice.`;
+Answer in 3-4 sentences. Reference the live data. Explain relevance for Pakistani investors. No financial advice.`;
   } else {
     prompt = `You are a crypto analyst for Wall-Trade — Pakistan's AI markets intelligence platform.
 
-LIVE MARKET DATA FOR ${symbol}:
+LIVE MARKET DATA FOR ${sym} (source: ${priceData.source}):
 Price: $${price} (${change}% today)
-${marketData.join('\n')}
-
-${newsHeadlines.length ? `LATEST NEWS (last 24-48 hours):\n${newsHeadlines.join('\n')}\n\nFactor these developments into your analysis.` : ''}
+${marketData.length ? marketData.join('\n') : 'Basic price data only'}
 
 ${PAKISTAN_CONTEXT}
 
@@ -180,7 +205,7 @@ Return ONLY valid JSON (no markdown, no backticks):
   "verdict": "Bullish" or "Neutral" or "Bearish",
   "score": <1-10>,
   "headline": "Sharp one-line take referencing actual data — max 12 words",
-  "body": "2-3 sentences. Price level vs MA, key news driver, Pakistan angle. No advice.",
+  "body": "2-3 sentences. Price momentum, key driver, Pakistan angle. No advice.",
   "insights": [
     {"icon":"📊","value":"metric+number","label":"max 8 words","color":"green"},
     {"icon":"⚡","value":"metric+number","label":"max 8 words","color":"amber"},
@@ -190,7 +215,7 @@ Return ONLY valid JSON (no markdown, no backticks):
     {"label":"2-3 word signal","type":"green"},
     {"label":"2-3 word signal","type":"amber"}
   ],
-  "education": "2 sentences. What is ${symbol} and what drives its price. Plain English for new Pakistani investor."
+  "education": "2 sentences. What is ${sym} and what drives its price. Plain English for new Pakistani investor."
 }`;
   }
 
@@ -198,7 +223,7 @@ Return ONLY valid JSON (no markdown, no backticks):
     const result = await callAnthropic({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
-      system: 'You are a concise crypto analyst with access to live market data. Return only valid JSON for verdicts, plain text for questions. Always reference specific numbers from the data provided.',
+      system: 'Concise crypto analyst for Pakistani retail investors. Return only valid JSON for verdicts, plain text for questions. Always reference specific numbers from the data provided.',
       messages: [{ role: 'user', content: prompt }]
     });
 
@@ -208,22 +233,14 @@ Return ONLY valid JSON (no markdown, no backticks):
       response = { answer: raw };
     } else {
       const m = raw.match(/\{[\s\S]*\}/);
-      response = m ? JSON.parse(m[0]) : { error: 'Parse failed' };
+      response = m ? JSON.parse(m[0]) : { error: 'Parse failed', raw };
     }
 
-    // Attach market data for frontend use
-    if (!question && q) {
-      response.marketData = {
-        yearHigh: q.yearHigh, yearLow: q.yearLow,
-        marketCap: q.marketCap, priceAvg50: q.priceAvg50,
-        priceAvg200: q.priceAvg200, volume: q.volume,
-        dayHigh: q.dayHigh, dayLow: q.dayLow
-      };
-      if (hist?.length >= 7) response.history = hist.slice(0, 30).map(d => ({ date: d.date, close: d.close }));
-    }
+    // Attach price data for frontend
+    response.priceData = { price, change, source: priceData.source };
 
     cache[cacheKey] = { data: response, ts: Date.now() };
-    console.log(`${symbol} verdict: ${response.verdict} ${response.score}/10 | News: ${newsHeadlines.length} | MarketData: ${marketData.length} fields`);
+    console.log(`${sym} verdict: ${response.verdict} ${response.score}/10 | Source: ${priceData.source}`);
     return { statusCode: 200, headers, body: JSON.stringify(response) };
 
   } catch(e) {
