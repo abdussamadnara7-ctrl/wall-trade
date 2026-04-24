@@ -186,7 +186,7 @@ async function getSP500(key) {
 async function getCrypto(key) {
   if (!key) return [];
 
-  const WANT = ['BTCUSD', 'ETHUSD', 'SOLUSD', 'XRPUSD', 'BNBUSD'];
+  const WANT = ['BTCUSD', 'ETHUSD', 'SOLUSD', 'XRPUSD', 'BNBUSD', 'ADAUSD', 'AVAXUSD', 'DOTUSD', 'MATICUSD', 'LINKUSD'];
 
   const individual = await Promise.all(
     WANT.map(sym =>
