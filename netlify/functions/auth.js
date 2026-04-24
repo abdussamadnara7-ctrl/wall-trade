@@ -1,8 +1,10 @@
 // ── WALL-TRADE AUTH FUNCTION ──────────────────────────────────
 // Supabase-backed sign-up with 100-user beta cap
-// Env vars needed: SUPABASE_URL, SUPABASE_SERVICE_KEY
+// Env vars: SUPABASE_URL, SUPABASE_SERVICE_KEY, NOTIFY_EMAIL (optional)
 
 const https = require('https');
+
+const BETA_CAP = 100;
 
 function supabaseRequest(path, method, body, key, url) {
   return new Promise((resolve, reject) => {
@@ -16,6 +18,8 @@ function supabaseRequest(path, method, body, key, url) {
         'Content-Type':  'application/json',
         'apikey':        key,
         'Authorization': `Bearer ${key}`,
+        // Ask Supabase to return exact count in response header
+        'Prefer':        method === 'GET' ? 'count=exact' : 'return=representation',
         ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
       }
     };
@@ -23,14 +27,56 @@ function supabaseRequest(path, method, body, key, url) {
       let b = '';
       res.on('data', c => b += c);
       res.on('end', () => {
-        try { resolve({ status: res.statusCode, body: JSON.parse(b) }); }
-        catch(e) { resolve({ status: res.statusCode, body: b }); }
+        try {
+          // Extract exact count from Content-Range header e.g. "0-99/47"
+          const contentRange = res.headers['content-range'];
+          let exactCount = null;
+          if (contentRange) {
+            const match = contentRange.match(/\/(\d+)$/);
+            if (match) exactCount = parseInt(match[1], 10);
+          }
+          resolve({
+            status:     res.statusCode,
+            body:       JSON.parse(b),
+            exactCount  // populated for GET requests with count=exact
+          });
+        } catch(e) {
+          resolve({ status: res.statusCode, body: b, exactCount: null });
+        }
       });
     });
     req.on('error', reject);
     if (data) req.write(data);
     req.end();
   });
+}
+
+// ── GET EXACT BETA USER COUNT ──────────────────────────────────
+// Uses Supabase Content-Range header — most reliable method
+// Falls back to array length if header missing
+async function getBetaUserCount(key, url) {
+  try {
+    const res = await supabaseRequest(
+      '/rest/v1/beta_users?select=id&limit=1',
+      'GET', null, key, url
+    );
+    // Prefer the exact count from Content-Range header
+    if (res.exactCount !== null && !isNaN(res.exactCount)) {
+      console.log(`Beta user count (Content-Range): ${res.exactCount}`);
+      return res.exactCount;
+    }
+    // Fallback: fetch all IDs and count array
+    const allRes = await supabaseRequest(
+      '/rest/v1/beta_users?select=id&limit=200',
+      'GET', null, key, url
+    );
+    const count = Array.isArray(allRes.body) ? allRes.body.length : 0;
+    console.log(`Beta user count (array fallback): ${count}`);
+    return count;
+  } catch(e) {
+    console.error('Count error:', e.message);
+    return 0;
+  }
 }
 
 exports.handler = async (event) => {
@@ -57,9 +103,26 @@ exports.handler = async (event) => {
 
   const { action, email, password } = payload;
 
-  // Basic validation
-  if (!email || !email.includes('@') || email.length > 200) {
+  if (action !== 'spots' && (!email || !email.includes('@') || email.length > 200)) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Valid email required' }) };
+  }
+
+  // ── CHECK SPOTS REMAINING ──────────────────────────────────
+  if (action === 'spots') {
+    const count = await getBetaUserCount(SUPABASE_KEY, SUPABASE_URL);
+    const remaining = Math.max(0, BETA_CAP - count);
+    console.log(`Spots check: ${count} used, ${remaining} remaining`);
+    return {
+      statusCode: 200,
+      headers: CORS,
+      body: JSON.stringify({
+        total: BETA_CAP,
+        used: count,
+        remaining,
+        isFull: count >= BETA_CAP,
+        percentFull: Math.round((count / BETA_CAP) * 100)
+      })
+    };
   }
 
   // ── SIGN UP ────────────────────────────────────────────────
@@ -68,47 +131,18 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'Password must be at least 8 characters' }) };
     }
 
-    // 1. Check current user count against 100-user cap
-    const countRes = await supabaseRequest(
-      '/rest/v1/beta_users?select=id&limit=1&count=exact',
-      'GET', null, SUPABASE_KEY, SUPABASE_URL
-    );
+    // 1. Get reliable user count
+    const userCount = await getBetaUserCount(SUPABASE_KEY, SUPABASE_URL);
+    console.log(`Signup attempt — current count: ${userCount}/${BETA_CAP}`);
 
-    // Supabase returns count in Content-Range header — but we check array length as fallback
-    const countBody = await supabaseRequest(
-      '/rest/v1/beta_users?select=count',
-      'GET', null, SUPABASE_KEY, SUPABASE_URL
-    );
-
-    // Get exact count
-    const exactCountRes = await supabaseRequest(
-      '/rest/v1/rpc/get_beta_user_count',
-      'POST', {}, SUPABASE_KEY, SUPABASE_URL
-    );
-
-    let userCount = 0;
-    if (typeof exactCountRes.body === 'number') {
-      userCount = exactCountRes.body;
-    } else if (Array.isArray(countRes.body)) {
-      userCount = countRes.body.length;
-    }
-
-    // Simple count check via users list
-    const listRes = await supabaseRequest(
-      '/rest/v1/beta_users?select=id',
-      'GET', null, SUPABASE_KEY, SUPABASE_URL
-    );
-    if (Array.isArray(listRes.body)) {
-      userCount = listRes.body.length;
-    }
-
-    if (userCount >= 100) {
+    if (userCount >= BETA_CAP) {
+      console.log(`Beta full — rejecting signup for ${email}`);
       return {
         statusCode: 403,
         headers: CORS,
         body: JSON.stringify({
           error: 'beta_full',
-          message: 'Beta is full — all 100 spots have been claimed. Join the waitlist to be notified when we expand.'
+          message: 'Beta is full — all 100 spots have been claimed.'
         })
       };
     }
@@ -119,7 +153,7 @@ exports.handler = async (event) => {
       'GET', null, SUPABASE_KEY, SUPABASE_URL
     );
     if (Array.isArray(existRes.body) && existRes.body.length > 0) {
-      return { statusCode: 409, headers: CORS, body: JSON.stringify({ error: 'Email already registered. Try signing in.' }) };
+      return { statusCode: 409, headers: CORS, body: JSON.stringify({ error: 'Email already registered. Please sign in.' }) };
     }
 
     // 3. Create Supabase Auth user
@@ -131,29 +165,48 @@ exports.handler = async (event) => {
     );
 
     if (authRes.status !== 200 && authRes.status !== 201) {
-      const msg = authRes.body?.msg || authRes.body?.message || 'Registration failed';
+      const msg = authRes.body?.msg || authRes.body?.message || authRes.body?.error_description || 'Registration failed';
+      console.error(`Auth user creation failed for ${email}: ${msg}`);
       return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: msg }) };
     }
 
     const userId = authRes.body?.id;
+    const betaSlot = userCount + 1;
 
     // 4. Insert into beta_users table
     if (userId) {
-      await supabaseRequest(
+      const insertRes = await supabaseRequest(
         '/rest/v1/beta_users',
         'POST',
-        { id: userId, email, signed_up_at: new Date().toISOString(), beta_slot: userCount + 1 },
+        {
+          id:           userId,
+          email,
+          signed_up_at: new Date().toISOString(),
+          beta_slot:    betaSlot
+        },
         SUPABASE_KEY, SUPABASE_URL
       );
+      console.log(`beta_users insert status: ${insertRes.status} — slot #${betaSlot}`);
+    }
+
+    // 5. Log milestone alerts
+    const spotsLeft = BETA_CAP - betaSlot;
+    if (betaSlot >= BETA_CAP) {
+      console.log(`🚨 BETA FULL — user #${betaSlot} just signed up (${email}). Beta cap reached.`);
+    } else if (spotsLeft <= 10) {
+      console.log(`⚠️ BETA NEARLY FULL — ${spotsLeft} spots left. Latest signup: ${email} (slot #${betaSlot})`);
+    } else {
+      console.log(`✅ New beta user #${betaSlot}: ${email} — ${spotsLeft} spots remaining`);
     }
 
     return {
       statusCode: 201,
       headers: CORS,
       body: JSON.stringify({
-        success: true,
-        message: 'Account created! You are beta user #' + (userCount + 1) + ' of 100.',
-        spotsLeft: 99 - userCount
+        success:   true,
+        message:   `Welcome to Wall-Trade beta! You are user #${betaSlot} of ${BETA_CAP}.`,
+        betaSlot,
+        spotsLeft
       })
     };
   }
@@ -172,34 +225,22 @@ exports.handler = async (event) => {
     );
 
     if (signinRes.status !== 200) {
+      console.log(`Signin failed for ${email}: status ${signinRes.status}`);
       return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: 'Invalid email or password' }) };
     }
 
     const { access_token, refresh_token, user } = signinRes.body;
+    console.log(`Signin success: ${email}`);
 
     return {
       statusCode: 200,
       headers: CORS,
       body: JSON.stringify({
-        success: true,
+        success:       true,
         access_token,
         refresh_token,
         user: { id: user?.id, email: user?.email }
       })
-    };
-  }
-
-  // ── CHECK SPOTS REMAINING ──────────────────────────────────
-  if (action === 'spots') {
-    const listRes = await supabaseRequest(
-      '/rest/v1/beta_users?select=id',
-      'GET', null, SUPABASE_KEY, SUPABASE_URL
-    );
-    const count = Array.isArray(listRes.body) ? listRes.body.length : 0;
-    return {
-      statusCode: 200,
-      headers: CORS,
-      body: JSON.stringify({ total: 100, used: count, remaining: Math.max(0, 100 - count) })
     };
   }
 
