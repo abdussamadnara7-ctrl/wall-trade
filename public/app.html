@@ -562,7 +562,7 @@ body {
 // ── AUTH ──────────────────────────────────────────────────
 // AUTH_ENFORCED = false  →  app loads for everyone (current state)
 // AUTH_ENFORCED = true   →  set this once Supabase is live and users are signing up
-const AUTH_ENFORCED = false;
+const AUTH_ENFORCED = true;
 
 (function() {
   if (!AUTH_ENFORCED) return; // gate is off — app loads normally
