@@ -1,33 +1,436 @@
 const https = require('https');
 
-// ── HARDCODED PSX FUNDAMENTALS FALLBACK ──────────────────────────
-// Yahoo Finance often returns N/A for Pakistani stocks.
-// Filled from PSX annual reports / company financials (FY2024-25).
-// NOTE: ENGRO was delisted Jan 14 2025 — replaced by ENGROH (Engro Holdings Ltd)
+// ── PSX FUNDAMENTALS — WallTrade Master Datasets (2025/2026) ──────
+// Banking:    WallTrade Master Banking Dataset 2025
+// Oil/Energy: WallTrade Master Oil & Energy Dataset 2025
+// Fertilizer: WallTrade Master Fertilizer Dataset 2026
+// Cement:     WallTrade Master Cement Dataset 2026
 const PSX_FUNDAMENTALS = {
-  OGDC:  { pe:'8.2',  fwdPe:'7.9',  pb:'1.1', eps:'37.20',  divYield:'6.1%', roe:'13.8%', roa:'10.2%', grossMargin:'58.4%', opMargin:'52.1%', netMargin:'42.3%', ebitda:'Rs. 142.3B', revenue:'Rs. 336.5B', currentRatio:'2.10', quickRatio:'1.85', debtToEquity:'0.04', totalCash:'Rs. 28.4B', totalDebt:'Rs. 1.2B',  fcf:'Rs. 89.6B',  beta:'0.72', revenueGrowth:'8.4%',   earningsGrowth:'6.2%',   marketCap:'Rs. 421.8B' },
-  PPL:   { pe:'7.1',  fwdPe:'6.8',  pb:'0.9', eps:'29.40',  divYield:'7.2%', roe:'12.4%', roa:'8.9%',  grossMargin:'54.2%', opMargin:'48.6%', netMargin:'38.7%', ebitda:'Rs. 98.2B',  revenue:'Rs. 254.1B', currentRatio:'1.85', quickRatio:'1.62', debtToEquity:'0.12', totalCash:'Rs. 18.6B', totalDebt:'Rs. 4.8B',  fcf:'Rs. 62.3B',  beta:'0.81', revenueGrowth:'6.1%',   earningsGrowth:'4.8%',   marketCap:'Rs. 233.6B' },
-  PSO:   { pe:'6.4',  fwdPe:'6.1',  pb:'0.8', eps:'82.50',  divYield:'5.8%', roe:'14.2%', roa:'3.1%',  grossMargin:'3.2%',  opMargin:'2.1%',  netMargin:'1.8%',  ebitda:'Rs. 28.4B',  revenue:'Rs. 1,580B', currentRatio:'1.12', quickRatio:'0.84', debtToEquity:'1.84', totalCash:'Rs. 8.2B',  totalDebt:'Rs. 48.6B', fcf:'Rs. 12.4B',  beta:'1.08', revenueGrowth:'4.2%',   earningsGrowth:'-3.1%',  marketCap:'Rs. 102.4B' },
-  MARI:  { pe:'9.8',  fwdPe:'9.2',  pb:'2.4', eps:'238.60', divYield:'4.2%', roe:'24.6%', roa:'18.4%', grossMargin:'62.8%', opMargin:'56.4%', netMargin:'46.2%', ebitda:'Rs. 64.8B',  revenue:'Rs. 140.2B', currentRatio:'3.42', quickRatio:'3.18', debtToEquity:'0.02', totalCash:'Rs. 22.6B', totalDebt:'Rs. 0.4B',  fcf:'Rs. 48.2B',  beta:'0.68', revenueGrowth:'12.4%',  earningsGrowth:'10.8%',  marketCap:'Rs. 278.4B' },
-  APL:   { pe:'11.2', fwdPe:'10.4', pb:'1.8', eps:'68.40',  divYield:'5.4%', roe:'16.2%', roa:'9.8%',  grossMargin:'6.4%',  opMargin:'4.8%',  netMargin:'3.9%',  ebitda:'Rs. 8.6B',   revenue:'Rs. 224.8B', currentRatio:'1.62', quickRatio:'1.24', debtToEquity:'0.28', totalCash:'Rs. 6.4B',  totalDebt:'Rs. 4.2B',  fcf:'Rs. 4.8B',   beta:'0.92', revenueGrowth:'7.8%',   earningsGrowth:'5.4%',   marketCap:'Rs. 58.6B'  },
-  HASCOL:{ pe:'N/A',  fwdPe:'N/A',  pb:'2.1', eps:'-4.20',  divYield:'N/A',  roe:'-8.4%', roa:'-2.8%', grossMargin:'1.8%',  opMargin:'-1.2%', netMargin:'-1.6%', ebitda:'Rs. -0.8B',  revenue:'Rs. 148.4B', currentRatio:'0.62', quickRatio:'0.41', debtToEquity:'4.82', totalCash:'Rs. 0.8B',  totalDebt:'Rs. 24.6B', fcf:'Rs. -2.4B',  beta:'1.42', revenueGrowth:'-2.4%',  earningsGrowth:'-18.6%', marketCap:'Rs. 4.8B'   },
-  HBL:   { pe:'7.8',  fwdPe:'7.2',  pb:'1.2', eps:'42.80',  divYield:'6.8%', roe:'16.4%', roa:'1.2%',  grossMargin:'N/A',   opMargin:'48.2%', netMargin:'24.6%', ebitda:'Rs. 86.4B',  revenue:'Rs. 352.8B', currentRatio:'N/A',  quickRatio:'N/A',  debtToEquity:'8.42', totalCash:'Rs. 284.6B',totalDebt:'Rs. 142.8B',fcf:'Rs. 42.6B',  beta:'0.88', revenueGrowth:'18.4%',  earningsGrowth:'14.2%',  marketCap:'Rs. 248.6B' },
-  MCB:   { pe:'8.4',  fwdPe:'7.8',  pb:'1.6', eps:'54.20',  divYield:'8.2%', roe:'22.4%', roa:'2.1%',  grossMargin:'N/A',   opMargin:'54.8%', netMargin:'32.4%', ebitda:'Rs. 72.4B',  revenue:'Rs. 224.6B', currentRatio:'N/A',  quickRatio:'N/A',  debtToEquity:'6.84', totalCash:'Rs. 186.4B',totalDebt:'Rs. 84.2B', fcf:'Rs. 38.4B',  beta:'0.76', revenueGrowth:'14.8%',  earningsGrowth:'12.6%',  marketCap:'Rs. 282.4B' },
-  UBL:   { pe:'7.2',  fwdPe:'6.8',  pb:'1.1', eps:'48.60',  divYield:'7.4%', roe:'18.2%', roa:'1.6%',  grossMargin:'N/A',   opMargin:'52.4%', netMargin:'28.6%', ebitda:'Rs. 64.8B',  revenue:'Rs. 228.4B', currentRatio:'N/A',  quickRatio:'N/A',  debtToEquity:'7.24', totalCash:'Rs. 164.8B',totalDebt:'Rs. 96.4B', fcf:'Rs. 32.8B',  beta:'0.82', revenueGrowth:'16.2%',  earningsGrowth:'11.4%',  marketCap:'Rs. 186.4B' },
-  NBP:   { pe:'4.8',  fwdPe:'4.4',  pb:'0.6', eps:'28.40',  divYield:'4.2%', roe:'12.8%', roa:'0.8%',  grossMargin:'N/A',   opMargin:'38.4%', netMargin:'18.6%', ebitda:'Rs. 48.2B',  revenue:'Rs. 258.6B', currentRatio:'N/A',  quickRatio:'N/A',  debtToEquity:'9.84', totalCash:'Rs. 242.8B',totalDebt:'Rs. 124.6B',fcf:'Rs. 18.4B',  beta:'0.94', revenueGrowth:'12.4%',  earningsGrowth:'8.2%',   marketCap:'Rs. 98.4B'  },
-  ABL:   { pe:'6.8',  fwdPe:'6.2',  pb:'1.0', eps:'38.60',  divYield:'6.4%', roe:'16.8%', roa:'1.4%',  grossMargin:'N/A',   opMargin:'48.6%', netMargin:'26.4%', ebitda:'Rs. 42.8B',  revenue:'Rs. 162.4B', currentRatio:'N/A',  quickRatio:'N/A',  debtToEquity:'7.64', totalCash:'Rs. 128.4B',totalDebt:'Rs. 68.2B', fcf:'Rs. 22.6B',  beta:'0.86', revenueGrowth:'14.2%',  earningsGrowth:'10.8%',  marketCap:'Rs. 128.6B' },
-  BAFL:  { pe:'7.4',  fwdPe:'6.8',  pb:'1.1', eps:'14.80',  divYield:'5.8%', roe:'16.4%', roa:'1.2%',  grossMargin:'N/A',   opMargin:'46.8%', netMargin:'24.8%', ebitda:'Rs. 38.4B',  revenue:'Rs. 154.8B', currentRatio:'N/A',  quickRatio:'N/A',  debtToEquity:'8.24', totalCash:'Rs. 112.6B',totalDebt:'Rs. 62.4B', fcf:'Rs. 18.8B',  beta:'0.92', revenueGrowth:'16.8%',  earningsGrowth:'12.4%',  marketCap:'Rs. 84.6B'  },
-  // ENGROH — Engro Holdings Ltd. Listed Jan 14 2025 replacing ENGRO (Engro Corporation)
-  // Holding company structure: owns stakes in EFERT, Engro Polymer, Engro Powergen, Enfrashare
-  ENGROH:{ pe:'14.8', fwdPe:'13.2', pb:'1.6', eps:'18.40',  divYield:'4.8%', roe:'11.2%', roa:'4.6%',  grossMargin:'22.4%', opMargin:'16.8%', netMargin:'10.4%', ebitda:'Rs. 28.6B',  revenue:'Rs. 274.8B', currentRatio:'1.28', quickRatio:'0.94', debtToEquity:'0.82', totalCash:'Rs. 12.4B', totalDebt:'Rs. 18.6B', fcf:'Rs. 14.8B',  beta:'1.04', revenueGrowth:'6.2%',   earningsGrowth:'4.8%',   marketCap:'Rs. 124.8B' },
-  EFERT: { pe:'9.8',  fwdPe:'9.2',  pb:'3.2', eps:'28.40',  divYield:'8.4%', roe:'32.6%', roa:'18.4%', grossMargin:'38.6%', opMargin:'32.4%', netMargin:'24.8%', ebitda:'Rs. 42.8B',  revenue:'Rs. 172.4B', currentRatio:'2.24', quickRatio:'1.86', debtToEquity:'0.42', totalCash:'Rs. 12.6B', totalDebt:'Rs. 8.4B',  fcf:'Rs. 32.4B',  beta:'0.82', revenueGrowth:'12.4%',  earningsGrowth:'10.2%',  marketCap:'Rs. 148.6B' },
-  FFC:   { pe:'8.6',  fwdPe:'8.2',  pb:'4.2', eps:'32.80',  divYield:'9.8%', roe:'48.6%', roa:'22.4%', grossMargin:'32.4%', opMargin:'26.8%', netMargin:'20.6%', ebitda:'Rs. 38.6B',  revenue:'Rs. 188.4B', currentRatio:'1.84', quickRatio:'1.42', debtToEquity:'0.28', totalCash:'Rs. 14.8B', totalDebt:'Rs. 6.4B',  fcf:'Rs. 28.6B',  beta:'0.76', revenueGrowth:'6.4%',   earningsGrowth:'4.8%',   marketCap:'Rs. 166.4B' },
-  FFBL:  { pe:'N/A',  fwdPe:'N/A',  pb:'1.4', eps:'-2.80',  divYield:'N/A',  roe:'-4.8%', roa:'-1.8%', grossMargin:'8.4%',  opMargin:'-2.4%', netMargin:'-1.8%', ebitda:'Rs. -1.2B',  revenue:'Rs. 68.4B',  currentRatio:'0.82', quickRatio:'0.58', debtToEquity:'2.84', totalCash:'Rs. 2.4B',  totalDebt:'Rs. 16.8B', fcf:'Rs. -4.2B',  beta:'1.28', revenueGrowth:'-4.2%',  earningsGrowth:'-24.6%', marketCap:'Rs. 14.8B'  },
-  LUCK:  { pe:'14.2', fwdPe:'12.8', pb:'1.8', eps:'62.40',  divYield:'3.8%', roe:'12.6%', roa:'6.4%',  grossMargin:'18.4%', opMargin:'14.2%', netMargin:'10.8%', ebitda:'Rs. 28.6B',  revenue:'Rs. 264.8B', currentRatio:'1.62', quickRatio:'1.24', debtToEquity:'0.48', totalCash:'Rs. 12.4B', totalDebt:'Rs. 18.6B', fcf:'Rs. 12.8B',  beta:'1.12', revenueGrowth:'4.8%',   earningsGrowth:'2.4%',   marketCap:'Rs. 214.8B' },
-  MLCF:  { pe:'18.4', fwdPe:'16.2', pb:'1.6', eps:'4.80',   divYield:'2.4%', roe:'8.6%',  roa:'4.2%',  grossMargin:'14.2%', opMargin:'10.8%', netMargin:'6.4%',  ebitda:'Rs. 8.4B',   revenue:'Rs. 52.6B',  currentRatio:'1.28', quickRatio:'0.86', debtToEquity:'0.82', totalCash:'Rs. 2.8B',  totalDebt:'Rs. 8.6B',  fcf:'Rs. 2.4B',   beta:'1.24', revenueGrowth:'6.2%',   earningsGrowth:'-8.4%',  marketCap:'Rs. 24.8B'  },
-  CHCC:  { pe:'22.6', fwdPe:'18.4', pb:'2.4', eps:'8.20',   divYield:'1.8%', roe:'10.8%', roa:'5.4%',  grossMargin:'16.8%', opMargin:'12.4%', netMargin:'8.2%',  ebitda:'Rs. 6.8B',   revenue:'Rs. 42.4B',  currentRatio:'1.48', quickRatio:'1.02', debtToEquity:'0.62', totalCash:'Rs. 2.4B',  totalDebt:'Rs. 6.2B',  fcf:'Rs. 1.8B',   beta:'1.18', revenueGrowth:'8.4%',   earningsGrowth:'-4.2%',  marketCap:'Rs. 28.4B'  },
-  DGKC:  { pe:'N/A',  fwdPe:'N/A',  pb:'0.8', eps:'-4.60',  divYield:'N/A',  roe:'-4.2%', roa:'-2.1%', grossMargin:'6.4%',  opMargin:'-2.8%', netMargin:'-3.4%', ebitda:'Rs. -1.6B',  revenue:'Rs. 48.4B',  currentRatio:'0.92', quickRatio:'0.64', debtToEquity:'1.84', totalCash:'Rs. 1.8B',  totalDebt:'Rs. 18.4B', fcf:'Rs. -2.8B',  beta:'1.32', revenueGrowth:'-2.4%',  earningsGrowth:'-28.6%', marketCap:'Rs. 18.4B'  },
+
+  // ── OIL & GAS EXPLORATION ──────────────────────────────────
+  OGDC: {
+    eps:'16.98', grossMargin:'53.6%', netMargin:'37.9%',
+    revenue:'PKR 192.8B', netProfit:'PKR 73.0B',
+    totalAssets:'PKR 1.69T', tradeDebts:'PKR 583.8B',
+    dividend:'PKR 4.25/share',
+    aiSummary:'Large-cap state-backed upstream energy giant with strong dividend and reserve profile.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    roe:'N/A', roa:'N/A', opMargin:'N/A', ebitdaMargin:'N/A',
+    ebitda:'N/A', currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  PPL: {
+    eps:'14.84', grossMargin:'59%', netMargin:'34%',
+    revenue:'PKR 118.0B', netProfit:'PKR 40.4B',
+    totalAssets:'PKR 976.2B', tradeDebts:'PKR 599.9B',
+    dividend:'PKR 2/share',
+    aiSummary:'Exploration-focused E&P company with reserve discovery upside and strong margins.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    roe:'N/A', roa:'N/A', opMargin:'N/A', ebitdaMargin:'N/A',
+    ebitda:'N/A', currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  MARI: {
+    eps:'41.32', netMargin:'35.9%', roe:'17.4%',
+    revenue:'PKR 138.3B', netProfit:'PKR 49.6B',
+    totalAssets:'PKR 452.2B', totalCash:'PKR 24B',
+    explorationSpend:'PKR 8.95B',
+    aiSummary:'Growth-oriented upstream energy stock driven by exploration and operational expansion.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    grossMargin:'N/A', roa:'N/A', opMargin:'N/A', ebitdaMargin:'N/A',
+    ebitda:'N/A', currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  // ── OIL MARKETING COMPANIES ────────────────────────────────
+  PSO: {
+    eps:'25.82', grossMargin:'3.1%', netMargin:'0.8%',
+    revenue:'PKR 1,499B', netProfit:'PKR 12.1B',
+    totalAssets:'PKR 998.8B', tradeDebts:'PKR 412.1B',
+    jetFuelMarketShare:'99.2%',
+    aiSummary:"Pakistan's dominant downstream fuel distribution company and fuel-demand proxy.",
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    roe:'N/A', roa:'N/A', opMargin:'N/A', ebitdaMargin:'N/A',
+    ebitda:'N/A', currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  APL: {
+    eps:'51.60', netMargin:'2.7%', roe:'9.5%',
+    revenue:'PKR 240.6B', netProfit:'PKR 6.42B',
+    inventory:'PKR 37B', tradePayables:'PKR 43B',
+    retailOutlets:'798',
+    aiSummary:'Low-margin fuel distribution business focused on operational efficiency and retail expansion.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    grossMargin:'N/A', roa:'N/A', opMargin:'N/A', ebitdaMargin:'N/A',
+    ebitda:'N/A', currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  HASCOL: {
+    eps:'-6.71', ebitda:'PKR 2.36B',
+    netProfit:'PKR -6.70B', grossProfit:'PKR 3.58B',
+    financeCost:'PKR 6.78B', fuelVolumes:'541,840 MT',
+    vitolOwnership:'40.21%',
+    aiSummary:'High-risk turnaround and restructuring story backed by Vitol and debt restructuring.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    roe:'N/A', roa:'N/A', grossMargin:'N/A', opMargin:'N/A',
+    netMargin:'N/A', ebitdaMargin:'N/A', revenue:'N/A',
+    currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A', totalAssets:'N/A',
+  },
+
+  // ── BANKING ────────────────────────────────────────────────
+  HBL: {
+    pe:'4.8', pb:'1.0', eps:'45.5', divYield:'9.1%',
+    roe:'14.9%', nplRatio:'4.6%',
+    netProfit:'PKR 66.8B', deposits:'PKR 5.5T',
+    totalAssets:'PKR 7.7T',
+    aiSummary:'Large-cap dividend and value banking play with strong deposit franchise.',
+    fwdPe:'N/A', roa:'N/A', grossMargin:'N/A', opMargin:'N/A',
+    netMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
+    revenue:'N/A', casaRatio:'N/A', carRatio:'N/A',
+    currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  MCB: {
+    pe:'8.3', pb:'1.85', eps:'45.73', divYield:'9.49%',
+    roe:'23.02%', casaRatio:'97.40%',
+    deposits:'PKR 2.26T', marketCap:'PKR 450B',
+    aiSummary:'Premium profitability-focused private bank with industry-leading efficiency.',
+    fwdPe:'N/A', roa:'N/A', grossMargin:'N/A', opMargin:'N/A',
+    netMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
+    revenue:'N/A', netProfit:'N/A', nplRatio:'N/A',
+    carRatio:'N/A', totalAssets:'N/A',
+    currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  UBL: {
+    eps:'51.33', revenue:'PKR 419.6B', netProfit:'PKR 128B',
+    deposits:'PKR 2.7T', carRatio:'20.97%', cet1Ratio:'15.92%',
+    remittanceMarketShare:'20%',
+    aiSummary:'Digitally advanced banking leader with strong remittance and profitability profile.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    roe:'N/A', roa:'N/A', grossMargin:'N/A', opMargin:'N/A',
+    netMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
+    casaRatio:'N/A', nplRatio:'N/A', totalAssets:'N/A',
+    currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  NBP: {
+    eps:'40.4', netProfit:'PKR 85.9B',
+    deposits:'PKR 4.4T', totalAssets:'PKR 7.1T',
+    carRatio:'26.21%', cet1Ratio:'19.65%',
+    casaRatio:'81%', liquidityCoverageRatio:'217%',
+    aiSummary:'Government-backed banking giant with massive liquidity and sovereign strength.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    roe:'N/A', roa:'N/A', grossMargin:'N/A', opMargin:'N/A',
+    netMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
+    revenue:'N/A', nplRatio:'N/A',
+    currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  ABL: {
+    roe:'18.7%', netProfit:'PKR 35.2B',
+    deposits:'PKR 2.346T', totalAssets:'PKR 3.37T',
+    investments:'PKR 2.137T', carRatio:'27.74%',
+    nplRatio:'1.42%', infectionRatio:'1.42%',
+    digitalUsers:'2.6M+',
+    aiSummary:'AI-driven banking innovator with strong capital adequacy and digital ecosystem.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A', eps:'N/A',
+    roa:'N/A', grossMargin:'N/A', opMargin:'N/A',
+    netMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
+    revenue:'N/A', casaRatio:'N/A',
+    currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  BAFL: {
+    aiSummary:'Mid-tier commercial bank with growing retail and SME banking presence.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A', eps:'N/A',
+    roe:'N/A', roa:'N/A', grossMargin:'N/A', opMargin:'N/A',
+    netMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
+    revenue:'N/A', netProfit:'N/A',
+    deposits:'N/A', totalAssets:'N/A',
+    carRatio:'N/A', casaRatio:'N/A', nplRatio:'N/A',
+    currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  // ── FERTILIZER ─────────────────────────────────────────────
+  ENGROH: {
+    eps:'46.20', ebitda:'PKR 98.9B',
+    revenue:'PKR 598.4B', totalAssets:'PKR 1.08T',
+    totalEquity:'PKR 303.1B', operatingCashflow:'PKR 285.7B',
+    marketCap:'PKR 540.2B',
+    keyDriver:'Deodar Telecom Towers',
+    aiSummary:'Diversified infrastructure and capital allocation platform with telecom and industrial exposure.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    roe:'N/A', roa:'N/A', grossMargin:'N/A', opMargin:'N/A',
+    netMargin:'N/A', ebitdaMargin:'N/A', netProfit:'N/A',
+    currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  FFC: {
+    ebitda:'PKR 132.6B', revenue:'PKR 432.4B',
+    dividend:'PKR 37/share', roce:'69%',
+    ureaMarketShare:'43%', dapMarketShare:'62%',
+    investmentIncome:'PKR 17.4B',
+    keyDriver:'Distribution Network',
+    aiSummary:'Dominant fertilizer cashflow compounder with nationwide agricultural distribution moat.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A', eps:'N/A',
+    roe:'N/A', roa:'N/A', grossMargin:'N/A', opMargin:'N/A',
+    netMargin:'N/A', ebitdaMargin:'N/A', netProfit:'N/A',
+    currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  EFERT: {
+    eps:'2.49', grossMargin:'31%',
+    revenue:'PKR 37.8B', netProfit:'PKR 3.3B',
+    debtToCapital:'55%', dividend:'PKR 2/share',
+    farmersOnboarded:'1,500+',
+    keyDriver:'Engro Markaz Expansion',
+    aiSummary:'Growth-oriented agri-commerce and fertilizer platform focused on farmer ecosystem expansion.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    roe:'N/A', roa:'N/A', opMargin:'N/A', netMargin:'N/A',
+    ebitdaMargin:'N/A', ebitda:'N/A',
+    currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A',
+  },
+
+  // ── CEMENT ─────────────────────────────────────────────────
+  LUCK: {
+    eps:'30.45', grossMargin:'25.5%', netMargin:'18.8%',
+    ebitda:'PKR 64.5B', revenue:'PKR 247.1B', netProfit:'PKR 46.4B',
+    marketShare:'18.9%', cementSales:'4.86M tons',
+    aiSummary:"Pakistan's largest cement company by market share with strong export exposure and premium brand.",
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    roe:'N/A', roa:'N/A', opMargin:'N/A', ebitdaMargin:'N/A',
+    currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A', totalAssets:'N/A',
+  },
+
+  MLCF: {
+    eps:'7.44', grossMargin:'33.9%', netMargin:'13.7%',
+    revenue:'PKR 57.0B', netProfit:'PKR 7.80B',
+    grossProfit:'PKR 19.3B', operatingCashflow:'PKR 31.9B',
+    longTermLoans:'PKR 83.5B',
+    aiSummary:'Mid-size cement producer with strong gross margins but high long-term debt exposure.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    roe:'N/A', roa:'N/A', opMargin:'N/A', ebitdaMargin:'N/A',
+    ebitda:'N/A', currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A', totalAssets:'N/A',
+  },
+
+  CHCC: {
+    eps:'21.16', grossMargin:'36.3%', netMargin:'20.9%',
+    revenue:'PKR 19.7B', netProfit:'PKR 4.11B',
+    grossProfit:'PKR 7.16B',
+    domesticSalesGrowth:'+16%', financeCostReduction:'-48%',
+    aiSummary:'High-margin efficient cement producer with improving cost structure and strong domestic sales growth.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    roe:'N/A', roa:'N/A', opMargin:'N/A', ebitdaMargin:'N/A',
+    ebitda:'N/A', currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A', totalAssets:'N/A',
+  },
+
+  DGKC: {
+    eps:'13.36', grossMargin:'26.9%', netMargin:'14.4%',
+    revenue:'PKR 40.6B', netProfit:'PKR 5.85B',
+    grossProfit:'PKR 10.9B',
+    capacityUtilization:'85%', expansion:'11,000 TPD new line',
+    aiSummary:'Expanding cement producer with significant new capacity coming online and strong utilization.',
+    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
+    roe:'N/A', roa:'N/A', opMargin:'N/A', ebitdaMargin:'N/A',
+    ebitda:'N/A', currentRatio:'N/A', quickRatio:'N/A',
+    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
+    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
+    interestCover:'N/A', totalAssets:'N/A',
+  },
 };
+
+// ── SECTOR MAP ─────────────────────────────────────────────────
+const SECTOR_MAP = {
+  OGDC:'ENERGY_EP', PPL:'ENERGY_EP', MARI:'ENERGY_EP',
+  PSO:'OMC', APL:'OMC', HASCOL:'OMC',
+  HBL:'BANKING', MCB:'BANKING', UBL:'BANKING',
+  NBP:'BANKING', ABL:'BANKING', BAFL:'BANKING',
+  ENGROH:'FERTILISER', FFC:'FERTILISER', EFERT:'FERTILISER',
+  LUCK:'CEMENT', MLCF:'CEMENT', CHCC:'CEMENT', DGKC:'CEMENT',
+};
+
+// ── SECTOR-SPECIFIC PROMPT BUILDERS ────────────────────────────
+function buildSectorDataBlock(ticker, s) {
+  const sector = SECTOR_MAP[ticker] || 'GENERAL';
+
+  if (sector === 'BANKING') {
+    return `SECTOR: Banking (PSX)
+KEY METRICS:
+• P/B: ${s.pb ?? 'N/A'} | P/E: ${s.pe ?? 'N/A'} | EPS: PKR ${s.eps ?? 'N/A'}
+• Dividend Yield: ${s.divYield ?? 'N/A'} | ROE: ${s.roe ?? 'N/A'}
+• NPL Ratio: ${s.nplRatio ?? 'N/A'} | CASA Ratio: ${s.casaRatio ?? 'N/A'}
+• CAR Ratio: ${s.carRatio ?? 'N/A'} | CET1: ${s.cet1Ratio ?? 'N/A'}
+• Net Profit: ${s.netProfit ?? 'N/A'} | Deposits: ${s.deposits ?? 'N/A'}
+• Total Assets: ${s.totalAssets ?? 'N/A'}
+${s.digitalUsers ? `• Digital Users: ${s.digitalUsers}` : ''}
+${s.remittanceMarketShare ? `• Remittance Market Share: ${s.remittanceMarketShare}` : ''}
+${s.infectionRatio ? `• Infection Ratio: ${s.infectionRatio}` : ''}
+${s.liquidityCoverageRatio ? `• Liquidity Coverage Ratio: ${s.liquidityCoverageRatio}` : ''}
+SECTOR RULES: P/B is primary valuation metric. High D/E is NORMAL for banks — never flag it. CASA >80% = strong deposit franchise. NPL <5% = healthy asset quality. Rate cuts compress NIMs short-term but stimulate credit growth.`;
+  }
+
+  if (sector === 'ENERGY_EP') {
+    return `SECTOR: Oil & Gas Exploration & Production (PSX)
+KEY METRICS:
+• EPS: PKR ${s.eps ?? 'N/A'} | Gross Margin: ${s.grossMargin ?? 'N/A'} | Net Margin: ${s.netMargin ?? 'N/A'}
+• Revenue: ${s.revenue ?? 'N/A'} | Net Profit: ${s.netProfit ?? 'N/A'}
+• Total Assets: ${s.totalAssets ?? 'N/A'} | Cash: ${s.totalCash ?? 'N/A'}
+• Trade Debts (Circular Debt Exposure): ${s.tradeDebts ?? 'N/A'}
+• Dividend: ${s.dividend ?? 'N/A'} | ROE: ${s.roe ?? 'N/A'}
+${s.explorationSpend ? `• Exploration Spend: ${s.explorationSpend}` : ''}
+SECTOR RULES: Revenue is USD-linked → PKR weakness BOOSTS rupee earnings. Brent crude price is #1 earnings driver. Trade debts represent circular debt exposure — cash flow ≠ reported profit. High gross margins (>50%) are normal for E&P. Dividend sustainability is key investment case.`;
+  }
+
+  if (sector === 'OMC') {
+    return `SECTOR: Oil Marketing Company (PSX)
+KEY METRICS:
+• EPS: PKR ${s.eps ?? 'N/A'} | Net Margin: ${s.netMargin ?? 'N/A'} | Gross Margin: ${s.grossMargin ?? 'N/A'}
+• Revenue: ${s.revenue ?? 'N/A'} | Net Profit: ${s.netProfit ?? 'N/A'}
+• Total Assets: ${s.totalAssets ?? 'N/A'}
+• Trade Debts: ${s.tradeDebts ?? 'N/A'}
+${s.inventory ? `• Inventory: ${s.inventory}` : ''}
+${s.jetFuelMarketShare ? `• Jet Fuel Market Share: ${s.jetFuelMarketShare}` : ''}
+${s.retailOutlets ? `• Retail Outlets: ${s.retailOutlets}` : ''}
+${s.vitolOwnership ? `• Vitol Ownership: ${s.vitolOwnership}` : ''}
+${s.financeCost ? `• Finance Cost: ${s.financeCost}` : ''}
+${s.fuelVolumes ? `• Fuel Volumes: ${s.fuelVolumes}` : ''}
+SECTOR RULES: Net margins of 1-3% are NORMAL for OMCs — not a red flag. PKR weakness is NEGATIVE (imports in USD, revenues in PKR). Inventory gains/losses are a major quarterly swing factor. PSO carries significant GoP receivables risk. HASCOL is a turnaround story — treat differently from APL/PSO.`;
+  }
+
+  if (sector === 'FERTILISER') {
+    return `SECTOR: Fertilizer (PSX)
+KEY METRICS:
+• EPS: PKR ${s.eps ?? 'N/A'} | Gross Margin: ${s.grossMargin ?? 'N/A'}
+• Revenue: ${s.revenue ?? 'N/A'} | Net Profit: ${s.netProfit ?? 'N/A'}
+• EBITDA: ${s.ebitda ?? 'N/A'} | Market Cap: ${s.marketCap ?? 'N/A'}
+${s.dividend ? `• Dividend: ${s.dividend}` : ''}
+${s.roce ? `• ROCE: ${s.roce}` : ''}
+${s.ureaMarketShare ? `• Urea Market Share: ${s.ureaMarketShare}` : ''}
+${s.dapMarketShare ? `• DAP Market Share: ${s.dapMarketShare}` : ''}
+${s.investmentIncome ? `• Investment Income: ${s.investmentIncome}` : ''}
+${s.operatingCashflow ? `• Operating Cashflow: ${s.operatingCashflow}` : ''}
+${s.totalAssets ? `• Total Assets: ${s.totalAssets}` : ''}
+${s.totalEquity ? `• Total Equity: ${s.totalEquity}` : ''}
+${s.debtToCapital ? `• Debt to Capital: ${s.debtToCapital}` : ''}
+${s.farmersOnboarded ? `• Farmers Onboarded: ${s.farmersOnboarded}` : ''}
+${s.keyDriver ? `• Key Driver: ${s.keyDriver}` : ''}
+SECTOR RULES: Dividend yield is THE primary investment case for FFC/EFERT. Gas feedstock cost is the core margin variable. ENGROH is a holding company — use sum-of-parts logic, not standalone P&L. FFC is a cashflow compounder; EFERT is growth-oriented. Seasonal demand: rabi (Oct-Dec) and kharif (Feb-Apr).`;
+  }
+
+  if (sector === 'CEMENT') {
+    return `SECTOR: Cement (PSX)
+KEY METRICS:
+• EPS: PKR ${s.eps ?? 'N/A'} | Gross Margin: ${s.grossMargin ?? 'N/A'} | Net Margin: ${s.netMargin ?? 'N/A'}
+• Revenue: ${s.revenue ?? 'N/A'} | Net Profit: ${s.netProfit ?? 'N/A'}
+• EBITDA: ${s.ebitda ?? 'N/A'}
+${s.marketShare ? `• Market Share: ${s.marketShare}` : ''}
+${s.cementSales ? `• Cement Sales: ${s.cementSales}` : ''}
+${s.capacityUtilization ? `• Capacity Utilization: ${s.capacityUtilization}` : ''}
+${s.expansion ? `• Expansion: ${s.expansion}` : ''}
+${s.domesticSalesGrowth ? `• Domestic Sales Growth: ${s.domesticSalesGrowth}` : ''}
+${s.financeCostReduction ? `• Finance Cost Reduction: ${s.financeCostReduction}` : ''}
+${s.longTermLoans ? `• Long-term Loans: ${s.longTermLoans}` : ''}
+${s.operatingCashflow ? `• Operating Cashflow: ${s.operatingCashflow}` : ''}
+SECTOR RULES: Coal cost (USD-denominated) is the #1 margin driver — PKR weakness HURTS margins. PSDP spending and rate cuts drive demand. Industry has overcapacity — watch retention prices. LUCK has export exposure and premium brand. MLCF has high debt. CHCC has best margins. DGKC expanding capacity.`;
+  }
+
+  // GENERAL fallback
+  return `KEY METRICS:
+• EPS: PKR ${s.eps ?? 'N/A'} | Net Margin: ${s.netMargin ?? 'N/A'}
+• Revenue: ${s.revenue ?? 'N/A'} | Net Profit: ${s.netProfit ?? 'N/A'}`;
+}
 
 // ── HELPERS ────────────────────────────────────────────────────
 function fetchJSON(url, headers = {}) {
@@ -75,18 +478,13 @@ async function getPSXPrice(ticker) {
   try {
     const data = await fetchJSON(
       `https://psxterminal.com/api/ticks/REG/${ticker}`,
-      {
-        'Origin':  'https://psxterminal.com',
-        'Referer': 'https://psxterminal.com/',
-        'Accept':  'application/json, text/plain, */*'
-      }
+      { 'Origin': 'https://psxterminal.com', 'Referer': 'https://psxterminal.com/', 'Accept': 'application/json' }
     );
     const d = data?.data ?? data;
     const price = d?.price ?? d?.last ?? d?.close;
     if (!price || isNaN(parseFloat(price))) return null;
 
     const open = d.open ?? price;
-    // PSX Terminal changePercent may be decimal (0.012) or percent (1.2)
     let change;
     if (d.changePercent != null) {
       const raw = parseFloat(d.changePercent);
@@ -95,105 +493,19 @@ async function getPSXPrice(ticker) {
       change = open ? ((parseFloat(price) - parseFloat(open)) / parseFloat(open) * 100) : 0;
     }
 
-    console.log(`PSX ${ticker}: price=${price} change=${change.toFixed(2)}%`);
     return {
       price:     parseFloat(price).toFixed(2),
       change:    change.toFixed(2),
       changeAmt: (parseFloat(price) - parseFloat(open)).toFixed(2),
-      high:      d.high  ? parseFloat(d.high).toFixed(2)  : null,
-      low:       d.low   ? parseFloat(d.low).toFixed(2)   : null,
+      high:      d.high   ? parseFloat(d.high).toFixed(2)  : null,
+      low:       d.low    ? parseFloat(d.low).toFixed(2)   : null,
       volume:    d.volume ? String(d.volume) : null,
       dir:       change >= 0 ? 'up' : 'dn'
     };
-  } catch(e) {
-    console.log(`PSX ${ticker} error:`, e.message);
-    return null;
-  }
+  } catch(e) { return null; }
 }
 
-// ── FETCH FULL STOCK DATA ──────────────────────────────────────
-async function getStockData(ticker) {
-  // Get live price from PSX Terminal + fundamentals from hardcoded fallback
-  const [livePrice, fmpData] = await Promise.all([
-    getPSXPrice(ticker),
-    getFMPData(ticker)
-  ]);
-
-  const fb = PSX_FUNDAMENTALS[ticker];
-
-  // Need at least fundamentals to show something
-  if (!fb && !fmpData) return null;
-
-  const name = ticker === 'ENGROH' ? 'Engro Holdings Ltd'
-             : ticker === 'OGDC'   ? 'Oil & Gas Dev Co Ltd'
-             : ticker === 'PPL'    ? 'Pakistan Petroleum Ltd'
-             : ticker === 'HBL'    ? 'Habib Bank Ltd'
-             : ticker === 'MCB'    ? 'MCB Bank Ltd'
-             : ticker === 'LUCK'   ? 'Lucky Cement Ltd'
-             : ticker;
-
-  const sector = ['HBL','MCB','UBL','NBP','ABL','BAFL','BAHL','MEBL','FABL'].includes(ticker) ? 'Commercial Banks'
-               : ['OGDC','PPL','MARI'].includes(ticker) ? 'Oil & Gas Exploration'
-               : ['PSO','APL','HASCOL'].includes(ticker) ? 'Oil & Gas Marketing'
-               : ['EFERT','FFC','FFBL'].includes(ticker) ? 'Fertilizer'
-               : ['LUCK','MLCF','CHCC','DGKC'].includes(ticker) ? 'Cement'
-               : ['SYS','TRG','NETSOL'].includes(ticker) ? 'Technology'
-               : ticker === 'ENGROH' ? 'Holding Company'
-               : 'Pakistan Stock Exchange';
-
-  // Merge: live price + FMP ratios + hardcoded fundamentals fallback
-  const merged = { ...fb, ...(fmpData || {}) };
-
-  return {
-    ticker,
-    name,
-    sector,
-    industry: '',
-    // Live price from PSX Terminal (may be null outside market hours)
-    price:     livePrice?.price     ?? null,
-    change:    livePrice?.change    ?? null,
-    changeAmt: livePrice?.changeAmt ?? null,
-    high:      livePrice?.high      ?? null,
-    low:       livePrice?.low       ?? null,
-    volume:    livePrice?.volume    ?? null,
-    week52High: null,
-    week52Low:  null,
-    dir:       livePrice?.dir ?? 'up',
-    dataSource: livePrice ? 'PSX Terminal' : 'fallback',
-    // Fundamentals from FMP (if available) with hardcoded fallback
-    pe:           merged.pe          ?? 'N/A',
-    fwdPe:        merged.fwdPe       ?? 'N/A',
-    pb:           merged.pb          ?? 'N/A',
-    eps:          merged.eps         ?? 'N/A',
-    divYield:     merged.divYield    ?? 'N/A',
-    roe:          merged.roe         ?? 'N/A',
-    roa:          merged.roa         ?? 'N/A',
-    grossMargin:  merged.grossMargin ?? 'N/A',
-    opMargin:     merged.opMargin    ?? 'N/A',
-    netMargin:    merged.netMargin   ?? 'N/A',
-    ebitdaMargin: merged.ebitdaMargin?? 'N/A',
-    ebitda:       merged.ebitda      ?? 'N/A',
-    revenue:      merged.revenue     ?? 'N/A',
-    currentRatio: merged.currentRatio?? 'N/A',
-    quickRatio:   merged.quickRatio  ?? 'N/A',
-    debtToEquity: merged.debtToEquity?? 'N/A',
-    totalCash:    merged.totalCash   ?? 'N/A',
-    totalDebt:    merged.totalDebt   ?? 'N/A',
-    fcf:          merged.fcf         ?? 'N/A',
-    fcfYield:     merged.fcfYield    ?? 'N/A',
-    beta:         merged.beta        ?? 'N/A',
-    revenueGrowth:  merged.revenueGrowth  ?? 'N/A',
-    earningsGrowth: merged.earningsGrowth ?? 'N/A',
-    marketCap:    merged.marketCap   ?? 'N/A',
-    ev_ebitda:    merged.ev_ebitda   ?? 'N/A',
-    roic:         merged.roic        ?? 'N/A',
-    payoutRatio:  merged.payoutRatio ?? 'N/A',
-    ps:           merged.ps          ?? 'N/A',
-    interestCover:merged.interestCover?? 'N/A',
-  };
-}
-
-// ── FMP FUNDAMENTALS (optional enrichment) ────────────────────
+// ── FMP ENRICHMENT (optional, enhances P/E P/B when available) ─
 async function getFMPData(ticker) {
   const key = process.env.FMP_API_KEY;
   if (!key) return null;
@@ -209,86 +521,125 @@ async function getFMPData(ticker) {
     return {
       pe:           fmt(r.peRatioTTM),
       pb:           fmt(r.priceToBookRatioTTM),
-      ps:           fmt(r.priceToSalesRatioTTM),
-      ev_ebitda:    fmt(m.enterpriseValueOverEBITDATTM),
       roe:          pct(r.returnOnEquityTTM),
-      roa:          pct(r.returnOnAssetsTTM),
-      roic:         pct(m.roicTTM),
-      grossMargin:  pct(r.grossProfitMarginTTM),
       netMargin:    pct(r.netProfitMarginTTM),
-      ebitdaMargin: pct(r.ebitdaMarginTTM),
-      debtToEquity: fmt(r.debtEquityRatioTTM),
-      currentRatio: fmt(r.currentRatioTTM),
-      quickRatio:   fmt(r.quickRatioTTM),
-      interestCover:fmt(m.interestCoverageTTM),
       divYield:     pct(r.dividendYieldTTM),
-      payoutRatio:  pct(r.payoutRatioTTM),
-      fcfYield:     pct(m.freeCashFlowYieldTTM),
+      debtToEquity: fmt(r.debtEquityRatioTTM),
       eps:          fmt(r.epsTTM),
     };
   } catch(e) { return null; }
 }
 
-// ── VERDICT CACHE (in-memory, resets per function instance) ───
+// ── ASSEMBLE FULL STOCK DATA ───────────────────────────────────
+async function getStockData(ticker) {
+  const fb = PSX_FUNDAMENTALS[ticker];
+  if (!fb) return null;
+
+  const [livePrice, fmpData] = await Promise.all([
+    getPSXPrice(ticker),
+    getFMPData(ticker)
+  ]);
+
+  const NAME_MAP = {
+    OGDC:'Oil & Gas Dev Co Ltd', PPL:'Pakistan Petroleum Ltd',
+    PSO:'Pakistan State Oil', MARI:'Mari Petroleum Co',
+    APL:'Attock Petroleum Ltd', HASCOL:'Hascol Petroleum Ltd',
+    HBL:'Habib Bank Ltd', MCB:'MCB Bank Ltd',
+    UBL:'United Bank Ltd', NBP:'National Bank of Pakistan',
+    ABL:'Allied Bank Ltd', BAFL:'Bank Al Falah Ltd',
+    ENGROH:'Engro Holdings Ltd', FFC:'Fauji Fertiliser Co',
+    EFERT:'Engro Fertilisers Ltd',
+    LUCK:'Lucky Cement Ltd', MLCF:'Maple Leaf Cement',
+    CHCC:'Cherat Cement Co', DGKC:'D.G. Khan Cement Co',
+  };
+
+  const SECTOR_LABEL = {
+    ENERGY_EP: 'Oil & Gas Exploration',
+    OMC: 'Oil & Gas Marketing',
+    BANKING: 'Commercial Banking',
+    FERTILISER: 'Fertilizer',
+    CEMENT: 'Cement',
+  };
+
+  const sectorCode = SECTOR_MAP[ticker] || 'GENERAL';
+
+  // FMP data enriches hardcoded data where available (P/E, P/B etc)
+  // Hardcoded master dataset takes priority for sector-specific metrics
+  const merged = { ...fb, ...(fmpData || {}) };
+
+  return {
+    ticker,
+    name:    NAME_MAP[ticker] || ticker,
+    sector:  SECTOR_LABEL[sectorCode] || 'Pakistan Stock Exchange',
+    sectorCode,
+    // Live price from PSX Terminal
+    price:     livePrice?.price     ?? null,
+    change:    livePrice?.change    ?? null,
+    changeAmt: livePrice?.changeAmt ?? null,
+    high:      livePrice?.high      ?? null,
+    low:       livePrice?.low       ?? null,
+    volume:    livePrice?.volume    ?? null,
+    dir:       livePrice?.dir       ?? 'up',
+    yearHigh:  null, yearLow: null,
+    dataSource: livePrice ? 'PSX Terminal' : 'fallback',
+    // All fundamentals from master dataset + FMP enrichment
+    ...merged,
+  };
+}
+
+// ── VERDICT CACHE ──────────────────────────────────────────────
 const verdictCache = {};
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
 function getCached(ticker) {
   const c = verdictCache[ticker];
-  if (!c) return null;
-  if (Date.now() - c.timestamp > CACHE_TTL) {
-    delete verdictCache[ticker];
-    return null;
-  }
+  if (!c || Date.now() - c.timestamp > CACHE_TTL) { delete verdictCache[ticker]; return null; }
   return c.data;
 }
-
 function setCache(ticker, data) {
   verdictCache[ticker] = { data, timestamp: Date.now() };
 }
 
-// ── GENERATE AI VERDICT + FULL ANALYSIS ──────────────────────
+// ── GENERATE AI VERDICT ────────────────────────────────────────
 async function generateVerdict(stockData, macroContext) {
   const cached = getCached(stockData.ticker);
   if (cached) return { ...cached, cached: true };
 
-  const prompt = `You are a sharp financial analyst covering Pakistani equities for Wall-Trade, an AI-powered PSX analysis platform for retail investors.
+  const sectorDataBlock = buildSectorDataBlock(stockData.ticker, stockData);
+  const aiSummary = stockData.aiSummary || '';
 
-LIVE STOCK DATA FOR ${stockData.ticker} — ${stockData.name}:
-Sector: ${stockData.sector} | Industry: ${stockData.industry}
-Price: PKR ${stockData.price} (${stockData.change}% today) | 52W Range: ${stockData.week52Low} – ${stockData.week52High}
-Market Cap: ${stockData.marketCap} | Volume: ${stockData.volume}
+  const prompt = `You are a sharp PSX equity analyst for Wall-Trade — Pakistan's AI-powered stock analysis platform for retail investors.
 
-VALUATION:
-P/E: ${stockData.pe}x | Fwd P/E: ${stockData.fwdPe}x | P/B: ${stockData.pb}x | P/S: ${stockData.ps}x | EPS: PKR ${stockData.eps}
-Dividend Yield: ${stockData.divYield}
+LIVE PRICE DATA:
+Ticker: ${stockData.ticker} — ${stockData.name}
+Price: PKR ${stockData.price ?? '—'} (${stockData.change ?? '—'}% today)
+${stockData.high ? `Day Range: PKR ${stockData.low} – ${stockData.high}` : ''}
+${stockData.volume ? `Volume: ${stockData.volume}` : ''}
 
-PROFITABILITY:
-ROE: ${stockData.roe} | ROA: ${stockData.roa} | Gross Margin: ${stockData.grossMargin} | Net Margin: ${stockData.netMargin}
-EBITDA: ${stockData.ebitda} | Revenue: ${stockData.revenue}
+${sectorDataBlock}
 
-FINANCIAL HEALTH:
-Current Ratio: ${stockData.currentRatio} | Quick Ratio: ${stockData.quickRatio} | D/E: ${stockData.debtToEquity}
-Total Cash: ${stockData.totalCash} | Total Debt: ${stockData.totalDebt} | Free Cash Flow: ${stockData.fcf}
+COMPANY SUMMARY: ${aiSummary}
 
-GROWTH:
-Revenue Growth: ${stockData.revenueGrowth} | Earnings Growth: ${stockData.earningsGrowth} | Beta: ${stockData.beta}
-
+MACRO CONTEXT:
 ${macroContext}
 
-Generate a complete analysis. Return ONLY this JSON (no markdown, no extra text):
+INSTRUCTION: Generate a sector-aware verdict using the actual financial data above. Do not be generic. Reference specific numbers. Apply sector-specific logic.
+
+Return ONLY this JSON (no markdown):
 {
   "verdict": "Positive" or "Neutral" or "Caution",
-  "score": <number 1-10>,
-  "headline": "<verdict word>: <sharp one-line reason, max 12 words>",
-  "body": "<120-150 words. State verdict clearly. Cover 2-3 strongest drivers only. One meaningful risk. Connect financials to Pakistan macro. Short paragraphs, mobile-friendly. No jargon. No buy/sell advice.>",
+  "score": <1-10>,
+  "headline": "<sharp one-liner max 12 words using actual data>",
+  "body": "<120-150 words. Lead with verdict. Cover 2-3 strongest data points. One key risk. Connect to Pakistan macro. Mobile-friendly short paragraphs. No buy/sell advice.>",
   "insights": [
-    {"icon": "<emoji>", "value": "<metric value>", "label": "<plain English explanation, max 12 words>", "color": "green|amber|red|purple"},
-    {"icon": "<emoji>", "value": "<metric value>", "label": "<plain English explanation, max 12 words>", "color": "green|amber|red|purple"},
-    {"icon": "<emoji>", "value": "<metric value>", "label": "<plain English explanation, max 12 words>", "color": "green|amber|red|purple"}
+    {"icon":"<emoji>","value":"<actual metric from data>","label":"<plain English max 12 words>","color":"green|amber|red|purple"},
+    {"icon":"<emoji>","value":"<actual metric from data>","label":"<plain English max 12 words>","color":"green|amber|red|purple"},
+    {"icon":"<emoji>","value":"<actual metric from data>","label":"<plain English max 12 words>","color":"green|amber|red|purple"}
   ],
   "signals": [
-    {"label": "<2-3 word signal>", "type": "green|amber|red|purple"}
+    {"label":"<2-3 word signal>","type":"green|amber|red|purple"},
+    {"label":"<2-3 word signal>","type":"green|amber|red|purple"},
+    {"label":"<2-3 word signal>","type":"green|amber|red|purple"}
   ],
   "scores": {
     "Financial health": <1-10>,
@@ -297,18 +648,18 @@ Generate a complete analysis. Return ONLY this JSON (no markdown, no extra text)
     "Risk level": <1-10>
   },
   "factors": [
-    {"icon": "<emoji>", "title": "<factor title>", "detail": "<2-3 sentences plain English explanation>"},
-    {"icon": "<emoji>", "title": "<factor title>", "detail": "<2-3 sentences plain English explanation>"},
-    {"icon": "<emoji>", "title": "<factor title>", "detail": "<2-3 sentences plain English explanation>"}
+    {"icon":"<emoji>","title":"<factor>","detail":"<2-3 sentences using actual numbers from the data>"},
+    {"icon":"<emoji>","title":"<factor>","detail":"<2-3 sentences using actual numbers from the data>"},
+    {"icon":"<emoji>","title":"<factor>","detail":"<2-3 sentences using actual numbers from the data>"}
   ],
-  "summary": "<one sentence overall summary for score card>"
+  "summary": "<one sentence overall summary>"
 }`;
 
   try {
     const result = await callAnthropic({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1500,
-      system: `You are a senior analyst covering PSX equities. You generate accurate, data-driven analysis for retail investors in Pakistan. Always base your verdict on the actual numbers provided. Be specific — use real figures from the data. Never be generic.`,
+      system: `You are a senior PSX equity analyst. You generate accurate, sector-specific, data-driven analysis for Pakistani retail investors. Always use the exact figures provided. Never be generic. Apply sector-specific logic strictly — banking metrics differ from E&P differ from cement. Be direct and specific.`,
       messages: [{ role: 'user', content: prompt }]
     });
 
@@ -345,17 +696,15 @@ exports.handler = async (event) => {
 
   const cleanTicker = ticker.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-  // Fetch stock data
   const stockData = await getStockData(cleanTicker);
   if (!stockData) {
     return {
       statusCode: 404,
       headers,
-      body: JSON.stringify({ error: `No data found for ${cleanTicker}. Check the ticker and try again.` })
+      body: JSON.stringify({ error: `No data found for ${cleanTicker}. Supported tickers: OGDC, PPL, MARI, PSO, APL, HASCOL, HBL, MCB, UBL, NBP, ABL, BAFL, ENGROH, FFC, EFERT, LUCK, MLCF, CHCC, DGKC` })
     };
   }
 
-  // Generate AI verdict
   const verdict = await generateVerdict(stockData, macroContext || '');
 
   return {
