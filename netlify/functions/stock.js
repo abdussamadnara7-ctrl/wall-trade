@@ -565,7 +565,7 @@ async function getStockData(ticker) {
 
   // FMP data enriches hardcoded data where available (P/E, P/B etc)
   // Hardcoded master dataset takes priority for sector-specific metrics
-  const merged = { ...fb, ...(fmpData || {}) };
+  const merged = { ...(fmpData || {}), ...fb };
 
   return {
     ticker,
