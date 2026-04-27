@@ -510,8 +510,7 @@ function buildMacroContext(live, staticMacro) {
   }
 
   ctx += '\nPAKISTAN MONETARY POLICY (current):\n';
-  ctx += '•'SBP Policy Rate: 11.50% p.a. — JUST HIKED by 100bps from 10.50%. Rate sensitive verdicts must reflect this immediately. Negative for banks NIM compression, negative for cement demand, negative for leveraged companies. Positive for PKR stability.'
-  ctx += '• Overnight Reverse Repo (ceiling): 11.50% p.a.\n';
+ctx += '• SBP Policy Rate: 11.50% p.a. — JUST HIKED by 100bps today April 27 2026. Negative for banks, cement and leveraged stocks. Positive for PKR.\n';  ctx += '• Overnight Reverse Repo (ceiling): 11.50% p.a.\n';
   ctx += '• Overnight Repo (floor): 9.50% p.a.\n';
   ctx += '• Trend: Aggressive easing cycle — cut from 22% peak (2023) to 10.50% (2026)\n';
 
@@ -702,7 +701,7 @@ IMF EFF programme: Active 37-month programme — energy pricing reforms, circula
 CPI Inflation: ~8-10% (down sharply from 38% peak — disinflation well underway but oil shock creating upside risk)
 Current account: Near-balanced or slight surplus — FX reserves recovering to ~$15bn+
 PSDP: Recovering as fiscal space improves with lower interest burden
-PSX KSE-100: At record highs but rate hike today creates near term pressure on rate sensitive sectors
+PSX KSE-100: Under pressure — SBP surprise rate hike of 100bps to 11.50% today creates near term selling pressure on rate sensitive sectors
 Circular debt: Rs. 2.3tn+ in power sector — still structurally problematic
 Geopolitical: Iran-US tensions elevated — Brent crude at $111, Strait of Hormuz oil supply risk acute
 Key risks: Oil price spike (geopolitical), surprise rate hike impact on equities, IMF programme slippage, rupee vulnerability`;
