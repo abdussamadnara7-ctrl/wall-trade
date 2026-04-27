@@ -509,10 +509,11 @@ function buildMacroContext(live, staticMacro) {
     ctx += `• KSE-100 Index: ${live.kse100.price} pts (${kseDir} ${Math.abs(live.kse100.change)}% — market sentiment ${kseColor} today)\n`;
   }
 
-  ctx += '\nPAKISTAN MONETARY POLICY (current):\n';
-ctx += '• SBP Policy Rate: 11.50% p.a. — JUST HIKED by 100bps today April 27 2026. Negative for banks, cement and leveraged stocks. Positive for PKR.\n';  ctx += '• Overnight Reverse Repo (ceiling): 11.50% p.a.\n';
-  ctx += '• Overnight Repo (floor): 9.50% p.a.\n';
-  ctx += '• Trend: Aggressive easing cycle — cut from 22% peak (2023) to 10.50% (2026)\n';
+ctx += '\nPAKISTAN MONETARY POLICY (current):\n';
+ctx += '• SBP Policy Rate: 11.50% p.a. — JUST HIKED by 100bps today April 27 2026. Negative for banks, cement and leveraged stocks. Positive for PKR.\n';
+ctx += '• Overnight Reverse Repo (ceiling): 12.50% p.a.\n';
+ctx += '• Overnight Repo (floor): 10.50% p.a.\n';
+ctx += '• Trend: Surprise hawkish hike — 100bps increase to 11.50% on April 27 2026. Reversal of easing cycle. Negative for rate sensitive sectors.\n';
 
   ctx += '\nPAKISTAN MACRO (current):\n';
   ctx += staticMacro + '\n';
