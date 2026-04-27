@@ -7,16 +7,16 @@ const MACRO_CONFIG = {
 
   // ── SBP MONETARY POLICY ──────────────────────────────────────
   // Update after every MPC meeting
-  sbp: {
-    policyRate:   '11.50',   // was 10.50
-lastDecision: 'HIKE',    // was 'HOLD'
-lastMoveBps:  100,       // was 0
-    lastDecision:   'HOLD',    // 'CUT' | 'HOLD' | 'HIKE'
-    lastMoveBps:    0,         // basis points moved — e.g. -100 for a 100bps cut
-    nextMPCDate:    'June 2026',
-    trend:          'Aggressive easing cycle — cut from 22% peak (2023) to 10.50% (2026)',
-    marketExpectation: 'Market pricing in 1-2 more cuts in 2026 as inflation falls toward 6-8%',
-  },
+ sbp: {
+  policyRate:        '11.50',
+  ceiling:           '12.50',
+  floor:             '10.50',
+  lastDecision:      'HIKE',
+  lastMoveBps:       100,
+  nextMPCDate:       'June 2026',
+  trend:             'Surprise hawkish hike — 100bps increase to 11.50% on April 27 2026. Reversal of easing cycle.',
+  marketExpectation: 'Market now pricing in rate staying elevated. Negative for rate sensitive sectors near term.',
+},
 
   // ── PKR / EXCHANGE RATE ───────────────────────────────────────
   // Approximate — live rate comes from FMP in prices.js
