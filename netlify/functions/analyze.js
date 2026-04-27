@@ -695,14 +695,17 @@ When a macro event occurs, think through ALL affected sectors:
 - Circular debt: Hits OGDC/PPL cash flows, PSO receivables`;
 
 // ── STATIC MACRO CONTEXT ───────────────────────────────────────
-const STATIC_MACRO = `IMF EFF programme: Active 37-month programme — energy pricing reforms, circular debt reduction, DISCO privatisation, cost-reflective tariffs are key conditions
-CPI Inflation: ~8-10% (down sharply from 38% peak — disinflation well underway)
+// LAST UPDATED: April 27, 2026
+const STATIC_MACRO = `SBP Policy Rate: 11.50% p.a. — JUST HIKED by 100bps from 10.50% today (April 27, 2026). This is a surprise hawkish move. Rate sensitive verdicts must reflect this immediately. Negative for banks short term NIM compression, negative for cement demand, negative for leveraged companies, positive for PKR stability.
+SBP Ceiling: 12.50% | Floor: 10.50%
+IMF EFF programme: Active 37-month programme — energy pricing reforms, circular debt reduction, DISCO privatisation, cost-reflective tariffs are key conditions. $1.2B tranche approved for May 8.
+CPI Inflation: ~8-10% (down sharply from 38% peak — disinflation well underway but oil shock creating upside risk)
 Current account: Near-balanced or slight surplus — FX reserves recovering to ~$15bn+
 PSDP: Recovering as fiscal space improves with lower interest burden
-PSX KSE-100: At record highs — market re-rating on macro stabilisation, rate cuts benefiting equities
+PSX KSE-100: At record highs but rate hike today creates near term pressure on rate sensitive sectors
 Circular debt: Rs. 2.3tn+ in power sector — still structurally problematic
-Geopolitical: Iran-US tensions elevated — Strait of Hormuz oil supply risk, affects Pakistan import costs
-Key risks: Oil price spike (geopolitical), IMF programme slippage, political instability, rupee vulnerability`;
+Geopolitical: Iran-US tensions elevated — Brent crude at $111, Strait of Hormuz oil supply risk acute
+Key risks: Oil price spike (geopolitical), surprise rate hike impact on equities, IMF programme slippage, rupee vulnerability`;
 
 // ── MAIN HANDLER ──────────────────────────────────────────────
 exports.handler = async (event) => {
