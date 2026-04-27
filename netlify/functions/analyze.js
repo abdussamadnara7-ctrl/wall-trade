@@ -510,7 +510,7 @@ function buildMacroContext(live, staticMacro) {
   }
 
   ctx += '\nPAKISTAN MONETARY POLICY (current):\n';
-  ctx += '• SBP Policy Rate: 10.50% p.a.\n';
+  ctx += '•'SBP Policy Rate: 11.50% p.a. — JUST HIKED by 100bps from 10.50%. Rate sensitive verdicts must reflect this immediately. Negative for banks NIM compression, negative for cement demand, negative for leveraged companies. Positive for PKR stability.'
   ctx += '• Overnight Reverse Repo (ceiling): 11.50% p.a.\n';
   ctx += '• Overnight Repo (floor): 9.50% p.a.\n';
   ctx += '• Trend: Aggressive easing cycle — cut from 22% peak (2023) to 10.50% (2026)\n';
