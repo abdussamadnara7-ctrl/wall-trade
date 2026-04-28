@@ -601,217 +601,62 @@ function setCache(ticker, data) {
 }
 
 // ── GENERATE AI VERDICT ────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════
-// WALL-TRADE — LIVE RATIO CALCULATIONS FOR stock.js
-// ══════════════════════════════════════════════════════════════
-// These values go inside PSX_FUNDAMENTALS in stock.js
-// EPS, DPS and Book Value are hardcoded from quarterly results
-// P/E, P/B and Dividend Yield are calculated live using PSX price
-// Last updated: Q3 FY2026
-// ══════════════════════════════════════════════════════════════
- 
-// ── STEP 1: ADD THIS FUNCTION TO stock.js ─────────────────────
-// Place this ABOVE the generateVerdict function
- 
 function calculateLiveRatios(ticker, livePrice) {
- 
-  // ── DENOMINATORS — hardcoded from latest quarterly results ──
-  // Update EPS after each results season (4x per year)
-  // Update DPS after dividend announcements
-  // Update bookValuePerShare after annual results (1x per year)
- 
+
   const FUNDAMENTALS = {
- 
-    // ── E&P SECTOR — P/E ratio is primary ───────────────────
-    'OGDC': {
-      eps:              16.98,   // PKR — update after quarterly results
-      dps:              4.25,    // PKR annual dividend
-      sharesOutstanding: 4300,   // million shares (approximate)
-    },
-    'PPL': {
-      eps:              14.84,
-      dps:              2.00,
-      sharesOutstanding: 2722,
-    },
-    'MARI': {
-      eps:              41.32,
-      dps:              null,    // confirm from latest announcement
-      sharesOutstanding: 1200,
-    },
-    'PSO': {
-      eps:              25.82,
-      dps:              null,
-      sharesOutstanding: 469,
-    },
-    'APL': {
-      eps:              51.60,
-      dps:              null,
-      sharesOutstanding: 124,
-    },
-    'HASCOL': {
-      eps:              -6.71,   // loss per share — no P/E applicable
-      dps:              null,
-      sharesOutstanding: 998,
-    },
- 
-    // ── BANKING SECTOR — P/B ratio is primary ───────────────
-    // Book Value Per Share = Total Equity / Shares Outstanding
-    // ALWAYS source from annual report balance sheet directly
-    // NEVER reverse-engineer from P/B ratio
-    // Update annually after full year results published on PSX
-    'HBL': {
-      eps:               45.48,
-      dps:               20.00,
-      bookValuePerShare: 333.10, // from annual report
-      sharesOutstanding: 1466.9,
-    },
-    'MCB': {
-      eps:               45.73,
-      dps:               36.00,
-      bookValuePerShare: 205.59, // from annual report
-      sharesOutstanding: 1185,
-    },
-    'UBL': {
-      eps:               53.86,
-      dps:               44.00,
-      bookValuePerShare: null,   // TODO: Total Equity / 2504.2mn shares from UBL annual report
-      sharesOutstanding: 2504.2,
-    },
-    'NBP': {
-      eps:               40.40,
-      dps:               35.00,
-      bookValuePerShare: null,   // TODO: Total Equity / 2127.5mn shares from NBP annual report
-      sharesOutstanding: 2127.5,
-    },
-    'ABL': {
-      eps:               null,   // TODO: update from latest quarterly results
-      dps:               null,
-      bookValuePerShare: null,   // TODO: Total Equity / 1169mn shares from ABL annual report
-      sharesOutstanding: 1169,
-    },
-    'BAFL': {
-      eps:               null,   // TODO: update from latest quarterly results
-      dps:               null,
-      bookValuePerShare: null,   // TODO: Total Equity / 1409mn shares from BAFL annual report
-      sharesOutstanding: 1409,
-    },
- 
-    // ── CEMENT SECTOR — P/E ratio is primary ────────────────
-    'LUCK': {
-      eps:              30.45,
-      dps:              null,
-      sharesOutstanding: 323,
-    },
-    'MLCF': {
-      eps:              7.44,
-      dps:              null,
-      sharesOutstanding: 1048,
-    },
-    'CHCC': {
-      eps:              21.16,
-      dps:              null,
-      sharesOutstanding: 194,
-    },
-    'DGKC': {
-      eps:              13.36,
-      dps:              null,
-      sharesOutstanding: 438,
-    },
- 
-    // ── FERTILIZER SECTOR — P/E ratio is primary ────────────
-    'ENGROH': {
-      eps:              46.20,
-      dps:              null,
-      sharesOutstanding: 1420,
-    },
-    'FFC': {
-      eps:              null,    // not in dataset — update from results
-      dps:              37.00,   // strong dividend payer
-      sharesOutstanding: 1272,
-    },
-    'EFERT': {
-      eps:              2.49,
-      dps:              2.00,
-      sharesOutstanding: 1314,
-    },
+    'OGDC':   { eps: 16.98,  dps: 4.25,  sharesOutstanding: 4300 },
+    'PPL':    { eps: 14.84,  dps: 2.00,  sharesOutstanding: 2722 },
+    'MARI':   { eps: 41.32,  dps: null,  sharesOutstanding: 1200 },
+    'PSO':    { eps: 25.82,  dps: null,  sharesOutstanding: 469  },
+    'APL':    { eps: 51.60,  dps: null,  sharesOutstanding: 124  },
+    'HASCOL': { eps: -6.71,  dps: null,  sharesOutstanding: 998  },
+    'HBL':    { eps: 45.48,  dps: 20.00, bookValuePerShare: 333.10, sharesOutstanding: 1466.9 },
+    'MCB':    { eps: 45.73,  dps: 36.00, bookValuePerShare: 205.59, sharesOutstanding: 1185   },
+    'UBL':    { eps: 53.86,  dps: 44.00, bookValuePerShare: null,   sharesOutstanding: 2504.2 },
+    'NBP':    { eps: 40.40,  dps: 35.00, bookValuePerShare: null,   sharesOutstanding: 2127.5 },
+    'ABL':    { eps: null,   dps: null,  bookValuePerShare: null,   sharesOutstanding: 1169   },
+    'BAFL':   { eps: null,   dps: null,  bookValuePerShare: null,   sharesOutstanding: 1409   },
+    'LUCK':   { eps: 30.45,  dps: null,  sharesOutstanding: 323  },
+    'MLCF':   { eps: 7.44,   dps: null,  sharesOutstanding: 1048 },
+    'CHCC':   { eps: 21.16,  dps: null,  sharesOutstanding: 194  },
+    'DGKC':   { eps: 13.36,  dps: null,  sharesOutstanding: 438  },
+    'ENGROH': { eps: 46.20,  dps: null,  sharesOutstanding: 1420 },
+    'FFC':    { eps: null,   dps: 37.00, sharesOutstanding: 1272 },
+    'EFERT':  { eps: 2.49,   dps: 2.00,  sharesOutstanding: 1314 },
   };
- 
+
   const f = FUNDAMENTALS[ticker];
   if (!f || !livePrice || livePrice <= 0) return {};
- 
+
   const ratios = {};
- 
-  // ── P/E RATIO (E&P, Cement, Fertilizer) ─────────────────────
+
   const PE_TICKERS = ['OGDC','PPL','MARI','PSO','APL','LUCK','MLCF','CHCC','DGKC','ENGROH','FFC','EFERT'];
   if (PE_TICKERS.includes(ticker) && f.eps && f.eps > 0) {
     ratios.peRatio = (livePrice / f.eps).toFixed(1);
     ratios.peNote  = `P/E ${ratios.peRatio}x (live price PKR ${livePrice} / EPS PKR ${f.eps})`;
   }
- 
-  // ── P/B RATIO (Banks only) ───────────────────────────────────
+
   const PB_TICKERS = ['HBL','MCB','UBL','NBP','ABL','BAFL'];
   if (PB_TICKERS.includes(ticker) && f.bookValuePerShare && f.bookValuePerShare > 0) {
     ratios.pbRatio = (livePrice / f.bookValuePerShare).toFixed(2);
     ratios.pbNote  = `P/B ${ratios.pbRatio}x (live price PKR ${livePrice} / BV/share PKR ${f.bookValuePerShare})`;
   }
- 
-  // ── DIVIDEND YIELD (all stocks with known DPS) ───────────────
+
   if (f.dps && f.dps > 0) {
     ratios.dividendYield = ((f.dps / livePrice) * 100).toFixed(2) + '%';
     ratios.divNote = `Dividend Yield ${ratios.dividendYield} (DPS PKR ${f.dps} / price PKR ${livePrice})`;
   }
- 
-  // ── MARKET CAP ───────────────────────────────────────────────
+
   if (f.sharesOutstanding) {
     const mcap = ((livePrice * f.sharesOutstanding) / 1000).toFixed(1);
     ratios.marketCap = `PKR ${mcap}B`;
   }
- 
-  // ── LIVE PRICE — always include so Claude sees exact price ───
-  // Critical for contextual reasoning — Claude should always know
-  // the exact price the ratios are calculated against
+
   ratios.price          = livePrice;
-  ratios.priceTimestamp = new Date().toISOString(); // useful when PSX closes — stale price detection later
- 
+  ratios.priceTimestamp = new Date().toISOString();
+
   return ratios;
 }
- 
- 
-// ── STEP 2: WHERE TO CALL IT IN stock.js ──────────────────────
-//
-// Find the section where you build stockData before calling generateVerdict
-// It will look something like this:
-//
-//   const stockData = { ...merged, price: livePrice, ... };
-//   const verdict = await generateVerdict(stockData, macroContext);
-//
-// Add ONE line between these two:
-//
-//   const stockData = { ...merged, price: livePrice, ... };
-//
-//   // ADD THIS LINE:
-//   const liveRatios = calculateLiveRatios(ticker, livePrice);
-//   const stockDataWithRatios = { ...stockData, ...liveRatios };
-//
-//   const verdict = await generateVerdict(stockDataWithRatios, macroContext);
-//
-// That is it. The live ratios are now merged into stockData
-// and Claude will see them in the verdict prompt automatically.
-// ──────────────────────────────────────────────────────────────
- 
- 
-// ── QUARTERLY UPDATE CHECKLIST ────────────────────────────────
-// After each results season update these values in FUNDAMENTALS:
-//
-// Q1 FY26 results (Oct-Nov 2025):  eps for all stocks
-// Q2 FY26 results (Jan-Feb 2026):  eps for all stocks
-// Q3 FY26 results (Apr-May 2026):  eps for all stocks  ← WE ARE HERE
-// Annual results  (Jul-Aug 2026):  eps + bookValuePerShare + dps
-//
-// Stocks with missing values marked as null above:
-// ABL eps, BAFL eps, FFC eps, MARI dps, PSO dps, APL dps
-// Update these from quarterly result announcements on PSX
-// ──────────────────────────────────────────────────────────────
 async function generateVerdict(stockData, macroContext) {
   const cached = getCached(stockData.ticker);
   if (cached) return { ...cached, cached: true };
@@ -916,7 +761,9 @@ exports.handler = async (event) => {
     };
   }
 
-const verdict = await generateVerdict(stockData, macroContext);
+const liveRatios = calculateLiveRatios(stockData.ticker, stockData.price);
+const stockDataWithRatios = { ...stockData, ...liveRatios };
+const verdict = await generateVerdict(stockDataWithRatios, macroContext);
   return {
     statusCode: 200,
     headers,
