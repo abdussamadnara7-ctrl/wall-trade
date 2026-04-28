@@ -696,16 +696,19 @@ When a macro event occurs, think through ALL affected sectors:
 
 // ── STATIC MACRO CONTEXT ───────────────────────────────────────
 // LAST UPDATED: April 27, 2026
-const STATIC_MACRO = `SBP Policy Rate: 11.50% p.a. — JUST HIKED by 100bps from 10.50% today (April 27, 2026). This is a surprise hawkish move. Rate sensitive verdicts must reflect this immediately. Negative for banks short term NIM compression, negative for cement demand, negative for leveraged companies, positive for PKR stability.
-SBP Ceiling: 12.50% | Floor: 10.50%
-IMF EFF programme: Active 37-month programme — energy pricing reforms, circular debt reduction, DISCO privatisation, cost-reflective tariffs are key conditions. $1.2B tranche approved for May 8.
-CPI Inflation: ~8-10% (down sharply from 38% peak — disinflation well underway but oil shock creating upside risk)
-Current account: Near-balanced or slight surplus — FX reserves recovering to ~$15bn+
-PSDP: Recovering as fiscal space improves with lower interest burden
-PSX KSE-100: Under pressure — SBP surprise rate hike of 100bps to 11.50% today creates near term selling pressure on rate sensitive sectors
-Circular debt: Rs. 2.3tn+ in power sector — still structurally problematic
-Geopolitical: Iran-US tensions elevated — Brent crude at $111, Strait of Hormuz oil supply risk acute
-Key risks: Oil price spike (geopolitical), surprise rate hike impact on equities, IMF programme slippage, rupee vulnerability`;
+const STATIC_MACRO = `SBP Policy Rate: 11.50% p.a. Hiked 100bps on April 27 2026 from 10.50%. Ceiling 12.50%, Floor 10.50%. Next MPC June 2026. Hike was precautionary to anchor inflation amid Middle East supply shock. No rate reversal cycle expected near term.
+Inflation: CPI 7.3% March 2026, core inflation 7.8%. Expected to reach double digits in coming months before easing. SBP target range 5-7% will be breached for most of FY27. Driven by Middle East conflict pushing energy prices, freight and insurance costs structurally higher.
+GDP: Real GDP 3.8% growth in first half FY26 versus 1.9% same period last year. Full year FY26 estimated at lower bound of 3.5-4.5%. Expected to slow in Q4 FY26 due to Middle East spillover on industrial and services sectors.
+FX reserves: $15.8B as of April 24 2026. Target $18B by June 2026. Current account surplus two consecutive months. Remittances $41B annual run rate. Pakistan repaid $1.3B Eurobond and $3.5B UAE deposits from reserves.
+IMF: Active 37 month EFF programme. $1.2B tranche pending IMF board approval May 8 2026. Staff level agreement reached March 27 2026. Programme on track, low slippage risk.
+Pakistan re-entered international capital markets after 4 year gap. Strong macro credibility signal.
+BANKING SECTOR FRAMEWORK: Rate hike creates near term NIM compression as deposit repricing lags asset repricing. However over 3 to 6 months investment books reprice at higher yields supporting earnings recovery. Well capitalised banks with strong CASA ratios are best positioned. Rate hike is short term headwind not structural negative. Monitor NIMs in next quarterly results.
+CEMENT SECTOR FRAMEWORK: Most rate sensitive sector. Higher borrowing costs reduce construction activity, real estate demand and PSDP project financing. Coal costs and capacity utilisation remain key variables alongside rate environment. Avoid heavy exposure near term. Monitor PSDP disbursements as partial offset.
+E&P SECTOR FRAMEWORK: Structurally insulated from rate hike. Revenues are dollar linked to global oil prices while production costs are largely fixed in rupees. Every dollar increase in Brent crude flows directly to bottom line in PKR terms at current exchange rate. Elevated oil environment is strongly positive for OGDC, PPL and MARI. Circular debt receivables remain a risk but operational outlook positive.
+FERTILIZER SECTOR FRAMEWORK: Relatively insulated from rate hike. Gas feedstock pricing is regulated and stable. Urea demand driven by agricultural cycle not interest rates. Government subsidy programmes buffer impact on leveraged farmers. Global urea prices elevated which supports export margins for FFC and ENGROH.
+OMC SECTOR FRAMEWORK: Margin pressure in elevated oil environment. PSO and APL import oil in dollars and sell in rupees. Higher oil widens the gap between import cost and regulated retail price. Inventory gains possible in rising oil environment but working capital pressure increases.
+GEOPOLITICAL FRAMEWORK: Iran-US negotiations stalled with no concrete breakthrough. Backchannel diplomacy active across multiple capitals. Strait of Hormuz closure risk remains elevated. Any diplomatic resolution would be a strong positive catalyst for oil prices and Pakistani market sentiment. Duration and intensity of conflict is primary uncertainty for inflation and current account outlook.
+KEY RISKS FOR ALL VERDICTS: Inflation hitting double digits faster than expected. Further oil price spike from geopolitical escalation. IMF programme slippage. FY27 budget fiscal slippages. Rupee vulnerability if current account deteriorates. Political instability.`;
 
 // ── MAIN HANDLER ──────────────────────────────────────────────
 exports.handler = async (event) => {
