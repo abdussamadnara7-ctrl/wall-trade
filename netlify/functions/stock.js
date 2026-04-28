@@ -916,9 +916,7 @@ exports.handler = async (event) => {
     };
   }
 
-const liveRatios = calculateLiveRatios(ticker, livePrice);
-const stockDataWithRatios = { ...stockData, ...liveRatios };
-const verdict = await generateVerdict(stockDataWithRatios, macroContext);
+const verdict = await generateVerdict(stockData, macroContext);
   return {
     statusCode: 200,
     headers,
