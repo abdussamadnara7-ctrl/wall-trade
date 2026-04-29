@@ -93,7 +93,7 @@ async function getPSXPrices(tickers) {
 // ── KSE-100 INDEX ──────────────────────────────────────────────
 async function getKSE100() {
   try {
-    const data = await get('https://psxterminal.com/api/ticks/IDX/KSE100', PSX_HEADERS, 5000);
+    const data = await get('https://psxterminal.com/api/ticks/IDX/KSE100', PSX_HEADERS, 12000);
     const d = data?.data ?? data;
     const price = d?.price ?? d?.last ?? d?.close;
     if (!price || Number(price) < 10000) return null;
