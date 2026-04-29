@@ -6,7 +6,7 @@ function get(url, extraHeaders = {}, ms = 8000) {
     const timer = setTimeout(() => { console.log('TIMEOUT:', url.slice(0, 70)); resolve(null); }, ms);
     const req = https.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; WallTrade/1.0)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         ...extraHeaders
       }
     }, res => {
@@ -23,10 +23,19 @@ function get(url, extraHeaders = {}, ms = 8000) {
 }
 
 const PSX_HEADERS = {
-  'Origin':  'https://psxterminal.com',
-  'Referer': 'https://psxterminal.com/',
-  'Accept':  'application/json, text/plain, */*',
-  'Accept-Language': 'en-US,en;q=0.9'
+  'Origin':           'https://psxterminal.com',
+  'Referer':          'https://psxterminal.com/',
+  'Accept':           'application/json, text/plain, */*',
+  'Accept-Language':  'en-US,en;q=0.9',
+  'Accept-Encoding':  'gzip, deflate, br',
+  'Connection':       'keep-alive',
+  'Cache-Control':    'no-cache',
+  'Pragma':           'no-cache',
+  'sec-ch-ua':        '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+  'sec-ch-ua-mobile': '?0',
+  'sec-fetch-dest':   'empty',
+  'sec-fetch-mode':   'cors',
+  'sec-fetch-site':   'same-origin',
 };
 
 // ── PSX STOCK PRICES ───────────────────────────────────────────
