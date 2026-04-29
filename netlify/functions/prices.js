@@ -46,7 +46,7 @@ async function getPSXPrices(tickers) {
   for (let i = 0; i < tickers.length; i += BATCH) {
     const batch = tickers.slice(i, i + BATCH);
     const fetches = batch.map(ticker =>
-      get(`https://psxterminal.com/api/ticks/REG/${ticker}`, PSX_HEADERS, 5000)
+      get(`https://psxterminal.com/api/ticks/REG/${ticker}`, PSX_HEADERS, 12000)
         .then(data => ({ ticker, data }))
     );
     const responses = await Promise.allSettled(fetches);
