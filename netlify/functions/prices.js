@@ -6,7 +6,7 @@ function get(url, extraHeaders = {}, ms = 8000) {
     const timer = setTimeout(() => { console.log('TIMEOUT:', url.slice(0, 70)); resolve(null); }, ms);
     const req = https.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (compatible; WallTrade/1.0)',
         ...extraHeaders
       }
     }, res => {
@@ -23,19 +23,10 @@ function get(url, extraHeaders = {}, ms = 8000) {
 }
 
 const PSX_HEADERS = {
-  'Origin':           'https://psxterminal.com',
-  'Referer':          'https://psxterminal.com/',
-  'Accept':           'application/json, text/plain, */*',
-  'Accept-Language':  'en-US,en;q=0.9',
-  'Accept-Encoding':  'gzip, deflate, br',
-  'Connection':       'keep-alive',
-  'Cache-Control':    'no-cache',
-  'Pragma':           'no-cache',
-  'sec-ch-ua':        '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-  'sec-ch-ua-mobile': '?0',
-  'sec-fetch-dest':   'empty',
-  'sec-fetch-mode':   'cors',
-  'sec-fetch-site':   'same-origin',
+  'Origin':  'https://psxterminal.com',
+  'Referer': 'https://psxterminal.com/',
+  'Accept':  'application/json, text/plain, */*',
+  'Accept-Language': 'en-US,en;q=0.9',
 };
 
 // ── PSX STOCK PRICES ───────────────────────────────────────────
@@ -46,7 +37,7 @@ async function getPSXPrices(tickers) {
   for (let i = 0; i < tickers.length; i += BATCH) {
     const batch = tickers.slice(i, i + BATCH);
     const fetches = batch.map(ticker =>
-      get(`https://psxterminal.com/api/ticks/REG/${ticker}`, PSX_HEADERS, 12000)
+      get(`https://psxterminal.com/api/ticks/REG/${ticker}`, PSX_HEADERS, 5000)
         .then(data => ({ ticker, data }))
     );
     const responses = await Promise.allSettled(fetches);
@@ -93,7 +84,7 @@ async function getPSXPrices(tickers) {
 // ── KSE-100 INDEX ──────────────────────────────────────────────
 async function getKSE100() {
   try {
-    const data = await get('https://psxterminal.com/api/ticks/IDX/KSE100', PSX_HEADERS, 12000);
+    const data = await get('https://psxterminal.com/api/ticks/IDX/KSE100', PSX_HEADERS, 5000);
     const d = data?.data ?? data;
     const price = d?.price ?? d?.last ?? d?.close;
     if (!price || Number(price) < 10000) return null;
