@@ -775,7 +775,7 @@ exports.handler = async (event) => {
     };
   }
 
-const liveRatios = calculateLiveRatios(stockData.ticker, stockData.price);
+const liveRatios = calculateLiveRatios(stockData.ticker, parseFloat(stockData.price) || 0);
 const stockDataWithRatios = { ...stockData, ...liveRatios };
 const verdict = await generateVerdict(stockDataWithRatios, macroContext);
   return {
