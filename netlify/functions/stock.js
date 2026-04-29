@@ -627,7 +627,7 @@ function calculateLiveRatios(ticker, livePrice) {
     'HBL':    { eps: 45.48,  dps: 20.00, bookValuePerShare: 333.10, sharesOutstanding: 1466.9 },
     'MCB':    { eps: 45.73,  dps: 36.00, bookValuePerShare: 205.59, sharesOutstanding: 1185   },
     'UBL':    { eps: 53.86,  dps: 44.00, bookValuePerShare: null,   sharesOutstanding: 2504.2 },
-    'NBP':    { eps: 7.58,   dps: 3.50,  bookValuePerShare: 205.3,  sharesOutstanding: 2127.5 },,
+    'NBP':    { eps: 7.58,   dps: 3.50,  bookValuePerShare: 205.3,  sharesOutstanding: 2127.5 },
     'ABL':    { eps: null,   dps: null,  bookValuePerShare: null,   sharesOutstanding: 1169   },
     'BAFL':   { eps: null,   dps: null,  bookValuePerShare: null,   sharesOutstanding: 1409   },
     'LUCK':   { eps: 30.45,  dps: null,  sharesOutstanding: 323  },
