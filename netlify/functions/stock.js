@@ -159,21 +159,37 @@ const PSX_FUNDAMENTALS = {
   },
 
   NBP: {
-    eps:'40.4', netProfit:'PKR 85.9B',
-    deposits:'PKR 4.4T', totalAssets:'PKR 7.1T',
-    carRatio:'26.21%', cet1Ratio:'19.65%',
-    casaRatio:'81%', liquidityCoverageRatio:'217%',
-    aiSummary:'Government-backed banking giant with massive liquidity and sovereign strength.',
-    pe:'N/A', fwdPe:'N/A', pb:'N/A', divYield:'N/A',
-    roe:'N/A', roa:'N/A', grossMargin:'N/A', opMargin:'N/A',
-    netMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
-    revenue:'N/A', nplRatio:'N/A',
-    currentRatio:'N/A', quickRatio:'N/A',
-    debtToEquity:'N/A', totalCash:'N/A', totalDebt:'N/A',
-    fcf:'N/A', fcfYield:'N/A', beta:'N/A',
-    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
-    ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A',
-    interestCover:'N/A',
+    NBP: {
+  eps: '7.58',                    // Q1 2026 actual — annualized 30.32
+  netProfit: 'PKR 16.1B',         // Q1 2026 — down from PKR 22.1B prior year
+  deposits: 'PKR 4.1T',           // strong state-backed funding franchise
+  totalAssets: 'PKR 7.2T',        // massive institution
+  investments: 'PKR 5.16T',       // heavy govt securities exposure
+  equity: 'PKR 436.8B',           // down sharply from PKR 537.9B
+  netInterestIncome: 'PKR 52.0B',
+  operatingExpenses: 'PKR 31.2B',
+  carRatio: '26.21%',
+  cet1Ratio: '19.65%',
+  casaRatio: '81%',
+  liquidityCoverageRatio: '217%',
+  bvps: 'PKR 205.3',              // total equity 436,833mn / 2127.5mn shares
+  dps: 'PKR 3.50',                // interim dividend Q1 2026
+  aiSummary: 'Government-backed banking giant with massive PKR 4.1T deposit franchise and PKR 5.16T investment book. Q1 2026 profitability weakened materially — EPS 7.58 vs 10.29 prior year and equity fell sharply from PKR 537.9B to PKR 436.8B impacting BVPS and capital strength perception. Trades at steep discount to book value. Heavy government securities exposure is classic Pakistan banking model.',
+  pe: 'N/A', fwdPe: 'N/A',
+  pb: 'N/A',                      // auto-calculated live from price / 205.3
+  divYield: 'N/A',                // auto-calculated live
+  roe: 'N/A', roa: 'N/A',
+  grossMargin: 'N/A', opMargin: 'N/A',
+  netMargin: 'N/A', ebitdaMargin: 'N/A',
+  ebitda: 'N/A', revenue: 'N/A',
+  nplRatio: 'N/A',
+  currentRatio: 'N/A', quickRatio: 'N/A',
+  debtToEquity: 'N/A', totalCash: 'N/A', totalDebt: 'N/A',
+  fcf: 'N/A', fcfYield: 'N/A', beta: 'N/A',
+  revenueGrowth: 'N/A', earningsGrowth: 'N/A', marketCap: 'N/A',
+  ev_ebitda: 'N/A', roic: 'N/A', payoutRatio: 'N/A',
+  ps: 'N/A', interestCover: 'N/A',
+},
   },
 
   ABL: {
@@ -613,7 +629,7 @@ function calculateLiveRatios(ticker, livePrice) {
     'HBL':    { eps: 45.48,  dps: 20.00, bookValuePerShare: 333.10, sharesOutstanding: 1466.9 },
     'MCB':    { eps: 45.73,  dps: 36.00, bookValuePerShare: 205.59, sharesOutstanding: 1185   },
     'UBL':    { eps: 53.86,  dps: 44.00, bookValuePerShare: null,   sharesOutstanding: 2504.2 },
-    'NBP':    { eps: 40.40,  dps: 35.00, bookValuePerShare: null,   sharesOutstanding: 2127.5 },
+    'NBP':    { eps: 7.58,   dps: 3.50,  bookValuePerShare: 205.3,  sharesOutstanding: 2127.5 },,
     'ABL':    { eps: null,   dps: null,  bookValuePerShare: null,   sharesOutstanding: 1169   },
     'BAFL':   { eps: null,   dps: null,  bookValuePerShare: null,   sharesOutstanding: 1409   },
     'LUCK':   { eps: 30.45,  dps: null,  sharesOutstanding: 323  },
