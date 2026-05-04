@@ -777,18 +777,21 @@ function gaugeArc(score) {
 // ── RENDER ─────────────────────────────────────────────────
 function render(ticker, stockData, verdict) {
   const lp = livePrices[ticker];
-  const price   = lp?.price || stockData?.price || '—';
+  const price   = lp?.price  || stockData?.price  || '—';
   const change  = lp?.change || stockData?.change || '0';
-  const dir     = lp?.dir || stockData?.dir || 'up';
-  const name    = stockData?.name || ticker;
+  const dir     = lp?.dir    || stockData?.dir    || 'up';
+  const name    = stockData?.name   || ticker;
   const sector  = stockData?.sector || 'Pakistan Stock Exchange';
-  const vtype  = verdict?.verdict || '';
-  const vscore = verdict?.score  || 0;
-  const insights = verdict?.insights || [];
-  const signals  = verdict?.signals || [];
-  const scores   = verdict?.scores || {};
-  const factors  = verdict?.factors || [];
-  const ratios   = stockData ? buildRatios(stockData) : {};
+
+  // Only extract verdict data if verdict actually exists
+  const hasVerdict = !!(verdict?.verdict);
+  const vtype   = hasVerdict ? verdict.verdict   : '';
+  const vscore  = hasVerdict ? (verdict.score || 0) : 0;
+  const insights = hasVerdict ? (verdict.insights || []) : [];
+  const signals  = hasVerdict ? (verdict.signals  || []) : [];
+  const scores   = hasVerdict ? (verdict.scores   || {}) : {};
+  const factors  = hasVerdict && verdict.factors?.length ? verdict.factors : buildBaseFactors(stockData, ticker);
+  const ratios   = stockData  ? buildRatios(stockData)   : {};
 
   document.getElementById('root').innerHTML = `
   <div class="hero">
@@ -807,14 +810,41 @@ function render(ticker, stockData, verdict) {
   </div>
 
   <div class="tabs">
-    <div class="tab ${tab==='overview'?'on':''}" onclick="setTab('overview')">Overview</div>
-    <div class="tab ${tab==='financials'?'on':''}" onclick="setTab('financials')">Financials</div>
-    <div class="tab ${tab==='factors'?'on':''}" onclick="setTab('factors')">Key factors</div>
+    <div class="tab ${tab==='overview'?'on':''}"    onclick="setTab('overview')">Overview</div>
+    <div class="tab ${tab==='financials'?'on':''}"  onclick="setTab('financials')">Financials</div>
+    <div class="tab ${tab==='factors'?'on':''}"     onclick="setTab('factors')">Key factors</div>
   </div>
 
+  <!-- ── OVERVIEW TAB ── -->
   <div class="tcontent ${tab==='overview'?'on':''}" id="tc-overview">
+
+    <!-- SECTION 1: Financial ratios — ALWAYS visible -->
+    ${Object.keys(ratios).length ? `
+    <div class="ratio-wrap" style="padding-top:22px;padding-bottom:4px;">
+      <div class="sec-lbl">Financial ratios</div>
+      <div class="rgrid">
+        ${Object.entries(ratios).map(([n,r])=>`
+          <div class="rcard">
+            <div class="rlbl">${n}</div>
+            <div class="rval ${rTG(r.c)}">${r.v}</div>
+            <div class="rctx ${rTG(r.c)}">${r.ctx}</div>
+          </div>`).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- SECTION 2: Key signals — visible when verdict exists -->
+    ${signals.length ? `
+    <div class="sigs-wrap">
+      <div class="sec-lbl">Key signals</div>
+      <div class="sigs">
+        ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- SECTION 3: AI Verdict — conditional -->
     <div class="sc-wrap">
       <div class="sc">
+        ${hasVerdict ? `
         <div class="sc-top">
           <div class="sc-eyebrow">Wall-Trade suggestion</div>
           <div class="sc-verdict-row">
@@ -834,30 +864,28 @@ function render(ticker, stockData, verdict) {
               </div>`;
             }).join('')}
           </div>
+          <div class="sc-sep"></div>
+          <div class="sc-bot" id="verdict-gate">
+            <div class="ai-row"><div class="ai-orb"></div>AI verdict</div>
+            <div class="ai-headline">${verdict.headline}</div>
+            <div class="ai-body">${verdict.body}</div>
+          </div>
         </div>
-        <div class="sc-sep"></div>
-        <div class="sc-bot" id="verdict-gate">
-          ${verdict
-            ? `<div class="ai-row"><div class="ai-orb"></div>AI verdict</div>
-               <div class="ai-headline">${verdict.headline}</div>
-               <div class="ai-body">${verdict.body}</div>`
-            : `<button class="gen-verdict-btn" onclick="generateVerdict('${ticker}')">
-                 <div class="ai-orb" style="flex-shrink:0;margin-right:2px"></div>
-                 Generate AI Verdict
-               </button>
-               <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:9px;">Powered by Claude · ~10 seconds</div>`}
+        ` : `
+        <div class="sc-bot" id="verdict-gate" style="padding-top:4px;">
+          <button class="gen-verdict-btn" onclick="generateVerdict('${ticker}')">
+            <div class="ai-orb" style="flex-shrink:0;margin-right:2px"></div>
+            Generate AI Verdict
+          </button>
+          <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:9px;">Powered by Claude · ~10 seconds</div>
         </div>
+        `}
       </div>
     </div>
-    ${signals.length ? `
-    <div class="sigs-wrap">
-      <div class="sec-lbl">Key signals</div>
-      <div class="sigs">
-        ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
-      </div>
-    </div>` : ''}
+
   </div>
 
+  <!-- ── FINANCIALS TAB ── -->
   <div class="tcontent ${tab==='financials'?'on':''}" id="tc-financials">
     <div class="ratio-wrap" style="padding-top:22px;">
       <div class="sec-lbl">Financial ratios</div>
@@ -870,7 +898,7 @@ function render(ticker, stockData, verdict) {
           </div>`).join('')}
       </div>
     </div>
-    ${Object.keys(scores).length ? `
+    ${hasVerdict && Object.keys(scores).length ? `
     <div class="scores-wrap">
       <div class="sec-lbl">Score breakdown</div>
       ${Object.entries(scores).map(([n,v])=>`
@@ -890,18 +918,22 @@ function render(ticker, stockData, verdict) {
         </div>
         <div class="oright">
           <div class="o-eye">Summary</div>
-          <div class="o-desc">${verdict?.summary || 'Analysis loading...'}</div>
+          <div class="o-desc">${verdict?.summary || ''}</div>
         </div>
       </div>
     </div>` : ''}
   </div>
 
+  <!-- ── KEY FACTORS TAB ── -->
   <div class="tcontent ${tab==='factors'?'on':''}" id="tc-factors">
     <div class="factors-wrap" style="padding-top:22px;">
       ${factors.map(f=>`<div class="fi">
         <div class="fi-icon">${f.icon}</div>
         <div><div class="fi-title">${f.title}</div><div class="fi-desc">${f.detail}</div></div>
       </div>`).join('')}
+      ${!hasVerdict ? `<div style="margin-top:16px;padding:12px 14px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);border-radius:12px;font-size:12px;color:var(--t3);line-height:1.6;">
+        <span style="color:var(--pa);font-weight:600;">✦ AI Enhanced</span> — Generate AI Verdict for deeper sector analysis and live macro signals.
+      </div>` : ''}
     </div>
   </div>
 
@@ -1017,6 +1049,110 @@ function buildRatios(s) {
   }
 
   return ratios;
+}
+
+// ── BUILD BASE FACTORS FROM STOCK DATA (always visible) ────
+function buildBaseFactors(s, ticker) {
+  if (!s) return [];
+  const sector = TICKER_SECTOR[ticker] || 'GENERAL';
+  const factors = [];
+  const n = v => parseFloat(v);
+
+  // Valuation
+  if (s.pe && s.pe !== 'N/A') {
+    const pe = n(s.pe);
+    const cheap = sector === 'BANKING' ? pe < 6 : pe < 10;
+    factors.push({
+      icon: '📊',
+      title: `P/E Ratio: ${s.pe}×`,
+      detail: cheap
+        ? `Trading at a discount — historically attractive entry level for ${sector === 'BANKING' ? 'bank' : 'this sector'}.`
+        : pe > 20
+          ? 'Premium valuation — market pricing in strong future earnings growth.'
+          : 'Fair valuation relative to sector peers and historical averages.'
+    });
+  }
+
+  // Dividend
+  if (s.divYield && s.divYield !== 'N/A') {
+    const dy = n(s.divYield);
+    factors.push({
+      icon: '💰',
+      title: `Dividend Yield: ${s.divYield}`,
+      detail: dy >= 7
+        ? `High yield of ${s.divYield} — strong income case. Yield is above KIBOR making it attractive vs fixed income.`
+        : dy >= 4
+          ? `Healthy dividend yield of ${s.divYield}. Consistent payout signals management confidence.`
+          : `Dividend yield of ${s.divYield}. Growth reinvestment may be prioritised over payouts.`
+    });
+  }
+
+  // Profitability
+  if (s.roe && s.roe !== 'N/A') {
+    const roe = n(s.roe);
+    factors.push({
+      icon: '📈',
+      title: `Return on Equity: ${s.roe}`,
+      detail: roe >= 20
+        ? `Exceptional ROE of ${s.roe} — management is generating strong returns on shareholder capital.`
+        : roe >= 12
+          ? `Solid ROE of ${s.roe}. Efficient use of equity capital relative to sector benchmarks.`
+          : `ROE of ${s.roe} is below sector average — watch for margin improvement or restructuring signals.`
+    });
+  }
+
+  // Net margin
+  if (s.netMargin && s.netMargin !== 'N/A') {
+    factors.push({
+      icon: '🏦',
+      title: `Net Margin: ${s.netMargin}`,
+      detail: `Bottom-line profitability after all costs and taxes. ${
+        n(s.netMargin) >= 25 ? 'High-margin business with strong pricing power.' :
+        n(s.netMargin) >= 10 ? 'Healthy margins indicating operational efficiency.' :
+        'Thin margins — sensitive to cost pressures and currency moves.'
+      }`
+    });
+  }
+
+  // Debt / leverage
+  if (s.debtToEquity && s.debtToEquity !== 'N/A' && sector !== 'BANKING') {
+    const de = n(s.debtToEquity);
+    factors.push({
+      icon: de <= 0.5 ? '✅' : de <= 1.5 ? '⚠️' : '🔴',
+      title: `Debt/Equity: ${s.debtToEquity}`,
+      detail: de <= 0.5
+        ? 'Low leverage — strong balance sheet with minimal financial risk.'
+        : de <= 1.5
+          ? 'Moderate leverage — manageable debt load. Monitor in rising rate environment.'
+          : 'High leverage — elevated financial risk. Rate hikes increase borrowing costs significantly.'
+    });
+  }
+
+  // EPS
+  if (s.eps && s.eps !== 'N/A') {
+    factors.push({
+      icon: '💵',
+      title: `EPS: PKR ${s.eps}`,
+      detail: `Earnings per share based on latest reported results. ${
+        s.dps && s.dps !== 'N/A'
+          ? `Company paid DPS of PKR ${s.dps} — payout ratio reflects management's earnings distribution policy.`
+          : 'Key profitability metric used to calculate P/E and dividend coverage ratios.'
+      }`
+    });
+  }
+
+  // Sector-specific macro factor
+  const macroFactors = {
+    ENERGY_EP: { icon: '🛢️', title: 'Oil Price Sensitivity', detail: 'Dollar-linked revenues mean rising Brent crude directly expands margins. Currently elevated oil is fundamentally positive for earnings, though PSX sentiment remains risk-off due to macro concerns.' },
+    OMC:       { icon: '⛽', title: 'Refining Margin Risk', detail: 'OMC margins are thin (1-3%). Elevated oil prices increase dollar import costs against PKR revenues. Monitor circular debt and government pricing policy closely.' },
+    BANKING:   { icon: '🏛️', title: 'Rate Cycle Impact', detail: 'SBP hiked 100bps to 11.5% in April 2026. Near-term NIM pressure as deposit costs reprice faster. Medium-term positive as investment books reprice at higher yields over 3-6 months.' },
+    FERTILISER:{ icon: '🌱', title: 'Gas Pricing Advantage', detail: 'Subsidised gas inputs create a structural cost advantage. Government subsidy programmes provide buffer. Urea demand tied to agricultural season — watch crop cycles.' },
+    CEMENT:    { icon: '🏗️', title: 'Housing Programme Catalyst', detail: 'PM launched 500,000 home programme at PKR 3.2 trillion — medium-term demand positive. Near-term headwind from rate hike dampening construction activity. Cartelisation concerns flagged by regulators.' },
+    CONGLOMERATE: { icon: '🔗', title: 'Diversified Revenue Base', detail: 'Conglomerate structure provides exposure across fertiliser, energy and chemicals. Sum-of-parts valuation typically trades at a discount to underlying NAV — watch subsidiary performance.' },
+  };
+  if (macroFactors[sector]) factors.push(macroFactors[sector]);
+
+  return factors;
 }
 
 // ── SHOW LOADING STATE ─────────────────────────────────────
