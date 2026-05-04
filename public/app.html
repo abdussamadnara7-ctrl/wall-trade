@@ -293,6 +293,68 @@ body {
 }
 .sdot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
 
+/* ── OVERVIEW SNAPSHOT GRID ── */
+.snap-wrap { padding: 20px 20px 4px; }
+.snap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.snap-card {
+  background: var(--bg2); border: 1px solid var(--rim2);
+  border-radius: 16px; padding: 14px 16px;
+  box-shadow: var(--card-shadow);
+}
+.snap-lbl { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t3); margin-bottom: 6px; }
+.snap-val { font-size: 22px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; margin-bottom: 4px; }
+.snap-ctx { font-size: 10px; font-weight: 500; line-height: 1.4; }
+
+/* ── OVERVIEW HIGHLIGHTS ── */
+.hl-wrap { padding: 0 20px 4px; }
+.hl-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 0; border-bottom: 1px solid var(--rim);
+}
+.hl-card:last-child { border-bottom: none; }
+.hl-icon {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(95,255,192,0.08), rgba(139,92,246,0.12));
+  border: 1px solid var(--rim2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.hl-title { font-size: 13px; font-weight: 600; color: var(--t1); letter-spacing: -0.02em; margin-bottom: 3px; }
+.hl-desc  { font-size: 11px; color: var(--t2); line-height: 1.6; }
+
+/* ── COMPACT AI VERDICT CARD ── */
+.compact-verdict {
+  margin: 16px 20px 4px;
+  background: var(--bg2); border: 1px solid var(--rim2);
+  border-radius: 16px; padding: 16px 18px;
+  box-shadow: var(--card-shadow);
+}
+.cv-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cv-label { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--t3); }
+.cv-verdict-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.cv-verdict { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+.cv-summary { font-size: 12px; color: var(--t2); line-height: 1.6; }
+
+/* ── FINANCIALS GROUPED SECTIONS ── */
+.fin-section { padding: 0 20px; margin-bottom: 8px; }
+.fin-section:first-child { padding-top: 20px; }
+.fin-section-lbl {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--t3);
+  margin-bottom: 10px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--rim);
+}
+.fin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+.fin-card {
+  background: var(--bg2); border: 1px solid var(--rim2);
+  border-radius: 14px; padding: 13px 14px;
+  box-shadow: var(--card-shadow);
+}
+.fin-lbl { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t3); margin-bottom: 6px; }
+.fin-val { font-size: 19px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
+.fin-ctx { font-size: 10px; font-weight: 500; line-height: 1.35; }
+.fin-full { grid-column: 1 / -1; }
+
 /* ── RATIO GRID ── */
 .ratio-wrap { padding: 0 20px 4px; }
 .rgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -774,24 +836,280 @@ function gaugeArc(score) {
   </div>`;
 }
 
-// ── RENDER ─────────────────────────────────────────────────
+// ── OVERVIEW SNAPSHOT — 4 headline metrics per sector ──────
+function buildOverviewMetrics(s, ticker) {
+  if (!s) return [];
+  const sector = TICKER_SECTOR[ticker] || 'GENERAL';
+  const rTG = c => c==='green'?'rc-green':c==='red'?'rc-red':'rc-amber';
+  const c  = (v,g,w) => { const n=parseFloat(v); return isNaN(n)?'amber':n>=g?'green':n>=w?'amber':'red'; };
+  const ci = (v,b,w) => { const n=parseFloat(v); return isNaN(n)?'amber':n<=b?'green':n<=w?'amber':'red'; };
+  const m = [];
+
+  if (sector === 'BANKING') {
+    if (s.pb  && s.pb  !== 'N/A') m.push({ lbl:'P/B Ratio',    val:s.pb+'×',      col:ci(s.pb,1.5,2.5),  ctx:'Book value multiple — core bank valuation' });
+    if (s.roe && s.roe !== 'N/A') m.push({ lbl:'ROE',          val:s.roe,         col:c(s.roe,18,12),    ctx:'Return on equity — core profitability' });
+    if (s.divYield && s.divYield!=='N/A') m.push({ lbl:'Div Yield', val:s.divYield, col:c(s.divYield,6,4), ctx:'Annual dividend yield' });
+    if (s.eps && s.eps !== 'N/A') m.push({ lbl:'EPS',          val:'PKR '+s.eps,  col:'green',           ctx:'Earnings per share — latest reported' });
+
+  } else if (sector === 'ENERGY_EP') {
+    if (s.pe  && s.pe  !== 'N/A') m.push({ lbl:'P/E Ratio',    val:s.pe+'×',      col:ci(s.pe,10,15),    ctx:'Price to earnings — E&P below 10× is attractive' });
+    if (s.divYield && s.divYield!=='N/A') m.push({ lbl:'Div Yield', val:s.divYield, col:c(s.divYield,6,4), ctx:'Dollar-linked revenues support high yields' });
+    if (s.netMargin && s.netMargin!=='N/A') m.push({ lbl:'Net Margin', val:s.netMargin, col:c(s.netMargin,35,20), ctx:'E&P should exceed 30% — oil price sensitive' });
+    if (s.eps && s.eps !== 'N/A') m.push({ lbl:'EPS',          val:'PKR '+s.eps,  col:'green',           ctx:'Earnings per share — latest reported' });
+    else if (s.fcfYield && s.fcfYield!=='N/A') m.push({ lbl:'FCF Yield', val:s.fcfYield, col:c(s.fcfYield,5,2), ctx:'Free cash flow yield' });
+
+  } else if (sector === 'OMC') {
+    if (s.pe  && s.pe  !== 'N/A') m.push({ lbl:'P/E Ratio',    val:s.pe+'×',      col:ci(s.pe,10,15),    ctx:'Price to earnings' });
+    if (s.netMargin && s.netMargin!=='N/A') m.push({ lbl:'Net Margin', val:s.netMargin, col:c(s.netMargin,3,1), ctx:'OMC margins are thin — 1-3% is normal' });
+    if (s.currentRatio && s.currentRatio!=='N/A') m.push({ lbl:'Current Ratio', val:s.currentRatio+'×', col:c(s.currentRatio,1.2,1), ctx:'Short-term liquidity' });
+    if (s.debtToEquity && s.debtToEquity!=='N/A') m.push({ lbl:'Debt/Equity', val:s.debtToEquity, col:ci(s.debtToEquity,1,2), ctx:'Financial leverage' });
+
+  } else if (sector === 'FERTILISER') {
+    if (s.pe  && s.pe  !== 'N/A') m.push({ lbl:'P/E Ratio',    val:s.pe+'×',      col:ci(s.pe,10,15),    ctx:'Price to earnings' });
+    if (s.divYield && s.divYield!=='N/A') m.push({ lbl:'Div Yield', val:s.divYield, col:c(s.divYield,8,5), ctx:'Core investment case — target >8%' });
+    if (s.roe && s.roe !== 'N/A') m.push({ lbl:'ROE',          val:s.roe,         col:c(s.roe,25,15),    ctx:'High ROE signals gas pricing advantage' });
+    if (s.netMargin && s.netMargin!=='N/A') m.push({ lbl:'Net Margin', val:s.netMargin, col:c(s.netMargin,20,10), ctx:'Net profit margin' });
+
+  } else if (sector === 'CEMENT') {
+    if (s.pe  && s.pe  !== 'N/A') m.push({ lbl:'P/E Ratio',    val:s.pe+'×',      col:ci(s.pe,12,20),    ctx:'Cyclical — valuation swings with demand' });
+    if (s.grossMargin && s.grossMargin!=='N/A') m.push({ lbl:'Gross Margin', val:s.grossMargin, col:c(s.grossMargin,25,12), ctx:'Coal-sensitive — swings sharply' });
+    if (s.netMargin && s.netMargin!=='N/A') m.push({ lbl:'Net Margin', val:s.netMargin, col:c(s.netMargin,12,6), ctx:'Net profit margin' });
+    if (s.debtToEquity && s.debtToEquity!=='N/A') m.push({ lbl:'Debt/Equity', val:s.debtToEquity, col:ci(s.debtToEquity,1,2), ctx:'High leverage risky in downturns' });
+
+  } else if (sector === 'CONGLOMERATE') {
+    if (s.pe  && s.pe  !== 'N/A') m.push({ lbl:'P/E Ratio',    val:s.pe+'×',      col:ci(s.pe,12,18),    ctx:'Holding company — sum-of-parts logic' });
+    if (s.divYield && s.divYield!=='N/A') m.push({ lbl:'Div Yield', val:s.divYield, col:c(s.divYield,5,3), ctx:'Dividend from subsidiaries' });
+    if (s.roe && s.roe !== 'N/A') m.push({ lbl:'ROE',          val:s.roe,         col:c(s.roe,12,7),     ctx:'Return on equity' });
+    if (s.netMargin && s.netMargin!=='N/A') m.push({ lbl:'Net Margin', val:s.netMargin, col:c(s.netMargin,15,8), ctx:'Net profit margin' });
+
+  } else {
+    if (s.pe  && s.pe  !== 'N/A') m.push({ lbl:'P/E Ratio',    val:s.pe+'×',      col:ci(s.pe,15,25),    ctx:'Price to earnings' });
+    if (s.divYield && s.divYield!=='N/A') m.push({ lbl:'Div Yield', val:s.divYield, col:c(s.divYield,5,3), ctx:'Annual dividend yield' });
+    if (s.roe && s.roe !== 'N/A') m.push({ lbl:'ROE',          val:s.roe,         col:c(s.roe,15,8),     ctx:'Return on equity' });
+    if (s.netMargin && s.netMargin!=='N/A') m.push({ lbl:'Net Margin', val:s.netMargin, col:c(s.netMargin,15,5), ctx:'Net profit margin' });
+  }
+  return m.slice(0,4);
+}
+
+// ── OVERVIEW HIGHLIGHTS — what matters now per sector ──────
+function buildHighlights(s, ticker) {
+  const sector = TICKER_SECTOR[ticker] || 'GENERAL';
+  const hl = [];
+
+  const SECTOR_HL = {
+    ENERGY_EP: [
+      { icon:'🛢️', title:'Dollar-linked revenues', desc:'OGDC, PPL and MARI earn in USD terms. Rising Brent crude directly expands margins — every $10/bbl increase adds meaningful EPS upside.' },
+      { icon:'⚠️', title:'PSX risk-off vs earnings upside', desc:'Market is currently pricing macro risk over earnings. Institutional selling is overriding fundamental strength. Watch Hormuz diplomatic progress.' },
+      { icon:'💸', title:'Circular debt risk', desc:'Government receivables from energy sector remain elevated. Cash conversion can lag strong headline earnings — factor into dividend sustainability analysis.' },
+    ],
+    OMC: [
+      { icon:'⛽', title:'Thin margins, high volume', desc:'OMC margins run 1-3%. Elevated oil prices increase dollar import costs against PKR revenues. Pricing policy and government subsidies are key margin drivers.' },
+      { icon:'🔄', title:'Inventory gains/losses', desc:'Rising oil creates inventory gains; falling oil creates losses. Earnings can swing sharply quarter to quarter based on oil price movement.' },
+      { icon:'📊', title:'Circular debt exposure', desc:'PSO in particular carries significant circular debt receivables from the government. This is a balance sheet risk that overstates reported profitability.' },
+    ],
+    BANKING: [
+      { icon:'📈', title:'Rate cycle positioning', desc:'SBP hiked 100bps to 11.5% in April 2026. Near-term deposit cost pressure but investment books reprice positively over 3-6 months.' },
+      { icon:'🏦', title:'Asset quality watch', desc:'NPL ratios are the key risk metric. Banks with strong CASA franchises are better positioned in a high-rate environment.' },
+      { icon:'💰', title:'Dividend yield attractive vs. KIBOR', desc:'With KIBOR at 11.9%, bank dividend yields above 8-9% offer real value. Compare yield to 3-year PKRV of 12.4% when assessing fixed income alternatives.' },
+    ],
+    FERTILISER: [
+      { icon:'🌱', title:'Subsidised gas advantage', desc:'Fertiliser companies benefit from gas priced below market. This structural cost advantage creates high ROE and strong free cash flow generation.' },
+      { icon:'💰', title:'High dividend payers', desc:'Fertiliser sector consistently pays one of the highest dividend yields on PSX. FFC and EFERT have maintained strong payout ratios for over a decade.' },
+      { icon:'🌾', title:'Agricultural demand linkage', desc:'Urea demand tied to crop cycles. Kharif (June-Oct) and Rabi (Nov-Apr) seasons drive volume. Watch NFDC offtake data for demand signals.' },
+    ],
+    CEMENT: [
+      { icon:'🏗️', title:'Housing programme catalyst', desc:'PM launched 500,000 home programme at PKR 3.2 trillion. Medium-term demand positive for cement volumes, especially in affordable housing segments.' },
+      { icon:'⚠️', title:'Cartelisation risk', desc:'SECP has flagged decades of coordinated pricing in cement. Regulatory intervention could compress margins if enforcement is strengthened.' },
+      { icon:'⚡', title:'Energy cost sensitivity', desc:'Coal and electricity are primary cost drivers. Coal prices have moderated from 2022 peaks but remain elevated. Energy cost as % of revenue is key to watch.' },
+    ],
+    CONGLOMERATE: [
+      { icon:'🔗', title:'Sum-of-parts discount', desc:'Conglomerates typically trade at a 20-30% discount to underlying NAV. ENGROH\'s value is primarily driven by its stake in EFERT (fertiliser).' },
+      { icon:'🌱', title:'EFERT exposure dominates', desc:'ENGROH\'s investment in Engro Fertilisers is its primary earnings driver. Monitor EFERT fundamentals and dividend policy for ENGROH valuation.' },
+      { icon:'🔄', title:'Diversification premium debate', desc:'Market debates whether conglomerate structure adds or destroys value. Unlocking value through demergers or listings of subsidiaries can be a catalyst.' },
+    ],
+  };
+
+  return (SECTOR_HL[sector] || [
+    { icon:'📊', title:'Valuation snapshot', desc:'Review the financial ratios for a full picture of this company\'s valuation relative to sector peers.' },
+    { icon:'🌐', title:'Macro sensitivity', desc:'Pakistan macro factors including SBP rates, PKR and oil prices affect all listed companies. Generate AI Verdict for sector-specific analysis.' },
+  ]).slice(0,3);
+}
+
+// ── FINANCIALS GROUPED SECTIONS ─────────────────────────────
+function buildFinancialSections(s, ticker) {
+  if (!s) return [];
+  const sector = TICKER_SECTOR[ticker] || 'GENERAL';
+  const c  = (v,g,w) => { const n=parseFloat(v); return isNaN(n)?'amber':n>=g?'green':n>=w?'amber':'red'; };
+  const ci = (v,b,w) => { const n=parseFloat(v); return isNaN(n)?'amber':n<=b?'green':n<=w?'amber':'red'; };
+  const card = (lbl,val,col,ctx,full=false) => ({ lbl,val,col,ctx,full });
+
+  if (sector === 'BANKING') return [
+    { title:'Valuation', cards: [
+      s.pb  && s.pb !=='N/A' && card('P/B Ratio',  s.pb+'×',     ci(s.pb,1.5,2.5),   'Book value multiple'),
+      s.pe  && s.pe !=='N/A' && card('P/E Ratio',  s.pe+'×',     ci(s.pe,8,12),      'Price to earnings'),
+      s.eps && s.eps!=='N/A' && card('EPS',         'PKR '+s.eps, 'green',            'Earnings per share'),
+    ].filter(Boolean)},
+    { title:'Income', cards: [
+      s.divYield && s.divYield!=='N/A' && card('Div Yield', s.divYield, c(s.divYield,6,4), 'Annual dividend yield'),
+      s.dps && s.dps!=='N/A' && card('DPS', 'PKR '+s.dps, 'green', 'Dividend per share'),
+    ].filter(Boolean)},
+    { title:'Profitability', cards: [
+      s.roe && s.roe!=='N/A' && card('ROE', s.roe, c(s.roe,18,12), 'Return on equity'),
+      s.netMargin && s.netMargin!=='N/A' && card('Net Margin', s.netMargin, c(s.netMargin,25,15), 'Net profit margin'),
+    ].filter(Boolean)},
+    { title:'Scale', cards: [
+      s.revenue && s.revenue!=='N/A' && card('Revenue', s.revenue, 'green', 'Total revenue', true),
+      s.netProfit && s.netProfit!=='N/A' && card('Net Profit', s.netProfit, 'green', 'Bottom-line profit', true),
+    ].filter(Boolean)},
+  ];
+
+  if (sector === 'ENERGY_EP') return [
+    { title:'Valuation', cards: [
+      s.pe && s.pe!=='N/A' && card('P/E Ratio', s.pe+'×', ci(s.pe,10,15), 'E&P below 10× is attractive'),
+      s.pb && s.pb!=='N/A' && card('P/B Ratio', s.pb+'×', ci(s.pb,1.5,3), 'Price to book'),
+      s.divYield && s.divYield!=='N/A' && card('Div Yield', s.divYield, c(s.divYield,6,4), 'Dollar-linked revenues support yield'),
+      s.eps && s.eps!=='N/A' && card('EPS', 'PKR '+s.eps, 'green', 'Earnings per share'),
+    ].filter(Boolean)},
+    { title:'Profitability', cards: [
+      s.netMargin && s.netMargin!=='N/A' && card('Net Margin', s.netMargin, c(s.netMargin,35,20), 'High margin sector'),
+      s.roe && s.roe!=='N/A' && card('ROE', s.roe, c(s.roe,15,8), 'Return on equity'),
+      s.fcfYield && s.fcfYield!=='N/A' && card('FCF Yield', s.fcfYield, c(s.fcfYield,5,2), 'Free cash flow yield'),
+    ].filter(Boolean)},
+    { title:'Scale', cards: [
+      s.revenue && s.revenue!=='N/A' && card('Revenue', s.revenue, 'green', 'Total revenue', true),
+      s.netProfit && s.netProfit!=='N/A' && card('Net Profit', s.netProfit, 'green', 'Bottom-line profit', true),
+    ].filter(Boolean)},
+  ];
+
+  if (sector === 'OMC') return [
+    { title:'Valuation', cards: [
+      s.pe && s.pe!=='N/A' && card('P/E Ratio', s.pe+'×', ci(s.pe,10,15), 'Price to earnings'),
+      s.pb && s.pb!=='N/A' && card('P/B Ratio', s.pb+'×', ci(s.pb,1.5,2.5), 'Price to book'),
+      s.eps && s.eps!=='N/A' && card('EPS', 'PKR '+s.eps, 'green', 'Earnings per share'),
+      s.divYield && s.divYield!=='N/A' && card('Div Yield', s.divYield, c(s.divYield,5,3), 'Annual dividend yield'),
+    ].filter(Boolean)},
+    { title:'Profitability', cards: [
+      s.netMargin && s.netMargin!=='N/A' && card('Net Margin', s.netMargin, c(s.netMargin,3,1), 'OMC margins are thin 1-3%'),
+    ].filter(Boolean)},
+    { title:'Liquidity & Leverage', cards: [
+      s.currentRatio && s.currentRatio!=='N/A' && card('Current Ratio', s.currentRatio+'×', c(s.currentRatio,1.2,1), 'Short-term liquidity'),
+      s.debtToEquity && s.debtToEquity!=='N/A' && card('Debt/Equity', s.debtToEquity, ci(s.debtToEquity,1,2), 'Financial leverage'),
+    ].filter(Boolean)},
+    { title:'Scale', cards: [
+      s.revenue && s.revenue!=='N/A' && card('Revenue', s.revenue, 'green', 'Total revenue', true),
+      s.netProfit && s.netProfit!=='N/A' && card('Net Profit', s.netProfit, 'green', 'Bottom-line profit', true),
+    ].filter(Boolean)},
+  ];
+
+  if (sector === 'FERTILISER') return [
+    { title:'Valuation', cards: [
+      s.pe && s.pe!=='N/A' && card('P/E Ratio', s.pe+'×', ci(s.pe,10,15), 'Price to earnings'),
+      s.divYield && s.divYield!=='N/A' && card('Div Yield', s.divYield, c(s.divYield,8,5), 'Core investment case — target >8%'),
+      s.eps && s.eps!=='N/A' && card('EPS', 'PKR '+s.eps, 'green', 'Earnings per share'),
+      s.dps && s.dps!=='N/A' && card('DPS', 'PKR '+s.dps, 'green', 'Dividend per share'),
+    ].filter(Boolean)},
+    { title:'Profitability', cards: [
+      s.roe && s.roe!=='N/A' && card('ROE', s.roe, c(s.roe,25,15), 'High ROE signals gas advantage'),
+      s.netMargin && s.netMargin!=='N/A' && card('Net Margin', s.netMargin, c(s.netMargin,20,10), 'Net profit margin'),
+    ].filter(Boolean)},
+    { title:'Balance Sheet', cards: [
+      s.debtToEquity && s.debtToEquity!=='N/A' && card('Debt/Equity', s.debtToEquity, ci(s.debtToEquity,0.5,1.5), 'Balance sheet strength'),
+    ].filter(Boolean)},
+    { title:'Scale', cards: [
+      s.revenue && s.revenue!=='N/A' && card('Revenue', s.revenue, 'green', 'Total revenue', true),
+      s.netProfit && s.netProfit!=='N/A' && card('Net Profit', s.netProfit, 'green', 'Bottom-line profit', true),
+    ].filter(Boolean)},
+  ];
+
+  if (sector === 'CEMENT') return [
+    { title:'Valuation', cards: [
+      s.pe && s.pe!=='N/A' && card('P/E Ratio', s.pe+'×', ci(s.pe,12,20), 'Cyclical — valuation swings'),
+      s.pb && s.pb!=='N/A' && card('P/B Ratio', s.pb+'×', ci(s.pb,1.5,2.5), 'Price to book'),
+      s.eps && s.eps!=='N/A' && card('EPS', 'PKR '+s.eps, 'green', 'Earnings per share'),
+      s.divYield && s.divYield!=='N/A' && card('Div Yield', s.divYield, c(s.divYield,5,3), 'Dividend yield'),
+    ].filter(Boolean)},
+    { title:'Profitability', cards: [
+      s.grossMargin && s.grossMargin!=='N/A' && card('Gross Margin', s.grossMargin, c(s.grossMargin,25,12), 'Coal-sensitive — swings sharply'),
+      s.netMargin && s.netMargin!=='N/A' && card('Net Margin', s.netMargin, c(s.netMargin,12,6), 'Net profit margin'),
+      s.roe && s.roe!=='N/A' && card('ROE', s.roe, c(s.roe,15,8), 'Return on equity'),
+    ].filter(Boolean)},
+    { title:'Balance Sheet', cards: [
+      s.debtToEquity && s.debtToEquity!=='N/A' && card('Debt/Equity', s.debtToEquity, ci(s.debtToEquity,1,2), 'High leverage risky in downturns'),
+    ].filter(Boolean)},
+    { title:'Scale', cards: [
+      s.revenue && s.revenue!=='N/A' && card('Revenue', s.revenue, 'green', 'Total revenue', true),
+      s.netProfit && s.netProfit!=='N/A' && card('Net Profit', s.netProfit, 'green', 'Bottom-line profit', true),
+    ].filter(Boolean)},
+  ];
+
+  // GENERAL / CONGLOMERATE / TECH fallback
+  return [
+    { title:'Valuation', cards: [
+      s.pe && s.pe!=='N/A' && card('P/E Ratio', s.pe+'×', ci(s.pe,15,25), 'Price to earnings'),
+      s.pb && s.pb!=='N/A' && card('P/B Ratio', s.pb+'×', ci(s.pb,2,4), 'Price to book'),
+      s.eps && s.eps!=='N/A' && card('EPS', 'PKR '+s.eps, 'green', 'Earnings per share'),
+      s.divYield && s.divYield!=='N/A' && card('Div Yield', s.divYield, c(s.divYield,5,3), 'Annual dividend yield'),
+    ].filter(Boolean)},
+    { title:'Profitability', cards: [
+      s.roe && s.roe!=='N/A' && card('ROE', s.roe, c(s.roe,15,8), 'Return on equity'),
+      s.netMargin && s.netMargin!=='N/A' && card('Net Margin', s.netMargin, c(s.netMargin,15,5), 'Net profit margin'),
+    ].filter(Boolean)},
+    { title:'Balance Sheet', cards: [
+      s.debtToEquity && s.debtToEquity!=='N/A' && card('Debt/Equity', s.debtToEquity, ci(s.debtToEquity,0.5,1.5), 'Financial leverage'),
+      s.currentRatio && s.currentRatio!=='N/A' && card('Current Ratio', s.currentRatio+'×', c(s.currentRatio,1.5,1), 'Short-term liquidity'),
+    ].filter(Boolean)},
+    { title:'Scale', cards: [
+      s.revenue && s.revenue!=='N/A' && card('Revenue', s.revenue, 'green', 'Total revenue', true),
+      s.netProfit && s.netProfit!=='N/A' && card('Net Profit', s.netProfit, 'green', 'Bottom-line profit', true),
+    ].filter(Boolean)},
+  ];
+}
+
 function render(ticker, stockData, verdict) {
   const lp = livePrices[ticker];
-  const price   = lp?.price  || stockData?.price  || '—';
-  const change  = lp?.change || stockData?.change || '0';
-  const dir     = lp?.dir    || stockData?.dir    || 'up';
-  const name    = stockData?.name   || ticker;
-  const sector  = stockData?.sector || 'Pakistan Stock Exchange';
+  const price  = lp?.price  || stockData?.price  || '—';
+  const change = lp?.change || stockData?.change || '0';
+  const dir    = lp?.dir    || stockData?.dir    || 'up';
+  const name   = stockData?.name   || ticker;
+  const sector = stockData?.sector || 'Pakistan Stock Exchange';
 
-  // Only extract verdict data if verdict actually exists
   const hasVerdict = !!(verdict?.verdict);
   const vtype   = hasVerdict ? verdict.verdict   : '';
-  const vscore  = hasVerdict ? (verdict.score || 0) : 0;
-  const insights = hasVerdict ? (verdict.insights || []) : [];
-  const signals  = hasVerdict ? (verdict.signals  || []) : [];
-  const scores   = hasVerdict ? (verdict.scores   || {}) : {};
+  const vscore  = hasVerdict ? (verdict.score||0) : 0;
+  const insights = hasVerdict ? (verdict.insights||[]) : [];
+  const signals  = hasVerdict ? (verdict.signals ||[]) : [];
+  const scores   = hasVerdict ? (verdict.scores  ||{}) : {};
   const factors  = hasVerdict && verdict.factors?.length ? verdict.factors : buildBaseFactors(stockData, ticker);
-  const ratios   = stockData  ? buildRatios(stockData)   : {};
+
+  // New data builders
+  const snapMetrics   = buildOverviewMetrics(stockData, ticker);
+  const highlights    = buildHighlights(stockData, ticker);
+  const finSections   = buildFinancialSections(stockData, ticker);
+
+  // Colour helpers for snap/fin cards
+  const rTGc = c => c==='green'?'rc-green':c==='red'?'rc-red':'rc-amber';
+
+  const renderSnapCard = (m) => `
+    <div class="snap-card">
+      <div class="snap-lbl">${m.lbl}</div>
+      <div class="snap-val ${rTGc(m.col)}">${m.val}</div>
+      <div class="snap-ctx ${rTGc(m.col)}">${m.ctx}</div>
+    </div>`;
+
+  const renderFinCard = (c) => `
+    <div class="fin-card${c.full?' fin-full':''}">
+      <div class="fin-lbl">${c.lbl}</div>
+      <div class="fin-val ${rTGc(c.col)}">${c.val}</div>
+      <div class="fin-ctx ${rTGc(c.col)}">${c.ctx}</div>
+    </div>`;
+
+  const renderFinSection = (sec) => sec.cards.length === 0 ? '' : `
+    <div class="fin-section">
+      <div class="fin-section-lbl">${sec.title}</div>
+      <div class="fin-grid">
+        ${sec.cards.map(renderFinCard).join('')}
+      </div>
+    </div>`;
 
   document.getElementById('root').innerHTML = `
   <div class="hero">
@@ -804,35 +1122,44 @@ function render(ticker, stockData, verdict) {
       <div class="hero-r">
         <div class="hero-cur">PKR</div>
         <div class="hero-price gx-white" id="live-price">${price}</div>
-        <div class="hero-chg ${dir === 'up' ? 'up' : 'dn'}" id="live-chg">${dir === 'up' ? '+' : ''}${change}% today</div>
+        <div class="hero-chg ${dir==='up'?'up':'dn'}" id="live-chg">${dir==='up'?'+':''}${change}% today</div>
       </div>
     </div>
   </div>
 
   <div class="tabs">
-    <div class="tab ${tab==='overview'?'on':''}"    onclick="setTab('overview')">Overview</div>
-    <div class="tab ${tab==='financials'?'on':''}"  onclick="setTab('financials')">Financials</div>
-    <div class="tab ${tab==='factors'?'on':''}"     onclick="setTab('factors')">Key factors</div>
+    <div class="tab ${tab==='overview'  ?'on':''}" onclick="setTab('overview')">Overview</div>
+    <div class="tab ${tab==='financials'?'on':''}" onclick="setTab('financials')">Financials</div>
+    <div class="tab ${tab==='factors'   ?'on':''}" onclick="setTab('factors')">Key factors</div>
   </div>
 
-  <!-- ── OVERVIEW TAB ── -->
+  <!-- ══ OVERVIEW TAB ══ -->
   <div class="tcontent ${tab==='overview'?'on':''}" id="tc-overview">
 
-    <!-- SECTION 1: Financial ratios — ALWAYS visible -->
-    ${Object.keys(ratios).length ? `
-    <div class="ratio-wrap" style="padding-top:22px;padding-bottom:4px;">
-      <div class="sec-lbl">Financial ratios</div>
-      <div class="rgrid">
-        ${Object.entries(ratios).map(([n,r])=>`
-          <div class="rcard">
-            <div class="rlbl">${n}</div>
-            <div class="rval ${rTG(r.c)}">${r.v}</div>
-            <div class="rctx ${rTG(r.c)}">${r.ctx}</div>
-          </div>`).join('')}
+    <!-- Snapshot metrics -->
+    ${snapMetrics.length ? `
+    <div class="snap-wrap">
+      <div class="sec-lbl" style="margin-bottom:10px;">Snapshot</div>
+      <div class="snap-grid">
+        ${snapMetrics.map(renderSnapCard).join('')}
       </div>
     </div>` : ''}
 
-    <!-- SECTION 2: Key signals — visible when verdict exists -->
+    <!-- What matters now -->
+    ${highlights.length ? `
+    <div class="hl-wrap">
+      <div class="sec-lbl" style="margin-bottom:2px;padding:0 0 8px;border-bottom:1px solid var(--rim);">What matters now</div>
+      ${highlights.map(h=>`
+        <div class="hl-card">
+          <div class="hl-icon">${h.icon}</div>
+          <div>
+            <div class="hl-title">${h.title}</div>
+            <div class="hl-desc">${h.desc}</div>
+          </div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <!-- Key signals from verdict -->
     ${signals.length ? `
     <div class="sigs-wrap">
       <div class="sec-lbl">Key signals</div>
@@ -841,66 +1168,39 @@ function render(ticker, stockData, verdict) {
       </div>
     </div>` : ''}
 
-    <!-- SECTION 3: AI Verdict — conditional -->
-    <div class="sc-wrap">
-      <div class="sc">
-        ${hasVerdict ? `
-        <div class="sc-top">
-          <div class="sc-eyebrow">Wall-Trade suggestion</div>
-          <div class="sc-verdict-row">
-            <div class="sc-verdict ${vGrad(vtype)}">${vtype}</div>
-            ${gaugeArc(vscore)}
-          </div>
-          <div class="insights">
-            ${insights.map(ins => {
-              const borderMap = {green:'var(--gb)',amber:'var(--aa)',red:'var(--ra)',purple:'var(--pb)',blue:'var(--bb)'};
-              const gradMap   = {green:'linear-gradient(130deg,#5fffc0,#22d98a)',amber:'linear-gradient(130deg,#fbbf24,#d97706)',red:'linear-gradient(130deg,#ff8080,#ef4444)',purple:'linear-gradient(130deg,#c4b5fd,#8b5cf6)',blue:'linear-gradient(130deg,#93c5fd,#3b82f6)'};
-              return `<div class="insight-card" style="border-left-color:${borderMap[ins.color]||borderMap.purple}">
-                <div class="insight-icon-wrap">${ins.icon}</div>
-                <div class="insight-right">
-                  <div class="insight-value" style="background:${gradMap[ins.color]||gradMap.purple};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${ins.value}</div>
-                  <div class="insight-label">${ins.label}</div>
-                </div>
-              </div>`;
-            }).join('')}
-          </div>
-          <div class="sc-sep"></div>
-          <div class="sc-bot" id="verdict-gate">
-            <div class="ai-row"><div class="ai-orb"></div>AI verdict</div>
-            <div class="ai-headline">${verdict.headline}</div>
-            <div class="ai-body">${verdict.body}</div>
-          </div>
-        </div>
-        ` : `
-        <div class="sc-bot" id="verdict-gate" style="padding-top:4px;">
-          <button class="gen-verdict-btn" onclick="generateVerdict('${ticker}')">
-            <div class="ai-orb" style="flex-shrink:0;margin-right:2px"></div>
-            Generate AI Verdict
-          </button>
-          <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:9px;">Powered by Claude · ~10 seconds</div>
-        </div>
-        `}
+    <!-- AI Verdict section -->
+    ${hasVerdict ? `
+    <div class="compact-verdict">
+      <div class="cv-top">
+        <div class="cv-label">Wall-Trade AI</div>
+        <div class="ai-row" style="margin:0"><div class="ai-orb"></div>Verdict</div>
       </div>
-    </div>
+      <div class="cv-verdict-row">
+        <div class="cv-verdict ${vGrad(vtype)}">${vtype}</div>
+        ${gaugeArc(vscore)}
+      </div>
+      <div class="cv-summary">${verdict.headline}</div>
+      ${signals.length ? `
+      <div class="sigs" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--rim);">
+        ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
+      </div>` : ''}
+    </div>` : `
+    <div style="padding:4px 20px 16px;">
+      <button class="gen-verdict-btn" onclick="generateVerdict('${ticker}')">
+        <div class="ai-orb" style="flex-shrink:0;margin-right:2px"></div>
+        Generate AI Verdict
+      </button>
+      <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:9px;">Powered by Claude · ~10 seconds</div>
+    </div>`}
 
   </div>
 
-  <!-- ── FINANCIALS TAB ── -->
+  <!-- ══ FINANCIALS TAB ══ -->
   <div class="tcontent ${tab==='financials'?'on':''}" id="tc-financials">
-    <div class="ratio-wrap" style="padding-top:22px;">
-      <div class="sec-lbl">Financial ratios</div>
-      <div class="rgrid">
-        ${Object.entries(ratios).map(([n,r])=>`
-          <div class="rcard">
-            <div class="rlbl">${n}</div>
-            <div class="rval ${rTG(r.c)}">${r.v}</div>
-            <div class="rctx ${rTG(r.c)}">${r.ctx}</div>
-          </div>`).join('')}
-      </div>
-    </div>
+    ${finSections.map(renderFinSection).join('')}
     ${hasVerdict && Object.keys(scores).length ? `
-    <div class="scores-wrap">
-      <div class="sec-lbl">Score breakdown</div>
+    <div class="fin-section" style="margin-top:8px;">
+      <div class="fin-section-lbl">AI Score breakdown</div>
       ${Object.entries(scores).map(([n,v])=>`
         <div class="score-item">
           <div class="score-top">
@@ -909,22 +1209,43 @@ function render(ticker, stockData, verdict) {
           </div>
           <div class="strack"><div class="sfill" style="width:${v*10}%;background:${scGrad(v)}"></div></div>
         </div>`).join('')}
-    </div>
-    <div class="overall-wrap">
-      <div class="ocard">
-        <div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;">Score</div>
-          <span class="onum ${scTG(vscore)}">${vscore}</span><span class="oden"> /10</span>
-        </div>
-        <div class="oright">
-          <div class="o-eye">Summary</div>
-          <div class="o-desc">${verdict?.summary || ''}</div>
+      <div class="overall-wrap" style="padding:14px 0 4px;">
+        <div class="ocard">
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;">Score</div>
+            <span class="onum ${scTG(vscore)}">${vscore}</span><span class="oden"> /10</span>
+          </div>
+          <div class="oright">
+            <div class="o-eye">Summary</div>
+            <div class="o-desc">${verdict?.summary || ''}</div>
+          </div>
         </div>
       </div>
     </div>` : ''}
+    ${hasVerdict ? `
+    <div class="fin-section" style="margin-top:4px;padding-bottom:8px;">
+      <div class="fin-section-lbl">AI Analysis</div>
+      <div class="insights" style="margin-bottom:14px;">
+        ${insights.map(ins => {
+          const borderMap = {green:'var(--gb)',amber:'var(--aa)',red:'var(--ra)',purple:'var(--pb)',blue:'var(--bb)'};
+          const gradMap   = {green:'linear-gradient(130deg,#5fffc0,#22d98a)',amber:'linear-gradient(130deg,#fbbf24,#d97706)',red:'linear-gradient(130deg,#ff8080,#ef4444)',purple:'linear-gradient(130deg,#c4b5fd,#8b5cf6)',blue:'linear-gradient(130deg,#93c5fd,#3b82f6)'};
+          return `<div class="insight-card" style="border-left-color:${borderMap[ins.color]||borderMap.purple}">
+            <div class="insight-icon-wrap">${ins.icon}</div>
+            <div class="insight-right">
+              <div class="insight-value" style="background:${gradMap[ins.color]||gradMap.purple};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${ins.value}</div>
+              <div class="insight-label">${ins.label}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="ai-row" style="margin-bottom:8px;"><div class="ai-orb"></div>Full verdict</div>
+      <div class="ai-headline">${verdict.headline}</div>
+      <div class="ai-body">${verdict.body}</div>
+    </div>` : ''}
+    <div style="height:8px;"></div>
   </div>
 
-  <!-- ── KEY FACTORS TAB ── -->
+  <!-- ══ KEY FACTORS TAB ══ -->
   <div class="tcontent ${tab==='factors'?'on':''}" id="tc-factors">
     <div class="factors-wrap" style="padding-top:22px;">
       ${factors.map(f=>`<div class="fi">
@@ -932,7 +1253,7 @@ function render(ticker, stockData, verdict) {
         <div><div class="fi-title">${f.title}</div><div class="fi-desc">${f.detail}</div></div>
       </div>`).join('')}
       ${!hasVerdict ? `<div style="margin-top:16px;padding:12px 14px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);border-radius:12px;font-size:12px;color:var(--t3);line-height:1.6;">
-        <span style="color:var(--pa);font-weight:600;">✦ AI Enhanced</span> — Generate AI Verdict for deeper sector analysis and live macro signals.
+        <span style="color:var(--pa);font-weight:600;">✦ AI Enhanced</span> — Generate AI Verdict for live macro signals and deeper sector analysis.
       </div>` : ''}
     </div>
   </div>
