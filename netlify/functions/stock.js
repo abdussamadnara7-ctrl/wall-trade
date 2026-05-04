@@ -758,23 +758,26 @@ exports.handler = async (event) => {
   try { payload = JSON.parse(event.body); }
   catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request' }) }; }
 
-  const { ticker, macroContext } = payload;
+  const { ticker, macroContext, priceOnly, stockData: cachedStockData } = payload;
 
   if (!ticker || typeof ticker !== 'string' || ticker.length > 10) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid ticker' }) };
   }
+  
+const cleanTicker = ticker.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-  const cleanTicker = ticker.toUpperCase().replace(/[^A-Z0-9]/g, '');
+const stockData = await getStockData(cleanTicker);
+if (!stockData) {
+  return {
+    statusCode: 404,
+    headers,
+    body: JSON.stringify({ error: `No data found for ${cleanTicker}. Supported tickers: OGDC, PPL, MARI, PSO, APL, HASCOL, HBL, MCB, UBL, NBP, ABL, BAFL, ENGROH, FFC, EFERT, LUCK, MLCF, CHCC, DGKC` })
+  };
+}
 
-  const stockData = await getStockData(cleanTicker);
-  if (!stockData) {
-    return {
-      statusCode: 404,
-      headers,
-      body: JSON.stringify({ error: `No data found for ${cleanTicker}. Supported tickers: OGDC, PPL, MARI, PSO, APL, HASCOL, HBL, MCB, UBL, NBP, ABL, BAFL, ENGROH, FFC, EFERT, LUCK, MLCF, CHCC, DGKC` })
-    };
-  }
-
+if (priceOnly) {
+  return { statusCode: 200, headers, body: JSON.stringify({ stockData, verdict: null }) };
+}
 const liveRatios = calculateLiveRatios(stockData.ticker, parseFloat(stockData.price) || 0);
 const stockDataWithRatios = { ...stockData, ...liveRatios };
 const verdict = await generateVerdict(stockDataWithRatios, macroContext);
