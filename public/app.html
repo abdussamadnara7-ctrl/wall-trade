@@ -782,8 +782,8 @@ function render(ticker, stockData, verdict) {
   const dir     = lp?.dir || stockData?.dir || 'up';
   const name    = stockData?.name || ticker;
   const sector  = stockData?.sector || 'Pakistan Stock Exchange';
-  const vtype   = verdict?.verdict || 'Neutral';
-  const vscore  = verdict?.score || 5;
+  const vtype  = verdict?.verdict || '';
+  const vscore = verdict?.score  || 0;
   const insights = verdict?.insights || [];
   const signals  = verdict?.signals || [];
   const scores   = verdict?.scores || {};
