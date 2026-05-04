@@ -511,6 +511,109 @@ body {
   margin-bottom: 3px;
 }
 .insight-label { font-size: 11px; color: var(--t2); line-height: 1.45; font-weight: 400; }
+/* ── GENERATE VERDICT BUTTON ── */
+.gen-verdict-btn {
+  width: 100%; padding: 15px; border-radius: 14px; border: none;
+  background: linear-gradient(130deg, var(--gb), var(--pb));
+  color: #fff; font-family: inherit; font-size: 14px; font-weight: 700;
+  cursor: pointer; letter-spacing: -0.01em;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  transition: opacity 0.15s;
+}
+.gen-verdict-btn:hover { opacity: 0.88; }
+.gen-verdict-btn:active { opacity: 0.75; }
+
+/* ── TRADE SECTION ── */
+.trade-section {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 0 20px 12px;
+  background: var(--bg2); border: 1px solid var(--rim);
+  border-radius: 14px; padding: 13px 16px;
+}
+.trade-title { font-size: 13px; font-weight: 600; color: var(--t1); letter-spacing: -0.01em; }
+.trade-sub   { font-size: 11px; color: var(--t3); margin-top: 2px; }
+.trade-btn {
+  background: linear-gradient(130deg, var(--gb), var(--pb));
+  color: #fff; border: none; border-radius: 10px;
+  padding: 9px 18px; font-family: inherit; font-size: 13px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; transition: opacity 0.15s;
+  letter-spacing: -0.01em;
+}
+.trade-btn:hover { opacity: 0.88; }
+.trade-btn:active { opacity: 0.75; }
+
+/* ── BROKER MODAL ── */
+.broker-modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.78); z-index: 500;
+  align-items: flex-end; justify-content: center;
+  backdrop-filter: blur(8px);
+}
+.broker-modal-overlay.on { display: flex; }
+.broker-sheet {
+  background: var(--bg1); border: 1px solid var(--rim2); border-bottom: none;
+  border-radius: 22px 22px 0 0; width: 100%; max-width: 430px;
+  padding-bottom: 44px; max-height: 70vh; overflow-y: auto;
+}
+.broker-sheet-bar { width: 32px; height: 3px; background: var(--rim2); border-radius: 2px; margin: 12px auto 18px; }
+.broker-sheet-head { padding: 0 20px 14px; border-bottom: 1px solid var(--rim); }
+.broker-sheet-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t3); margin-bottom: 5px; }
+.broker-sheet-ticker { font-size: 18px; font-weight: 700; letter-spacing: -0.03em; color: var(--t1); }
+.broker-sheet-sub { font-size: 11px; color: var(--t3); margin-top: 4px; line-height: 1.5; }
+.broker-list { padding: 12px 20px; display: flex; flex-direction: column; gap: 9px; }
+.broker-card {
+  background: var(--bg2); border: 1px solid var(--rim2);
+  border-radius: 14px; padding: 12px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; transition: background 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.broker-card:hover { background: var(--bg3); }
+.broker-card:active { background: var(--bg4); }
+.broker-card-l { display: flex; align-items: center; gap: 12px; }
+.broker-logo {
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; flex-shrink: 0;
+  border: 1px solid var(--rim2);
+}
+.broker-name { font-size: 14px; font-weight: 700; color: var(--t1); letter-spacing: -0.02em; }
+.broker-desc { font-size: 10px; color: var(--t3); margin-top: 2px; }
+.broker-arrow { font-size: 13px; color: var(--gb); font-weight: 600; }
+.broker-note {
+  margin: 0 20px 4px; padding: 10px 14px;
+  background: rgba(255,255,255,0.02); border: 1px solid var(--rim);
+  border-radius: 10px; font-size: 10px; color: var(--t3); line-height: 1.6;
+}
+
+/* ── BROKER IFRAME HOST ── */
+.broker-frame-host {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.92); z-index: 600;
+  flex-direction: column; align-items: center; justify-content: flex-end;
+}
+.broker-frame-host.on { display: flex; }
+.broker-frame-wrap {
+  width: 100%; max-width: 430px; height: 87vh;
+  background: var(--bg1); border-radius: 22px 22px 0 0;
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.broker-frame-bar {
+  padding: 11px 16px; display: flex; align-items: center;
+  justify-content: space-between; border-bottom: 1px solid var(--rim); flex-shrink: 0;
+}
+.broker-frame-name { display: flex; align-items: center; gap: 7px; }
+.broker-frame-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gb); animation: orb 2s infinite; }
+.broker-frame-title { font-size: 13px; font-weight: 700; color: var(--t1); }
+.broker-frame-via { font-size: 10px; color: var(--t3); }
+.broker-frame-close {
+  background: var(--bg3); border: 1px solid var(--rim2); border-radius: 8px;
+  color: var(--t2); font-size: 12px; padding: 6px 12px; cursor: pointer;
+  font-family: inherit; transition: background 0.12s;
+}
+.broker-frame-close:hover { background: var(--bg4); }
+.broker-frame-iframe { flex: 1; border: none; width: 100%; background: #fff; }
+
 </style>
 </head>
 <body>
@@ -611,20 +714,21 @@ let livePrices = {};      // live prices from prices.js
 
 // ── MACRO CONTEXT (static, updated periodically) ──────────
 const MACRO = [
-  "SBP Policy Rate: 11.50% — hiked 100bps April 27 2026. Ceiling 12.50%, Floor 10.50%. Next MPC June 2026. Hike was precautionary to anchor inflation amid Middle East energy shock. No rate reversal expected near term",
-  "Inflation: CPI 7.3% March 2026, core 7.8%. Heading to double digits in coming months. SBP target range 5-7% will be breached for most of FY27. Primary driver is Middle East conflict pushing energy prices higher",
-  "GDP: 3.8% growth first half FY26. Economy improving but expected to slow in Q4 FY26 due to Middle East spillover effects on industry and services",
-  "FX reserves: $15.8B as of April 24 2026. Target $18B by June 2026. Current account in surplus. Remittances strong at $41B annual run rate",
-  "IMF: Active EFF programme. $1.2B tranche pending IMF board approval on May 8 2026. Programme on track. Low slippage risk",
-  "Pakistan re-entered international capital markets after 4 year gap — strong macro credibility signal",
-  "Banking sector: near term NIM pressure from rate hike. Medium term positive as investment books reprice at higher yields over 3 to 6 months",
-  "Cement sector: most exposed to rate hike. Higher borrowing costs reduce construction activity and real estate demand. Cautious near term",
-  "E&P sector: insulated from rate hike. Revenues dollar linked to oil prices. Elevated oil prices are pure margin expansion for OGDC, PPL and MARI",
-  "Fertilizer sector: relatively insulated. Gas pricing stable. Government subsidy programmes provide buffer against rate hike impact on farmers",
-  "OMC sector: margin pressure. Higher oil means higher dollar import costs against rupee revenues",
-  "Iran-US tensions: elevated and unresolved. Backchannel diplomacy ongoing. No concrete breakthrough. Strait of Hormuz risk keeping global oil prices elevated",
-  "KSE-100: P/E at 7.4x — cheap versus regional peers. Market under pressure near term from rate hike but structural macro story intact",
-  "Key risks: inflation hitting double digits faster than expected, oil price further spike, IMF programme slippage, FY27 budget fiscal slippages, geopolitical escalation"
+  "SBP Policy Rate: 11.50% — hiked 100bps on April 27 2026. KIBOR 6M now at 11.9% above policy rate reflecting continued pressure. Next MPC June 2026. No rate reversal expected near term",
+  "Inflation: Back in double digits for first time in nearly two years as of May 2026. Rising energy costs and global oil volatility are primary drivers. SBP target range 5-7% significantly breached",
+  "Oil situation CRITICAL: Brent crude at elevated levels — live price injected separately. Arab Light at $105.2. US conveyed response to Iran 14-point peace proposal via Pakistan on May 4 2026. Trump announced US helping free ships in Strait of Hormuz. If Hormuz fully reopens oil could drop $20-30 per barrel overnight — massive positive for Pakistan",
+  "UAE exited OAPEC and OPEC+ on May 1 2026 to boost its own output. OPEC+ agreed third consecutive output hike of 188,000 bpd for June but largely on paper while Hormuz disrupted",
+  "KSE-100: 162,994 last close — down 2,829 points (-1.71%) on May 2 2026. Down 6.4% year to date. Market cap PKR 15.4 trillion. Broad based selling continues. P/E approximately 7.4x — cheap versus regional peers",
+  "Budget: National Assembly budget session called for June 1 2026. FY2026-27 budget to be presented same week. Next major domestic catalyst for markets",
+  "Cement sector: Regulators flagged deep-rooted cartelisation concerns spanning decades. Budget may include measures targeting sector. PM launched 5-year housing programme — 500,000 homes at PKR 3.2 trillion — medium term positive",
+  "Banking sector: KIBOR 6M at 11.9% above SBP policy rate. Banks repricing books in real time. Near term NIM pressure but medium term positive as investment books reprice at higher yields over 3 to 6 months",
+  "E&P sector IMPORTANT: Brent at elevated levels is fundamentally positive for OGDC PPL MARI dollar-linked revenues. BUT PSX market currently in risk-off mode selling E&Ps due to macro fears not earnings. Verdicts must reflect BOTH dimensions — strong fundamentals but negative near term PSX sentiment",
+  "Fertilizer sector: relatively insulated. Gas pricing stable. Government subsidy programmes provide buffer",
+  "OMC sector: margin pressure from elevated oil — higher dollar import costs against rupee revenues",
+  "FX reserves: $15.8B. Current account in surplus. Remittances strong at $41B annual run rate. IMF EFF programme active",
+  "PKR: 278.8 per USD — stable. Down only 0.5% year to date. SBP rate hike supportive of rupee",
+  "Key positive catalyst: Hormuz diplomatic resolution — would send oil sharply lower, ease inflation, restore rate cut expectations and trigger strong PSX rally across all sectors",
+  "Key risks: Hormuz closure duration, inflation hitting double digits faster than expected, further SBP rate hike, IMF programme slippage, FY27 budget fiscal slippages"
 ].join(". ");
 
 // ── COLOUR HELPERS ─────────────────────────────────────────
@@ -732,11 +836,16 @@ function render(ticker, stockData, verdict) {
           </div>
         </div>
         <div class="sc-sep"></div>
-        <div class="sc-bot">
-          <div class="ai-row"><div class="ai-orb"></div>AI verdict</div>
+        <div class="sc-bot" id="verdict-gate">
           ${verdict
-            ? `<div class="ai-headline">${verdict.headline}</div><div class="ai-body">${verdict.body}</div>`
-            : `<div class="ai-loading"><div class="spin"></div>Analysing ${ticker} with live Pakistan market data…</div>`}
+            ? `<div class="ai-row"><div class="ai-orb"></div>AI verdict</div>
+               <div class="ai-headline">${verdict.headline}</div>
+               <div class="ai-body">${verdict.body}</div>`
+            : `<button class="gen-verdict-btn" onclick="generateVerdict('${ticker}')">
+                 <div class="ai-orb" style="flex-shrink:0;margin-right:2px"></div>
+                 Generate AI Verdict
+               </button>
+               <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:9px;">Powered by Claude · ~10 seconds</div>`}
         </div>
       </div>
     </div>
@@ -805,6 +914,13 @@ function render(ticker, stockData, verdict) {
       <input class="ask-in" id="ask-in" type="text" placeholder="Ask anything about ${ticker}…"/>
       <button class="ask-btn" id="ask-btn" onclick="doAsk()">Ask</button>
     </div>
+  </div>
+  <div class="trade-section">
+    <div class="trade-text">
+      <div class="trade-title">Ready to trade?</div>
+      <div class="trade-sub">Open or access your account</div>
+    </div>
+    <button class="trade-btn" onclick="showTradeModal('${ticker}')">Trade →</button>
   </div>
   <div class="disc">Wall-Trade provides financial information and analysis for educational purposes only. Not investment advice. Not SECP registered. Signals (Positive / Neutral / Caution) are analytical indicators, not instructions to buy or sell.</div>
   `;
@@ -929,11 +1045,16 @@ function renderError(ticker, message) {
   </div>`;
 }
 
-// ── LOAD STOCK DYNAMICALLY ─────────────────────────────────
+// ── LOAD STOCK — PRICES ONLY, NO AUTO-VERDICT ─────────────
 async function loadStock(ticker) {
-  // Check cache first
+  // If cached with verdict, render immediately
   if (stockCache[ticker] && verdictCache[ticker]) {
     render(ticker, stockCache[ticker], verdictCache[ticker]);
+    return;
+  }
+  // If cached without verdict, render with generate button
+  if (stockCache[ticker]) {
+    render(ticker, stockCache[ticker], null);
     return;
   }
 
@@ -943,33 +1064,99 @@ async function loadStock(ticker) {
     const res = await fetch('/.netlify/functions/stock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker, macroContext: MACRO })
+      body: JSON.stringify({ ticker, macroContext: MACRO, priceOnly: true })
     });
 
-    if (res.status === 404) {
-      const err = await res.json();
-      renderError(ticker, err.error);
-      return;
-    }
-
+    if (res.status === 404) { const err = await res.json(); renderError(ticker, err.error); return; }
     if (!res.ok) throw new Error('Server error');
 
     const data = await res.json();
-    stockCache[ticker]  = data.stockData;
-    verdictCache[ticker] = data.verdict;
-    render(ticker, data.stockData, data.verdict);
+    stockCache[ticker] = data.stockData;
 
-    // Update pill with latest price
     if (data.stockData?.price) {
-      livePrices[ticker] = {
-        price:  data.stockData.price,
-        change: data.stockData.change,
-        dir:    data.stockData.dir
-      };
+      livePrices[ticker] = { price: data.stockData.price, change: data.stockData.change, dir: data.stockData.dir };
     }
+
+    // Render with no verdict — shows generate button
+    render(ticker, data.stockData, null);
+
   } catch(e) {
     renderError(ticker, 'Unable to connect. Please check your connection and try again.');
   }
+}
+
+// ── GENERATE AI VERDICT ON DEMAND ─────────────────────────
+async function generateVerdict(ticker) {
+  if (verdictCache[ticker]) {
+    render(ticker, stockCache[ticker], verdictCache[ticker]);
+    return;
+  }
+
+  const gate = document.getElementById('verdict-gate');
+  if (gate) {
+    gate.innerHTML = `<div class="ai-loading"><div class="spin"></div>Generating AI verdict for ${ticker}…</div>`;
+  }
+
+  // Build live commodity prefix to prepend to MACRO
+  const brent  = liveCommodities?.brent;
+  const gold   = liveCommodities?.gold;
+  const pkrusd = liveCommodities?.pkrusd;
+  const liveParts = [];
+  if (brent)  liveParts.push(`Brent Crude: $${brent.price} (${brent.change >= 0 ? '+' : ''}${brent.change}% today)`);
+  if (gold)   liveParts.push(`Gold: $${gold.price}`);
+  if (pkrusd) liveParts.push(`PKR/USD: ${pkrusd.rate}`);
+  const livePrefix = liveParts.length
+    ? `LIVE PRICES AS OF NOW: ${liveParts.join(' | ')}. `
+    : '';
+  const enrichedMacro = livePrefix + MACRO;
+
+  try {
+    const res = await fetch('/.netlify/functions/stock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticker, macroContext: enrichedMacro, stockData: stockCache[ticker] })
+    });
+    if (!res.ok) throw new Error('Server error');
+
+    const data = await res.json();
+    verdictCache[ticker] = data.verdict;
+    render(ticker, stockCache[ticker], data.verdict);
+
+  } catch(e) {
+    if (document.getElementById('verdict-gate')) {
+      document.getElementById('verdict-gate').innerHTML =
+        `<div style="color:var(--ra);font-size:13px;padding:12px 0">Could not generate verdict — please try again.</div>`;
+    }
+  }
+}
+
+// ── TRADE MODAL ───────────────────────────────────────────
+function showTradeModal(ticker) {
+  const t = ticker || cur;
+  const lp = livePrices[t];
+  const priceStr = lp ? ` · PKR ${lp.price}` : '';
+  document.getElementById('broker-sheet-ticker-lbl').textContent = t + priceStr;
+  document.getElementById('broker-modal-overlay').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTradeModal() {
+  document.getElementById('broker-modal-overlay').classList.remove('on');
+  document.body.style.overflow = '';
+}
+
+function selectBroker(name, url) {
+  closeTradeModal();
+  document.getElementById('broker-frame-title-lbl').textContent = name;
+  document.getElementById('broker-iframe').src = url;
+  document.getElementById('broker-frame-host').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeBrokerIframe() {
+  document.getElementById('broker-frame-host').classList.remove('on');
+  document.getElementById('broker-iframe').src = '';
+  document.body.style.overflow = '';
 }
 
 // ── ASK QUESTION ──────────────────────────────────────────
@@ -1138,6 +1325,8 @@ function select(ticker) {
 }
 
 // ── LIVE PRICES TICKER ─────────────────────────────────────
+let liveCommodities = {}; // brent, gold, pkrusd stored here
+
 async function fetchLivePrices() {
   try {
     const res = await fetch('/.netlify/functions/prices', {
@@ -1152,6 +1341,9 @@ async function fetchLivePrices() {
       updateTickerBar(data.prices, data.kse100, data.crypto);
       if (livePrices[cur]) renderLivePrice(cur);
     }
+    // Store live commodities for verdict injection
+    if (data.commodities) liveCommodities = data.commodities;
+    if (data.pkrusd)      liveCommodities.pkrusd = data.pkrusd;
   } catch(e) {}
 }
 
@@ -1506,5 +1698,45 @@ async function renderForexSection() {
   }
 }
 </script>
+<!-- ── BROKER MODAL ── -->
+<div class="broker-modal-overlay" id="broker-modal-overlay" onclick="if(event.target===this)closeTradeModal()">
+  <div class="broker-sheet">
+    <div class="broker-sheet-bar"></div>
+    <div class="broker-sheet-head">
+      <div class="broker-sheet-title">Trade this stock</div>
+      <div class="broker-sheet-ticker" id="broker-sheet-ticker-lbl">—</div>
+      <div class="broker-sheet-sub">Choose a brokerage. Existing users log in directly. New investor? Register in minutes.</div>
+    </div>
+    <div class="broker-list">
+      <div class="broker-card" onclick="selectBroker('K-Trade','https://ktradepk.com')">
+        <div class="broker-card-l">
+          <div class="broker-logo" style="background:rgba(30,80,220,0.1);color:#4d88ff;">KT</div>
+          <div>
+            <div class="broker-name">K-Trade</div>
+            <div class="broker-desc">KASB Securities · PSX Member · SECP Regulated</div>
+          </div>
+        </div>
+        <div class="broker-arrow">Trade →</div>
+      </div>
+    </div>
+    <div class="broker-note">💡 Wall-Trade earns a referral fee when you open a new account. All brokerages are SECP regulated PSX members. Not investment advice.</div>
+  </div>
+</div>
+
+<!-- ── BROKER IFRAME ── -->
+<div class="broker-frame-host" id="broker-frame-host">
+  <div class="broker-frame-wrap">
+    <div class="broker-frame-bar">
+      <div class="broker-frame-name">
+        <div class="broker-frame-dot"></div>
+        <span class="broker-frame-title" id="broker-frame-title-lbl">Broker</span>
+        <span class="broker-frame-via">via Wall-Trade</span>
+      </div>
+      <button class="broker-frame-close" onclick="closeBrokerIframe()">✕ Close</button>
+    </div>
+    <iframe class="broker-frame-iframe" id="broker-iframe" src="" allow="payment *"></iframe>
+  </div>
+</div>
+
 </body>
 </html>
