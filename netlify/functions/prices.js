@@ -1,91 +1,95 @@
 const https = require('https');
 const http = require('http');
 
-function get(url, ms = 10000) {
+const PROXY = 'http://188.166.245.128:3000';
+
+function getJson(url, ms = 8000) {
   return new Promise((resolve) => {
     const lib = url.startsWith('https') ? https : http;
     const timer = setTimeout(() => { console.log('TIMEOUT:', url); resolve(null); }, ms);
     lib.get(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'text/html,application/xhtml+xml,*/*',
+        'Accept': 'application/json, */*',
       }
     }, res => {
       let body = '';
       res.on('data', c => body += c);
       res.on('end', () => {
         clearTimeout(timer);
-        console.log(`${url.slice(0, 75)} → ${res.statusCode} len=${body.length}`);
-        resolve(body);
+        try { resolve(JSON.parse(body)); }
+        catch(e) { console.log('JSON parse error for', url); resolve(null); }
       });
     }).on('error', e => { clearTimeout(timer); console.log('ERR:', e.message); resolve(null); });
   });
 }
 
-function parsePSXData(html) {
-  if (!html) return { stocks: {}, kse100: null };
+// ── PSX LIVE PRICE via timeseries/int endpoint ────────────────
+async function getPSXPrice(ticker) {
   try {
-    // Extract the giant data object from the HTML
-    const match = html.match(/REG:\{(.+?)\},FUT:/s);
-    if (!match) { console.log('REG block not found'); return { stocks: {}, kse100: null }; }
-
-    const regBlock = match[1];
-    const stockMatches = regBlock.matchAll(/"?([A-Z0-9]+)"?:\{market:"REG",st:"OPN",symbol:"([A-Z0-9]+)",price:([\d.]+),change:([-\d.]+),changePercent:([-\d.]+),volume:(\d+)[^}]*\}/g);
-
-    const stocks = {};
-    for (const m of stockMatches) {
-      const symbol = m[2];
-      const price = parseFloat(m[3]);
-      const changeAmt = parseFloat(m[4]);
-      const changePct = parseFloat(m[5]);
-      const volume = m[6];
-      const changePctFinal = Math.abs(changePct) < 1.0 ? changePct * 100 : changePct;
-
-      stocks[symbol] = {
-        price:     price.toFixed(2),
-        change:    changePctFinal.toFixed(2),
-        changeAmt: changeAmt.toFixed(2),
-        volume:    volume,
-        dir:       changePctFinal >= 0 ? 'up' : 'dn',
-        currency:  'PKR'
-      };
-    }
-
-    // Extract KSE100
-    const kse100Match = html.match(/KSE100:\{market:"IDX"[^}]*price:([\d.]+),change:([-\d.]+),changePercent:([-\d.]+)/);
-    let kse100 = null;
-    if (kse100Match) {
-      const price = parseFloat(kse100Match[1]);
-      const changePct = parseFloat(kse100Match[3]);
-      const changePctFinal = Math.abs(changePct) < 1.0 ? changePct * 100 : changePct;
-      kse100 = {
-        price:  Math.round(price).toLocaleString(),
-        raw:    Math.round(price),
-        change: changePctFinal.toFixed(2),
-        dir:    changePctFinal >= 0 ? 'up' : 'dn'
-      };
-    }
-
-    console.log(`Parsed ${Object.keys(stocks).length} stocks from proxy`);
-    return { stocks, kse100 };
+    const data = await getJson(`${PROXY}/timeseries/int/${ticker}`, 8000);
+    if (!data?.data?.length) return null;
+    // data.data is array of [timestamp, price, volume] sorted newest first
+    const latest = data.data[0];
+    const price = parseFloat(latest[1]);
+    if (!price || price <= 0) return null;
+    // Calculate change from oldest price today
+    const oldest = data.data[data.data.length - 1];
+    const openPrice = parseFloat(oldest[1]);
+    const changeAmt = price - openPrice;
+    const changePct = openPrice > 0 ? (changeAmt / openPrice) * 100 : 0;
+    return {
+      price:     price.toFixed(2),
+      change:    changePct.toFixed(2),
+      changeAmt: changeAmt.toFixed(2),
+      volume:    latest[2]?.toString() || '0',
+      dir:       changePct >= 0 ? 'up' : 'dn',
+      currency:  'PKR'
+    };
   } catch(e) {
-    console.log('Parse error:', e.message);
-    return { stocks: {}, kse100: null };
+    console.log(`PSX error for ${ticker}:`, e.message);
+    return null;
   }
 }
 
-// FMP helpers unchanged
-function getJson(url, ms = 8000) {
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve(null), ms);
-    https.get(url, { headers: { 'User-Agent': 'WallTrade/1.0' } }, res => {
-      let body = '';
-      res.on('data', c => body += c);
-      res.on('end', () => { clearTimeout(timer); try { resolve(JSON.parse(body)); } catch(e) { resolve(null); } });
-    }).on('error', () => { clearTimeout(timer); resolve(null); });
+async function getPSXPrices(tickers) {
+  const results = {};
+  // Fetch all tickers in parallel
+  const fetches = await Promise.all(
+    tickers.map(ticker =>
+      getPSXPrice(ticker).then(data => ({ ticker, data }))
+    )
+  );
+  fetches.forEach(({ ticker, data }) => {
+    if (data) results[ticker] = data;
   });
+  console.log(`PSX prices: ${Object.keys(results).length}/${tickers.length} — ${Object.keys(results).join(',')}`);
+  return results;
 }
 
+// ── KSE-100 INDEX ─────────────────────────────────────────────
+async function getKSE100() {
+  try {
+    const data = await getJson(`${PROXY}/timeseries/int/KSE100`, 8000);
+    if (!data?.data?.length) return null;
+    const latest = data.data[0];
+    const price = parseFloat(latest[1]);
+    const oldest = data.data[data.data.length - 1];
+    const openPrice = parseFloat(oldest[1]);
+    const changePct = openPrice > 0 ? ((price - openPrice) / openPrice) * 100 : 0;
+    return {
+      price:  Math.round(price).toLocaleString(),
+      raw:    Math.round(price),
+      change: changePct.toFixed(2),
+      dir:    changePct >= 0 ? 'up' : 'dn'
+    };
+  } catch(e) {
+    console.log('KSE100 error:', e.message);
+    return null;
+  }
+}
+
+// ── FMP HELPERS ───────────────────────────────────────────────
 async function getCommodities(key) {
   if (!key) return {};
   const results = {};
@@ -151,18 +155,18 @@ async function getCrypto(key) {
     if (q?.price != null && parseFloat(q.price) > 0) {
       const change = parseFloat(q.changesPercentage ?? 0);
       results.push({
-        symbol: sym.replace('USD', ''),
-        price:  parseFloat(q.price).toFixed(2),
-        change: change.toFixed(2),
+        symbol:   sym.replace('USD', ''),
+        price:    parseFloat(q.price).toFixed(2),
+        change:   change.toFixed(2),
         change24h: (change >= 0 ? '+' : '') + change.toFixed(2) + '%',
-        dir:    change >= 0 ? 'up' : 'dn'
+        dir:      change >= 0 ? 'up' : 'dn'
       });
     }
   });
   return results;
 }
 
-// ── MAIN HANDLER ─────────────────────────────────────────────
+// ── MAIN HANDLER ──────────────────────────────────────────────
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin':  '*',
@@ -187,24 +191,15 @@ exports.handler = async (event) => {
 
   const requestedTickers = (payload.tickers || ALLOWED).filter(t => ALLOWED.includes(t));
 
-  // Fetch everything in parallel
-  const [html, commodities, pkrusd, sp500, crypto] = await Promise.all([
-    get('http://188.166.245.128:3000/'),
+  // Fetch PSX prices and KSE100 and all other data in parallel
+  const [psxPrices, kse100, commodities, pkrusd, sp500, crypto] = await Promise.all([
+    getPSXPrices(requestedTickers),
+    getKSE100(),
     getCommodities(key),
     getPKRUSD(key),
     getSP500(key),
     getCrypto(key)
   ]);
-
-  const { stocks: allStocks, kse100 } = parsePSXData(html);
-
-  // Filter to only requested tickers
-  const psxPrices = {};
-  requestedTickers.forEach(ticker => {
-    if (allStocks[ticker]) psxPrices[ticker] = allStocks[ticker];
-  });
-
-  console.log(`PSX prices: ${Object.keys(psxPrices).length}/${requestedTickers.length}`);
 
   return {
     statusCode: 200,
