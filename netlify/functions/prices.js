@@ -1,13 +1,14 @@
 const https = require('https');
+const http = require('http');
 
-// ── HELPERS ────────────────────────────────────────────────────
-function get(url, extraHeaders = {}, ms = 8000) {
+function get(url, ms = 10000) {
   return new Promise((resolve) => {
-    const timer = setTimeout(() => { console.log('TIMEOUT:', url.slice(0, 70)); resolve(null); }, ms);
-    const req = https.get(url, {
+    const lib = url.startsWith('https') ? https : http;
+    const timer = setTimeout(() => { console.log('TIMEOUT:', url); resolve(null); }, ms);
+    lib.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; WallTrade/1.0)',
-        ...extraHeaders
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html,application/xhtml+xml,*/*',
       }
     }, res => {
       let body = '';
@@ -15,206 +16,153 @@ function get(url, extraHeaders = {}, ms = 8000) {
       res.on('end', () => {
         clearTimeout(timer);
         console.log(`${url.slice(0, 75)} → ${res.statusCode} len=${body.length}`);
-        try { resolve(JSON.parse(body)); } catch(e) { resolve(null); }
+        resolve(body);
       });
-    });
-    req.on('error', e => { clearTimeout(timer); console.log('ERR:', e.message); resolve(null); });
+    }).on('error', e => { clearTimeout(timer); console.log('ERR:', e.message); resolve(null); });
   });
 }
 
-const PSX_HEADERS = {
-  'Origin':  'https://psxterminal.com',
-  'Referer': 'https://psxterminal.com/',
-  'Accept':  'application/json, text/plain, */*',
-  'Accept-Language': 'en-US,en;q=0.9',
-};
+function parsePSXData(html) {
+  if (!html) return { stocks: {}, kse100: null };
+  try {
+    // Extract the giant data object from the HTML
+    const match = html.match(/REG:\{(.+?)\},FUT:/s);
+    if (!match) { console.log('REG block not found'); return { stocks: {}, kse100: null }; }
 
-// ── PSX STOCK PRICES ───────────────────────────────────────────
-async function getPSXPrices(tickers) {
-  const results = {};
-  const BATCH = 5;
+    const regBlock = match[1];
+    const stockMatches = regBlock.matchAll(/"?([A-Z0-9]+)"?:\{market:"REG",st:"OPN",symbol:"([A-Z0-9]+)",price:([\d.]+),change:([-\d.]+),changePercent:([-\d.]+),volume:(\d+)[^}]*\}/g);
 
-  for (let i = 0; i < tickers.length; i += BATCH) {
-    const batch = tickers.slice(i, i + BATCH);
-    const fetches = batch.map(ticker =>
-      get(`https://psxterminal.com/api/ticks/REG/${ticker}`, PSX_HEADERS, 5000)
-        .then(data => ({ ticker, data }))
-    );
-    const responses = await Promise.allSettled(fetches);
+    const stocks = {};
+    for (const m of stockMatches) {
+      const symbol = m[2];
+      const price = parseFloat(m[3]);
+      const changeAmt = parseFloat(m[4]);
+      const changePct = parseFloat(m[5]);
+      const volume = m[6];
+      const changePctFinal = Math.abs(changePct) < 1.0 ? changePct * 100 : changePct;
 
-    responses.forEach(r => {
-      if (r.status !== 'fulfilled') return;
-      const { ticker, data } = r.value;
-      if (!data) return;
-
-      const d = data?.data ?? data;
-      const price = d?.price ?? d?.last ?? d?.close;
-      if (!price || isNaN(parseFloat(price))) return;
-
-      const open = parseFloat(d.open ?? price);
-      let change;
-      if (d.changePercent != null) {
-        const raw = parseFloat(d.changePercent);
-        change = Math.abs(raw) < 1.0 ? raw * 100 : raw;
-      } else {
-        change = open ? ((parseFloat(price) - open) / open * 100) : 0;
-      }
-
-      results[ticker] = {
-        price:     parseFloat(price).toFixed(2),
-        change:    change.toFixed(2),
-        changeAmt: (parseFloat(price) - open).toFixed(2),
-        high:      d.high   ? parseFloat(d.high).toFixed(2)  : null,
-        low:       d.low    ? parseFloat(d.low).toFixed(2)   : null,
-        volume:    d.volume ? String(d.volume) : null,
-        dir:       change >= 0 ? 'up' : 'dn',
+      stocks[symbol] = {
+        price:     price.toFixed(2),
+        change:    changePctFinal.toFixed(2),
+        changeAmt: changeAmt.toFixed(2),
+        volume:    volume,
+        dir:       changePctFinal >= 0 ? 'up' : 'dn',
         currency:  'PKR'
       };
-    });
-
-    if (i + BATCH < tickers.length) {
-      await new Promise(r => setTimeout(r, 200));
     }
+
+    // Extract KSE100
+    const kse100Match = html.match(/KSE100:\{market:"IDX"[^}]*price:([\d.]+),change:([-\d.]+),changePercent:([-\d.]+)/);
+    let kse100 = null;
+    if (kse100Match) {
+      const price = parseFloat(kse100Match[1]);
+      const changePct = parseFloat(kse100Match[3]);
+      const changePctFinal = Math.abs(changePct) < 1.0 ? changePct * 100 : changePct;
+      kse100 = {
+        price:  Math.round(price).toLocaleString(),
+        raw:    Math.round(price),
+        change: changePctFinal.toFixed(2),
+        dir:    changePctFinal >= 0 ? 'up' : 'dn'
+      };
+    }
+
+    console.log(`Parsed ${Object.keys(stocks).length} stocks from proxy`);
+    return { stocks, kse100 };
+  } catch(e) {
+    console.log('Parse error:', e.message);
+    return { stocks: {}, kse100: null };
   }
-
-  console.log(`PSX prices: ${Object.keys(results).length}/${tickers.length} — ${Object.keys(results).join(',')}`);
-  return results;
 }
 
-// ── KSE-100 INDEX ──────────────────────────────────────────────
-async function getKSE100() {
-  try {
-    const data = await get('https://psxterminal.com/api/ticks/IDX/KSE100', PSX_HEADERS, 5000);
-    const d = data?.data ?? data;
-    const price = d?.price ?? d?.last ?? d?.close;
-    if (!price || Number(price) < 10000) return null;
-
-    let change;
-    if (d.changePercent != null) {
-      const raw = parseFloat(d.changePercent);
-      change = Math.abs(raw) < 1.0 ? raw * 100 : raw;
-    } else {
-      const open = parseFloat(d.open ?? price);
-      change = open ? ((parseFloat(price) - open) / open * 100) : 0;
-    }
-
-    return {
-      price:  Math.round(parseFloat(price)).toLocaleString(),
-      raw:    Math.round(parseFloat(price)),
-      change: change.toFixed(2),
-      dir:    change >= 0 ? 'up' : 'dn'
-    };
-  } catch(e) { return null; }
+// FMP helpers unchanged
+function getJson(url, ms = 8000) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), ms);
+    https.get(url, { headers: { 'User-Agent': 'WallTrade/1.0' } }, res => {
+      let body = '';
+      res.on('data', c => body += c);
+      res.on('end', () => { clearTimeout(timer); try { resolve(JSON.parse(body)); } catch(e) { resolve(null); } });
+    }).on('error', () => { clearTimeout(timer); resolve(null); });
+  });
 }
 
-// ── COMMODITIES: BRENT + GOLD — FMP individual quotes ─────────
-// batch-commodity-quotes returns 402 on Starter plan
-// Individual /stable/quote confirmed working (same as crypto)
-// Try multiple symbols since FMP naming varies
 async function getCommodities(key) {
   if (!key) return {};
   const results = {};
-
-  // Try symbol variants in order — stop at first success
   const BRENT_SYMBOLS = ['BZUSD', 'OUSX', 'CLUSD', 'WTIUSD'];
   const GOLD_SYMBOLS  = ['GCUSD', 'XAUUSD', 'GOLDUSD'];
-
-  // Fetch all candidates in parallel
   const allSymbols = [...BRENT_SYMBOLS, ...GOLD_SYMBOLS];
   const fetches = await Promise.all(
     allSymbols.map(sym =>
-      get(`https://financialmodelingprep.com/stable/quote?symbol=${sym}&apikey=${key}`, {}, 6000)
+      getJson(`https://financialmodelingprep.com/stable/quote?symbol=${sym}&apikey=${key}`, 6000)
         .then(d => ({ sym, q: Array.isArray(d) ? d[0] : null }))
     )
   );
-
-  // Find first working Brent symbol
   for (const sym of BRENT_SYMBOLS) {
-    const match = fetches.find(f => f.sym === sym);
-    const q = match?.q;
+    const q = fetches.find(f => f.sym === sym)?.q;
     if (q?.price && parseFloat(q.price) > 30 && parseFloat(q.price) < 200) {
       const chg = parseFloat(q.changesPercentage ?? 0);
       results.brent = { price: parseFloat(q.price).toFixed(2), change: chg.toFixed(2), dir: chg >= 0 ? 'up' : 'dn' };
-      console.log(`Brent (FMP ${sym}): $${q.price}`);
       break;
     }
   }
-
-  // Find first working Gold symbol
   for (const sym of GOLD_SYMBOLS) {
-    const match = fetches.find(f => f.sym === sym);
-    const q = match?.q;
+    const q = fetches.find(f => f.sym === sym)?.q;
     if (q?.price && parseFloat(q.price) > 1000 && parseFloat(q.price) < 5000) {
       const chg = parseFloat(q.changesPercentage ?? 0);
       results.gold = { price: Math.round(parseFloat(q.price)).toString(), change: chg.toFixed(2), dir: chg >= 0 ? 'up' : 'dn' };
-      console.log(`Gold (FMP ${sym}): $${q.price}`);
       break;
     }
   }
-
-  console.log('Commodities result:', JSON.stringify(results));
   return results;
 }
 
-// ── PKR/USD — FMP individual quote (confirmed 200) ─────────────
 async function getPKRUSD(key) {
   if (!key) return null;
   try {
-    const data = await get(`https://financialmodelingprep.com/stable/quote?symbol=USDPKR&apikey=${key}`);
+    const data = await getJson(`https://financialmodelingprep.com/stable/quote?symbol=USDPKR&apikey=${key}`);
     const q = Array.isArray(data) ? data[0] : null;
     if (q?.price) return { rate: parseFloat(q.price).toFixed(2) };
   } catch(e) {}
   return null;
 }
 
-// ── S&P 500 — FMP individual quote (confirmed 200) ─────────────
 async function getSP500(key) {
   if (!key) return null;
   try {
-    const data = await get(`https://financialmodelingprep.com/stable/quote?symbol=SPY&apikey=${key}`);
+    const data = await getJson(`https://financialmodelingprep.com/stable/quote?symbol=SPY&apikey=${key}`);
     const q = Array.isArray(data) ? data[0] : null;
     if (!q?.price) return null;
-    return {
-      price:  parseFloat(q.price).toFixed(2),
-      change: parseFloat(q.changesPercentage ?? 0).toFixed(2)
-    };
+    return { price: parseFloat(q.price).toFixed(2), change: parseFloat(q.changesPercentage ?? 0).toFixed(2) };
   } catch(e) { return null; }
 }
 
-// ── CRYPTO — FMP individual quotes (confirmed 200 in logs) ─────
-// batch-crypto-quotes returns 402 on Starter plan — individual quotes work fine
 async function getCrypto(key) {
   if (!key) return [];
-
-  const WANT = ['BTCUSD', 'ETHUSD', 'SOLUSD', 'XRPUSD', 'BNBUSD', 'ADAUSD', 'AVAXUSD', 'DOTUSD', 'MATICUSD', 'LINKUSD'];
-
+  const WANT = ['BTCUSD','ETHUSD','SOLUSD','XRPUSD','BNBUSD','ADAUSD','AVAXUSD','DOTUSD','MATICUSD','LINKUSD'];
   const individual = await Promise.all(
     WANT.map(sym =>
-      get(`https://financialmodelingprep.com/stable/quote?symbol=${sym}&apikey=${key}`, {}, 6000)
+      getJson(`https://financialmodelingprep.com/stable/quote?symbol=${sym}&apikey=${key}`, 6000)
         .then(d => ({ sym, q: Array.isArray(d) ? d[0] : null }))
     )
   );
-
   const results = [];
   individual.forEach(({ sym, q }) => {
     if (q?.price != null && parseFloat(q.price) > 0) {
       const change = parseFloat(q.changesPercentage ?? 0);
       results.push({
-        symbol:    sym.replace('USD', ''),
-        price:     parseFloat(q.price).toFixed(2),
-        change:    change.toFixed(2),
+        symbol: sym.replace('USD', ''),
+        price:  parseFloat(q.price).toFixed(2),
+        change: change.toFixed(2),
         change24h: (change >= 0 ? '+' : '') + change.toFixed(2) + '%',
-        dir:       change >= 0 ? 'up' : 'dn'
+        dir:    change >= 0 ? 'up' : 'dn'
       });
-      console.log(`Crypto ${sym}: $${q.price}`);
     }
   });
-
-  console.log(`Crypto result: ${results.map(c => c.symbol).join(',')}`);
   return results;
 }
 
-// ── MAIN HANDLER ──────────────────────────────────────────────
+// ── MAIN HANDLER ─────────────────────────────────────────────
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin':  '*',
@@ -239,17 +187,24 @@ exports.handler = async (event) => {
 
   const requestedTickers = (payload.tickers || ALLOWED).filter(t => ALLOWED.includes(t));
 
-  const [psxPrices, kse100] = await Promise.all([
-    getPSXPrices(requestedTickers),
-    getKSE100()
-  ]);
-
-  const [commodities, pkrusd, sp500, crypto] = await Promise.all([
-    getCommodities(key),  // FMP individual quotes
+  // Fetch everything in parallel
+  const [html, commodities, pkrusd, sp500, crypto] = await Promise.all([
+    get('http://188.166.245.128:3000/'),
+    getCommodities(key),
     getPKRUSD(key),
     getSP500(key),
     getCrypto(key)
   ]);
+
+  const { stocks: allStocks, kse100 } = parsePSXData(html);
+
+  // Filter to only requested tickers
+  const psxPrices = {};
+  requestedTickers.forEach(ticker => {
+    if (allStocks[ticker]) psxPrices[ticker] = allStocks[ticker];
+  });
+
+  console.log(`PSX prices: ${Object.keys(psxPrices).length}/${requestedTickers.length}`);
 
   return {
     statusCode: 200,
