@@ -1507,13 +1507,14 @@ async function loadStock(ticker) {
   // If cached with verdict, render immediately
   if (stockCache[ticker] && verdictCache[ticker]) {
     render(ticker, stockCache[ticker], verdictCache[ticker]);
+    if (livePrices[ticker]) renderLivePrice(ticker);
     return;
-  }
-  // If cached without verdict, render with generate button
-  if (stockCache[ticker]) {
+}
+if (stockCache[ticker]) {
     render(ticker, stockCache[ticker], null);
+    if (livePrices[ticker]) renderLivePrice(ticker);
     return;
-  }
+}
 
   renderLoading(ticker);
 
@@ -1536,6 +1537,7 @@ async function loadStock(ticker) {
 
     // Render with no verdict — shows generate button
     render(ticker, data.stockData, null);
+if (livePrices[ticker]) renderLivePrice(ticker);
 
   } catch(e) {
     renderError(ticker, 'Unable to connect. Please check your connection and try again.');
