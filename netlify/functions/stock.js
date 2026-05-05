@@ -578,7 +578,7 @@ Price: PKR ${stockData.price ?? '—'} (${stockData.change ?? '—'}% today)
 
 ${sectorBlock}
 
-COMPANY ANALYSIS:
+MICRO INTELLIGENCE (from quarterly reports — use this to inform your analysis, do not just rephrase it):
 ${stockData.aiSummary || ''}
 
 PAKISTAN MACRO CONTEXT:
