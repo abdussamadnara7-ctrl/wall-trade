@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wall-Trade Admin</title>
+<style>
+:root {
+  --bg: #07090A;
+  --bg2: #0E1214;
+  --bg3: #161B1E;
+  --green: #00E5A0;
+  --green-dim: rgba(0,229,160,0.08);
+  --border: rgba(255,255,255,0.07);
+  --border-g: rgba(0,229,160,0.2);
+  --t1: #F0F4F3;
+  --t2: rgba(240,244,243,0.6);
+  --t3: rgba(240,244,243,0.35);
+  --red: #FF4560;
+  --amber: #FFB020;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--t1);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.logo {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--green);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.logo span { color: var(--t3); }
+
+.title {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--t3);
+  text-transform: uppercase;
+  margin-bottom: 48px;
+}
+
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 480px;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+/* Password gate */
+.pw-input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: var(--t1);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 12px;
+}
+
+.pw-input:focus { border-color: var(--border-g); }
+.pw-input::placeholder { color: var(--t3); }
+
+.btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 10px;
+  border: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-primary {
+  background: var(--green);
+  color: #07090A;
+}
+
+.btn-primary:hover { opacity: 0.88; }
+.btn-primary:active { opacity: 0.75; transform: scale(0.99); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--t2);
+  border: 1px solid var(--border);
+  margin-top: 8px;
+}
+
+.btn-secondary:hover { border-color: var(--border-g); color: var(--t1); }
+
+/* Upload zone */
+.drop-zone {
+  border: 1px dashed var(--border-g);
+  border-radius: 12px;
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+  background: var(--green-dim);
+  position: relative;
+}
+
+.drop-zone:hover, .drop-zone.drag { 
+  border-color: var(--green); 
+  background: rgba(0,229,160,0.12);
+}
+
+.drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.drop-icon { font-size: 28px; margin-bottom: 10px; }
+
+.drop-label {
+  font-size: 12px;
+  color: var(--t2);
+  line-height: 1.6;
+}
+
+.drop-label strong { color: var(--green); }
+
+.file-preview {
+  display: none;
+  background: var(--bg3);
+  border: 1px solid var(--border-g);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--t2);
+  align-items: center;
+  gap: 10px;
+}
+
+.file-preview.on { display: flex; }
+.file-preview-icon { font-size: 20px; flex-shrink: 0; }
+.file-preview-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-preview-remove { color: var(--red); cursor: pointer; font-size: 16px; flex-shrink: 0; }
+
+/* Text input */
+.text-area {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  color: var(--t1);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  min-height: 120px;
+  transition: border-color 0.2s;
+  margin-bottom: 16px;
+}
+
+.text-area:focus { border-color: var(--border-g); }
+.text-area::placeholder { color: var(--t3); }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg3);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--t3);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab.on {
+  background: var(--bg2);
+  color: var(--green);
+  border: 1px solid var(--border-g);
+}
+
+/* Status */
+.status {
+  display: none;
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+
+.status.on { display: block; }
+.status.loading { background: rgba(0,229,160,0.06); border: 1px solid var(--border-g); color: var(--t2); }
+.status.success { background: rgba(0,229,160,0.08); border: 1px solid var(--border-g); color: var(--green); }
+.status.error   { background: rgba(255,69,96,0.08); border: 1px solid rgba(255,69,96,0.2); color: var(--red); }
+
+.spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--border-g);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Result preview */
+.result-wrap {
+  display: none;
+  margin-top: 16px;
+}
+
+.result-wrap.on { display: block; }
+
+.result-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin-bottom: 8px;
+}
+
+.result-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 11px;
+  color: var(--t2);
+  line-height: 1.7;
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Gate */
+#gate, #main { transition: opacity 0.3s; }
+#main { display: none; }
+
+.version-tag {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  font-size: 9px;
+  color: var(--t3);
+  letter-spacing: 0.08em;
+}
+</style>
+</head>
+<body>
+
+<div class="logo">Wall<span>-Trade</span></div>
+<div class="title">Admin Console · Macro Update</div>
+
+<!-- PASSWORD GATE -->
+<div id="gate">
+  <div class="card">
+    <div class="card-title">Authentication Required</div>
+    <input class="pw-input" type="password" id="pw-input" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')checkPw()"/>
+    <button class="btn btn-primary" onclick="checkPw()">Access Console</button>
+  </div>
+</div>
+
+<!-- MAIN CONSOLE -->
+<div id="main">
+
+  <!-- MACRO UPDATE CARD -->
+  <div class="card">
+    <div class="card-title">Daily Macro Context Update</div>
+
+    <div class="tabs">
+      <div class="tab on" id="tab-file" onclick="setTab('file')">File / Image</div>
+      <div class="tab" id="tab-text" onclick="setTab('text')">Paste Text</div>
+    </div>
+
+    <!-- File upload -->
+    <div id="panel-file">
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.webp" onchange="handleFile(this.files[0])"/>
+        <div class="drop-icon">📄</div>
+        <div class="drop-label">
+          <strong>Tap to upload</strong> or drag & drop<br>
+          PDF · PNG · JPG · WEBP
+        </div>
+      </div>
+      <div class="file-preview" id="file-preview">
+        <span class="file-preview-icon" id="file-icon">📄</span>
+        <span class="file-preview-name" id="file-name"></span>
+        <span class="file-preview-remove" onclick="clearFile()">✕</span>
+      </div>
+    </div>
+
+    <!-- Text paste -->
+    <div id="panel-text" style="display:none;">
+      <textarea class="text-area" id="text-input" placeholder="Paste morning brief text here — KSE-100 levels, SBP rate, oil prices, market commentary..."></textarea>
+    </div>
+
+    <button class="btn btn-primary" id="extract-btn" onclick="extractMacro()" disabled>
+      Extract & Update Macro
+    </button>
+
+    <div class="status" id="status"></div>
+
+    <div class="result-wrap" id="result-wrap">
+      <div class="result-label">Extracted Macro Context</div>
+      <div class="result-box" id="result-box"></div>
+    </div>
+  </div>
+
+  <!-- CURRENT MACRO CARD -->
+  <div class="card">
+    <div class="card-title">Current Live Macro</div>
+    <div class="result-box" id="current-macro" style="max-height:160px;">Loading...</div>
+  </div>
+
+</div>
+
+<div class="version-tag">WT-ADMIN v1.0</div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────────
+const ADMIN_PASSWORD = 'ASNXSTOCKKING777'; // change this
+const SUPABASE_URL   = 'https://kctfrhxtligaqxdhbevq.supabase.co';
+const SUPABASE_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5YW9hbXlxbXR6a2Z6aHZkbm9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NzQ5NjIsImV4cCI6MjA4ODM1MDk2Mn0.SBr5YC0_drekGBoVfkq7DpKNyTK-a_CxA-qATEqkPp4';
+
+// ── AUTH ───────────────────────────────────────────────────────
+function checkPw() {
+  const val = document.getElementById('pw-input').value.trim();
+  if (val === ADMIN_PASSWORD) {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('main').style.display = 'block';
+    loadCurrentMacro();
+  } else {
+    document.getElementById('pw-input').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('pw-input').style.borderColor = '', 1000);
+  }
+}
+
+// ── TABS ───────────────────────────────────────────────────────
+let currentTab = 'file';
+function setTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-file').classList.toggle('on', tab === 'file');
+  document.getElementById('tab-text').classList.toggle('on', tab === 'text');
+  document.getElementById('panel-file').style.display = tab === 'file' ? 'block' : 'none';
+  document.getElementById('panel-text').style.display = tab === 'text' ? 'block' : 'none';
+  checkReady();
+}
+
+// ── FILE HANDLING ──────────────────────────────────────────────
+let selectedFile = null;
+
+function handleFile(file) {
+  if (!file) return;
+  selectedFile = file;
+  const icon = file.type.includes('pdf') ? '📄' : '🖼️';
+  document.getElementById('file-icon').textContent = icon;
+  document.getElementById('file-name').textContent = file.name;
+  document.getElementById('file-preview').classList.add('on');
+  document.getElementById('drop-zone').style.display = 'none';
+  checkReady();
+}
+
+function clearFile() {
+  selectedFile = null;
+  document.getElementById('file-input').value = '';
+  document.getElementById('file-preview').classList.remove('on');
+  document.getElementById('drop-zone').style.display = 'block';
+  checkReady();
+}
+
+// Drag and drop
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+
+// Text input listener
+document.getElementById('text-input').addEventListener('input', checkReady);
+
+function checkReady() {
+  const hasFile = currentTab === 'file' && selectedFile;
+  const hasText = currentTab === 'text' && document.getElementById('text-input').value.trim().length > 20;
+  document.getElementById('extract-btn').disabled = !(hasFile || hasText);
+}
+
+// ── EXTRACT MACRO ──────────────────────────────────────────────
+async function extractMacro() {
+  setStatus('loading', '<span class="spinner"></span> Sending to Claude for extraction...');
+  document.getElementById('extract-btn').disabled = true;
+  document.getElementById('result-wrap').classList.remove('on');
+
+  try {
+    let body;
+
+    if (currentTab === 'file' && selectedFile) {
+      // Convert file to base64
+      const base64 = await fileToBase64(selectedFile);
+      body = JSON.stringify({
+        type:      selectedFile.type.includes('pdf') ? 'pdf' : 'image',
+        mediaType: selectedFile.type,
+        data:      base64,
+      });
+    } else {
+      // Plain text
+      body = JSON.stringify({
+        type: 'text',
+        text: document.getElementById('text-input').value.trim(),
+      });
+    }
+
+    const res = await fetch('/.netlify/functions/macro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Server error');
+
+    setStatus('success', '✓ Macro context updated successfully. All new verdicts will use today\'s brief.');
+    document.getElementById('result-box').textContent = data.macro;
+    document.getElementById('result-wrap').classList.add('on');
+    loadCurrentMacro();
+
+  } catch(e) {
+    setStatus('error', '✕ Error: ' + e.message);
+  }
+
+  document.getElementById('extract-btn').disabled = false;
+}
+
+// ── LOAD CURRENT MACRO ─────────────────────────────────────────
+async function loadCurrentMacro() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/macro?select=content,updated_at&order=updated_at.desc&limit=1`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+      }
+    });
+    const data = await res.json();
+    if (data?.[0]?.content) {
+      const d = new Date(data[0].updated_at);
+      const label = `Last updated: ${d.toLocaleDateString('en-PK')} ${d.toLocaleTimeString('en-PK')}\n\n`;
+      document.getElementById('current-macro').textContent = label + data[0].content;
+    } else {
+      document.getElementById('current-macro').textContent = 'No macro set yet.';
+    }
+  } catch(e) {
+    document.getElementById('current-macro').textContent = 'Could not load.';
+  }
+}
+
+// ── HELPERS ────────────────────────────────────────────────────
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function setStatus(type, msg) {
+  const el = document.getElementById('status');
+  el.className = 'status on ' + type;
+  el.innerHTML = msg;
+}
+</script>
+</body>
+</html>
