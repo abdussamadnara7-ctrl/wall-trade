@@ -34,8 +34,8 @@ function callSupabase(path, method, body) {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'apikey': process.env.SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + process.env.SUPABASE_ANON_KEY,
+        'apikey': process.env.SUPABASE_SERVICE_KEY,
+        'Authorization': 'Bearer ' + process.env.SUPABASE_SERVICE_KEY,
         'Prefer': 'resolution=merge-duplicates',
         ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
       }
