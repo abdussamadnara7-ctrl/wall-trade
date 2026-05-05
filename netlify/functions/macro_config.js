@@ -1,116 +1,181 @@
-// ── WALL-TRADE MACRO CONFIG ────────────────────────────────────
-// UPDATE THIS BLOCK whenever macro conditions change.
-// This is the ONLY place you need to edit for macro updates.
-// Last updated: April 2026
+const https = require('https');
 
-const MACRO_CONFIG = {
-
-  // ── SBP MONETARY POLICY ──────────────────────────────────────
-  // Update after every MPC meeting
- sbp: {
-  policyRate:        '11.50',
-  ceiling:           '12.50',
-  floor:             '10.50',
-  lastDecision:      'HIKE',
-  lastMoveBps:       100,
-  nextMPCDate:       'June 2026',
-  trend:             'Surprise hawkish hike — 100bps increase to 11.50% on April 27 2026. Reversal of easing cycle.',
-  marketExpectation: 'Market now pricing in rate staying elevated. Negative for rate sensitive sectors near term.',
-},
-
-  // ── PKR / EXCHANGE RATE ───────────────────────────────────────
-  // Approximate — live rate comes from FMP in prices.js
-  pkr: {
-    usdRate:        '278-282',   // approximate interbank range
-    trend:          'Relatively stable after 2023 depreciation',
-    sbpManagement:  'SBP managed float — intervening to limit volatility',
-  },
-
-  // ── INFLATION ─────────────────────────────────────────────────
-  cpi: {
-    current:        '8-10',    // % — update monthly after PBS release
-    peak:           '38',      // % — 2023 peak
-    trend:          'Sharp disinflation underway',
-    target:         '5-7',     // SBP medium term target
-  },
-
-  // ── IMF PROGRAMME ─────────────────────────────────────────────
-  imf: {
-    status:         'ACTIVE',  // 'ACTIVE' | 'SUSPENDED' | 'COMPLETED'
-    programmeType:  'EFF',     // Extended Fund Facility
-    duration:       '37 months',
-    keyConditions:  'Energy pricing reforms, circular debt reduction, DISCO privatisation, cost-reflective tariffs',
-    nextReview:     'Q2 2026',
-    risk:           'LOW',     // 'LOW' | 'MEDIUM' | 'HIGH'
-  },
-
-  // ── EXTERNAL SECTOR ───────────────────────────────────────────
-  external: {
-    currentAccount: 'Near-balanced or slight surplus',
-    fxReserves:     '~$15B+',  // Update monthly
-    trend:          'Recovering after 2023 crisis lows',
-  },
-
-  // ── ENERGY / CIRCULAR DEBT ────────────────────────────────────
-  energy: {
-    circularDebt:   'Rs. 2.3tn+',
-    status:         'Structurally problematic — slow progress on reduction',
-    discoPrivatisation: 'Ongoing — IMF condition',
-  },
-
-  // ── GEOPOLITICAL ──────────────────────────────────────────────
-  geopolitical: {
-    iranUSTensions: 'ELEVATED',  // 'LOW' | 'ELEVATED' | 'HIGH' | 'CRITICAL'
-    hormuzRisk:     'OIL SUPPLY RISK — Strait of Hormuz closure would spike Brent and PKR import costs',
-    chinaRelations: 'STABLE — CPEC Phase 2 ongoing',
-    indiaRelations: 'TENSE',   // Update as needed
-    globalRisk:     'Fed higher-for-longer, USD strength, China slowdown — all weigh on EMs',
-  },
-
-  // ── PSX MARKET ────────────────────────────────────────────────
-  psx: {
-    kse100Status:   'At record highs',
-    driver:         'Market re-rating on macro stabilisation + aggressive rate cuts',
-    outlook:        'Positive — further rate cuts and IMF stability supportive',
-    peRatio:        'Still cheap vs regional peers despite rally',
-  },
-
-  // ── PSDP / FISCAL ─────────────────────────────────────────────
-  fiscal: {
-    psdpStatus:     'Recovering as fiscal space improves with lower interest burden',
-    deficitTrend:   'Improving — primary surplus achieved',
-    keyRisk:        'Revenue shortfall, energy subsidies creeping back',
-  },
-
-};
-
-// ── BUILD MACRO CONTEXT STRING FOR AI PROMPTS ─────────────────
-// This is what gets passed into every Claude prompt
-function buildStaticMacroContext() {
-  const s = MACRO_CONFIG.sbp;
-  const rateChange = s.lastDecision === 'CUT'
-    ? `JUST CUT by ${Math.abs(s.lastMoveBps)}bps to ${s.policyRate}% — RATE SENSITIVE VERDICTS SHOULD REFLECT THIS`
-    : s.lastDecision === 'HIKE'
-    ? `JUST HIKED by ${s.lastMoveBps}bps to ${s.policyRate}% — RATE SENSITIVE VERDICTS SHOULD REFLECT THIS`
-    : `HELD at ${s.policyRate}%`;
-
-  return [
-    `SBP Policy Rate: ${s.policyRate}% p.a. (${rateChange})`,
-    `SBP Ceiling: ${s.ceiling}% | Floor: ${s.floor}%`,
-    `Monetary Policy Trend: ${s.trend}`,
-    `Market Rate Expectation: ${s.marketExpectation}`,
-    `Next MPC Meeting: ${s.nextMPCDate}`,
-    `PKR/USD: ${MACRO_CONFIG.pkr.usdRate} — ${MACRO_CONFIG.pkr.trend}`,
-    `CPI Inflation: ~${MACRO_CONFIG.cpi.current}% (down from ${MACRO_CONFIG.cpi.peak}% peak) — ${MACRO_CONFIG.cpi.trend}`,
-    `IMF EFF Programme: ${MACRO_CONFIG.imf.status} — ${MACRO_CONFIG.imf.keyConditions}. Next review: ${MACRO_CONFIG.imf.nextReview}`,
-    `Current Account: ${MACRO_CONFIG.external.currentAccount} | FX Reserves: ${MACRO_CONFIG.external.fxReserves}`,
-    `Circular Debt: ${MACRO_CONFIG.energy.circularDebt} — ${MACRO_CONFIG.energy.status}`,
-    `PSX KSE-100: ${MACRO_CONFIG.psx.kse100Status} — ${MACRO_CONFIG.psx.driver}`,
-    `PSDP: ${MACRO_CONFIG.fiscal.psdpStatus}`,
-    `Geopolitical: Iran-US tensions ${MACRO_CONFIG.geopolitical.iranUSTensions} — ${MACRO_CONFIG.geopolitical.hormuzRisk}`,
-    `Global Risk: ${MACRO_CONFIG.geopolitical.globalRisk}`,
-    `Key Risks: Oil price spike, IMF slippage, political instability, rupee vulnerability`,
-  ].join('. ');
+// ── HELPERS ────────────────────────────────────────────────────
+function callAnthropic(body) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify(body);
+    const req = https.request({
+      hostname: 'api.anthropic.com',
+      path: '/v1/messages',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'Content-Length': Buffer.byteLength(data)
+      }
+    }, res => {
+      let b = '';
+      res.on('data', c => b += c);
+      res.on('end', () => { try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
+    });
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
 }
 
-module.exports = { MACRO_CONFIG, buildStaticMacroContext };
+function callSupabase(path, method, body) {
+  return new Promise((resolve, reject) => {
+    const data = body ? JSON.stringify(body) : null;
+    const req = https.request({
+      hostname: process.env.SUPABASE_URL.replace('https://', ''),
+      path: '/rest/v1/' + path,
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': process.env.SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + process.env.SUPABASE_ANON_KEY,
+        'Prefer': 'resolution=merge-duplicates',
+        ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
+      }
+    }, res => {
+      let b = '';
+      res.on('data', c => b += c);
+      res.on('end', () => {
+        try { resolve(b ? JSON.parse(b) : {}); }
+        catch(e) { resolve({}); }
+      });
+    });
+    req.on('error', reject);
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+// ── EXTRACTION PROMPT ──────────────────────────────────────────
+const EXTRACTION_PROMPT = `You are extracting Pakistan macro market context from a morning brief or market wrap document.
+
+Extract ALL of the following information if present:
+- KSE-100 index level, daily change, year-to-date change
+- SBP policy rate and any recent changes
+- KIBOR rates (3M, 6M)
+- Inflation (CPI) latest figure
+- PKR/USD exchange rate
+- Brent crude oil price and direction
+- Gold price
+- Any geopolitical developments affecting Pakistan markets (Middle East, Iran, Hormuz)
+- Budget news or government fiscal policy
+- IMF programme status
+- Sector-specific news (banking, cement, fertilizer, E&P, OMC)
+- Market sentiment (risk-on/risk-off)
+- Key upcoming events or catalysts
+
+Return a single clean paragraph or set of bullet points that captures everything important. 
+Write it as structured intelligence for an AI stock analyst — factual, specific, with actual numbers.
+Do NOT include pleasantries, headers, or formatting. Just the raw intelligence.
+If something is not in the document, skip it — do not make up numbers.
+Maximum 400 words.`;
+
+// ── MAIN HANDLER ──────────────────────────────────────────────
+exports.handler = async (event) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json'
+  };
+
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+  if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+
+  let payload;
+  try { payload = JSON.parse(event.body); }
+  catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request' }) }; }
+
+  const { type, data, mediaType, text } = payload;
+
+  // Build Claude message based on input type
+  let messages;
+
+  if (type === 'text') {
+    // Plain text — just send as user message
+    messages = [{
+      role: 'user',
+      content: `${EXTRACTION_PROMPT}\n\nDOCUMENT TEXT:\n${text}`
+    }];
+
+  } else if (type === 'pdf') {
+    // PDF document
+    messages = [{
+      role: 'user',
+      content: [
+        {
+          type: 'document',
+          source: { type: 'base64', media_type: 'application/pdf', data }
+        },
+        { type: 'text', text: EXTRACTION_PROMPT }
+      ]
+    }];
+
+  } else if (type === 'image') {
+    // Image (PNG/JPG/WEBP)
+    messages = [{
+      role: 'user',
+      content: [
+        {
+          type: 'image',
+          source: { type: 'base64', media_type: mediaType, data }
+        },
+        { type: 'text', text: EXTRACTION_PROMPT }
+      ]
+    }];
+
+  } else {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid type. Must be text, pdf or image.' }) };
+  }
+
+  // Call Claude
+  let macro;
+  try {
+    const result = await callAnthropic({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: 'You are a financial data extraction specialist. Extract macro market intelligence accurately and concisely. Return only the extracted content — no preamble, no explanation.',
+      messages
+    });
+
+    macro = result.content?.map(i => i.text || '').join('').trim();
+    if (!macro) throw new Error('Claude returned empty response');
+
+  } catch(e) {
+    console.error('Claude error:', e.message);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Extraction failed: ' + e.message }) };
+  }
+
+  // Save to Supabase — upsert single row with id=1
+  try {
+    await callSupabase('macro?id=eq.1', 'PATCH', {
+      content: macro,
+      updated_at: new Date().toISOString()
+    });
+  } catch(e) {
+    // If PATCH fails (row doesn't exist yet), try INSERT
+    try {
+      await callSupabase('macro', 'POST', {
+        id: 1,
+        content: macro,
+        updated_at: new Date().toISOString()
+      });
+    } catch(e2) {
+      console.error('Supabase error:', e2.message);
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to save to database' }) };
+    }
+  }
+
+  return {
+    statusCode: 200,
+    headers,
+    body: JSON.stringify({ success: true, macro })
+  };
+};
