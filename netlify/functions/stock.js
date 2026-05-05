@@ -678,12 +678,12 @@ exports.handler = async (event) => {
     return { statusCode: 404, headers, body: JSON.stringify({ error: `No data for ${cleanTicker}. Supported: OGDC PPL MARI PSO APL HASCOL HBL MCB UBL NBP ABL BAFL ENGROH FFC EFERT LUCK MLCF CHCC DGKC` }) };
   }
 
-  if (priceOnly) {
-    return { statusCode: 200, headers, body: JSON.stringify({ stockData, verdict: null }) };
-  }
-
   const liveRatios = calculateLiveRatios(cleanTicker, parseFloat(stockData.price) || 0);
-  const stockDataWithRatios = { ...stockData, ...liveRatios };
+const stockDataWithRatios = { ...stockData, ...liveRatios };
+
+if (priceOnly) {
+  return { statusCode: 200, headers, body: JSON.stringify({ stockData: stockDataWithRatios, verdict: null }) };
+}
 
   const verdict = await generateVerdict(stockDataWithRatios, macroContext);
 
