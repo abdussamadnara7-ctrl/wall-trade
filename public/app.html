@@ -675,7 +675,12 @@ body {
 }
 .broker-frame-close:hover { background: var(--bg4); }
 .broker-frame-iframe { flex: 1; border: none; width: 100%; background: #fff; }
-
+@keyframes progress {
+  0%   { width: 5%; }
+  50%  { width: 70%; }
+  90%  { width: 90%; }
+  100% { width: 95%; }
+}
 </style>
 </head>
 <body>
@@ -1178,13 +1183,13 @@ function render(ticker, stockData, verdict) {
         <div class="cv-verdict ${vGrad(vtype)}">${vtype}</div>
         ${gaugeArc(vscore)}
       </div>
-      <div class="cv-summary">${verdict.headline}</div>
+      <div style="font-size:13px;color:var(--t2);line-height:1.8;margin-top:10px;">${verdict.body}</div>
       ${signals.length ? `
       <div class="sigs" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--rim);">
         ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
       </div>` : ''}
     </div>` : `
-    <div style="padding:4px 20px 16px;">
+    <div id="verdict-gate" style="padding:4px 20px 16px;">
       <button class="gen-verdict-btn" onclick="generateVerdict('${ticker}')">
         <div class="ai-orb" style="flex-shrink:0;margin-right:2px"></div>
         Generate AI Verdict
@@ -1552,8 +1557,17 @@ async function generateVerdict(ticker) {
 
   const gate = document.getElementById('verdict-gate');
   if (gate) {
-    gate.innerHTML = `<div class="ai-loading"><div class="spin"></div>Generating AI verdict for ${ticker}…</div>`;
-  }
+gate.innerHTML = `
+  <div style="background:var(--bg2);border:1px solid var(--rim2);border-radius:16px;padding:24px 20px;margin:0 20px 12px;text-align:center;">
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+      <div class="spin" style="width:14px;height:14px;border-width:2px;flex-shrink:0;"></div>
+      <div style="font-size:13px;font-weight:600;color:var(--t1);">Generating AI Verdict</div>
+    </div>
+    <div style="font-size:11px;color:var(--t3);line-height:1.6;">Claude is analysing ${ticker} — live prices, fundamentals and Pakistan macro context.<br>This takes about 10 seconds.</div>
+    <div style="margin-top:14px;height:3px;background:var(--rim);border-radius:2px;overflow:hidden;">
+      <div style="height:100%;width:30%;background:linear-gradient(90deg,var(--gb),var(--pb));border-radius:2px;animation:progress 8s ease-in-out forwards;"></div>
+    </div>
+  </div>`;  }
 
   // Build live commodity prefix to prepend to MACRO
   const brent  = liveCommodities?.brent;
