@@ -29,7 +29,7 @@ function callSupabase(path, method, body) {
   return new Promise((resolve, reject) => {
     const data = body ? JSON.stringify(body) : null;
     const req = https.request({
-      hostname: process.env.SUPABASE_URL.kctfrhxtligaqxdhbevq('https://', ''),
+      hostname: 'kctfrhxtligaqxdhbevq.supabase.co',
       path: '/rest/v1/' + path,
       method,
       headers: {
