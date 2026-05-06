@@ -578,7 +578,7 @@ Price: PKR ${stockData.price ?? '—'} (${stockData.change ?? '—'}% today)
 
 ${sectorBlock}
 
-MICRO INTELLIGENCE (from quarterly reports — use this to inform your analysis, do not just rephrase it):
+COMPANY ANALYSIS:
 ${stockData.aiSummary || ''}
 
 PAKISTAN MACRO CONTEXT:
@@ -618,27 +618,10 @@ Return ONLY this JSON (no markdown):
 
   try {
     const result = await callAnthropic({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2500,
-system: `You are a senior equity analyst at a top Pakistani brokerage, writing for Wall-Trade — Pakistan's AI stock analysis platform for retail investors.
-
-YOUR JOB:
-Generate a sharp, data-driven verdict that helps a Pakistani retail investor understand this stock RIGHT NOW — given live prices, latest quarterly results and today's macro environment.
-
-RULES YOU MUST FOLLOW:
-- Always cite exact figures from the data provided — never say "strong margins", example - say "38.4% net margin"
-- Never be generic — every sentence must be specific to THIS stock
-- Connect macro to stock impact — e.g. "At Brent $110, OGDC's USD-linked revenues translate directly to PKR earnings upside"
-- Sector logic is mandatory:
-  • BANKING: P/B is primary metric. High D/E is normal. CASA > 50% is a strength. Never flag leverage.
-  • E&P: Circular debt = cash flow risk. High margins (35-50%) are normal. Brent is #1 driver.
-  • OMC: 1-3% margins are normal. Inventory gains/losses swing earnings. PKR weakness hurts.
-  • CEMENT: Coal cost is #1 margin driver. PSDP drives demand. Export weakness is sector-wide.
-  • FERTILIZER: Dividend yield is the investment case. Gas cost is the margin variable.
-- Write for someone who has never read an annual report — clear, direct, no jargon
-- The body field MUST be 120-150 words minimum — do not truncate it
-- Every factor detail MUST include at least one actual number from the data
-- Never give buy or sell advice`,      messages: [{ role: 'user', content: prompt }]
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
+      system: `You are a senior PSX equity analyst. Generate accurate, sector-specific, data-driven analysis for Pakistani retail investors. Always cite exact figures. Never be generic. High D/E is normal for banks and OMCs. Thin margins are normal for OMCs. High margins are normal for E&P. HASCOL is a turnaround — not a normal stock. Be direct and specific.`,
+      messages: [{ role: 'user', content: prompt }]
     });
     const raw = result.content?.map(i => i.text || '').join('').replace(/```json|```/g, '').trim();
     const verdict = JSON.parse(raw);
@@ -651,10 +634,108 @@ RULES YOU MUST FOLLOW:
 }
 
 // ── MAIN HANDLER ──────────────────────────────────────────────
+// ── SUPABASE HELPERS ──────────────────────────────────────────
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const VERDICT_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours in ms
+
+function supabase(path, method = 'GET', body = null) {
+  return new Promise((resolve) => {
+    const data = body ? JSON.stringify(body) : null;
+    const hostname = SUPABASE_URL.replace('https://', '');
+    const req = https.request({
+      hostname,
+      path: '/rest/v1/' + path,
+      method,
+      headers: {
+        'Content-Type':  'application/json',
+        'apikey':        SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Prefer':        'return=representation',
+        ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
+      }
+    }, res => {
+      let b = '';
+      res.on('data', c => b += c);
+      res.on('end', () => { try { resolve(JSON.parse(b)); } catch(e) { resolve(null); } });
+    });
+    req.on('error', () => resolve(null));
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+function supabaseRpc(fn, params) {
+  return new Promise((resolve) => {
+    const data = JSON.stringify(params);
+    const hostname = SUPABASE_URL.replace('https://', '');
+    const req = https.request({
+      hostname,
+      path: '/rest/v1/rpc/' + fn,
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'apikey':        SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Length': Buffer.byteLength(data)
+      }
+    }, res => {
+      let b = '';
+      res.on('data', c => b += c);
+      res.on('end', () => { try { resolve(JSON.parse(b)); } catch(e) { resolve(null); } });
+    });
+    req.on('error', () => resolve(null));
+    req.write(data);
+    req.end();
+  });
+}
+
+// Get cached verdict from Supabase
+async function getCachedVerdict(ticker) {
+  try {
+    const rows = await supabase(`verdict_cache?ticker=eq.${ticker}&select=verdict,updated_at`);
+    if (!rows?.[0]) return null;
+    const age = Date.now() - new Date(rows[0].updated_at).getTime();
+    if (age > VERDICT_CACHE_TTL) return null;
+    return rows[0].verdict;
+  } catch(e) { return null; }
+}
+
+// Save verdict to Supabase cache
+async function saveVerdictCache(ticker, verdict) {
+  try {
+    await supabase(
+      `verdict_cache?ticker=eq.${ticker}`,
+      'PATCH',
+      { verdict, updated_at: new Date().toISOString() }
+    );
+  } catch(e) {
+    // If PATCH fails (row doesn't exist), INSERT
+    try {
+      await supabase('verdict_cache', 'POST', {
+        ticker,
+        verdict,
+        updated_at: new Date().toISOString()
+      });
+    } catch(e2) {}
+  }
+}
+
+// Decode JWT to get user ID
+function decodeJWT(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+    return payload.sub || null;
+  } catch(e) { return null; }
+}
+
+// ── MAIN HANDLER ──────────────────────────────────────────────
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin':  '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json'
   };
@@ -665,7 +746,7 @@ exports.handler = async (event) => {
   try { payload = JSON.parse(event.body); }
   catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request' }) }; }
 
-  const { ticker, macroContext, priceOnly } = payload;
+  const { ticker, macroContext, priceOnly, token } = payload;
 
   if (!ticker || typeof ticker !== 'string' || ticker.length > 10) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid ticker' }) };
@@ -675,21 +756,75 @@ exports.handler = async (event) => {
 
   const stockData = await getStockData(cleanTicker);
   if (!stockData) {
-    return { statusCode: 404, headers, body: JSON.stringify({ error: `No data for ${cleanTicker}. Supported: OGDC PPL MARI PSO APL HASCOL HBL MCB UBL NBP ABL BAFL ENGROH FFC EFERT LUCK MLCF CHCC DGKC` }) };
+    return { statusCode: 404, headers, body: JSON.stringify({ error: `No data for ${cleanTicker}` }) };
   }
 
   const liveRatios = calculateLiveRatios(cleanTicker, parseFloat(stockData.price) || 0);
-const stockDataWithRatios = { ...stockData, ...liveRatios };
+  const stockDataWithRatios = { ...stockData, ...liveRatios };
 
-if (priceOnly) {
-  return { statusCode: 200, headers, body: JSON.stringify({ stockData: stockDataWithRatios, verdict: null }) };
-}
+  // Price only — no auth or rate limiting needed
+  if (priceOnly) {
+    return { statusCode: 200, headers, body: JSON.stringify({ stockData: stockDataWithRatios, verdict: null }) };
+  }
 
+  // ── AUTH CHECK ───────────────────────────────────────────────
+  const userId = token ? decodeJWT(token) : null;
+  if (!userId) {
+    return { statusCode: 401, headers, body: JSON.stringify({ error: 'Please sign in to generate verdicts.' }) };
+  }
+
+  // ── CHECK SERVER-SIDE VERDICT CACHE ─────────────────────────
+  const cachedVerdict = await getCachedVerdict(cleanTicker);
+  if (cachedVerdict) {
+    console.log(`Cache hit for ${cleanTicker} — returning cached verdict`);
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        stockData: stockDataWithRatios,
+        verdict:   cachedVerdict,
+        cached:    true,
+        timestamp: new Date().toISOString()
+      })
+    };
+  }
+
+  // ── RATE LIMIT CHECK ─────────────────────────────────────────
+  const usageCheck = await supabaseRpc('check_and_increment_usage', {
+    p_user_id: userId,
+    p_type:    'verdict'
+  });
+
+  if (!usageCheck?.allowed) {
+    const tier    = usageCheck?.tier || 'free';
+    const limit   = usageCheck?.limit || 2;
+    const isPremium = tier === 'premium';
+    return {
+      statusCode: 429,
+      headers,
+      body: JSON.stringify({
+        error:    `Daily limit reached. ${isPremium ? `Premium users get ${limit} verdicts/day.` : `Free users get ${limit} verdicts/day. Upgrade to Premium for 15 verdicts/day.`}`,
+        tier,
+        limit,
+        upgrade:  !isPremium
+      })
+    };
+  }
+
+  // ── GENERATE VERDICT ─────────────────────────────────────────
   const verdict = await generateVerdict(stockDataWithRatios, macroContext);
+
+  // Save to server-side cache so next user gets it for free
+  if (verdict) await saveVerdictCache(cleanTicker, verdict);
 
   return {
     statusCode: 200,
     headers,
-    body: JSON.stringify({ stockData: stockDataWithRatios, verdict, timestamp: new Date().toISOString() })
+    body: JSON.stringify({
+      stockData: stockDataWithRatios,
+      verdict,
+      cached:    false,
+      timestamp: new Date().toISOString()
+    })
   };
 };
