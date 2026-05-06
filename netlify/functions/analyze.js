@@ -59,7 +59,7 @@ COMMUNICATION STYLE:
 1. Use specific stock data and figures from the context provided — quarterly report data, live price, fundamentals, macro brief
 2. If the exact data is not in the context, use your own Sonnet 4.6 knowledge about this company, sector and Pakistan market
 3. Never just say data is unavailable and stop — always give the most complete answer you can combining both sources
-4. Be transparent when switching sources — e.g. "The quarterly data shows X, and more broadly..."`;`;
+4. Be transparent when switching sources — e.g. "The quarterly data shows X, and more broadly..."`;
 
 // ── MAIN HANDLER ──────────────────────────────────────────────
 exports.handler = async (event) => {
