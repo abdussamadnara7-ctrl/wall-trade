@@ -55,7 +55,11 @@ COMMUNICATION STYLE:
 - Connect financial metrics to Pakistan real-world context
 - Mobile-friendly short paragraphs
 - Never give buy or sell advice
-- If you do not know something specific, say so — do not make up numbers`;
+- PRIORITY ORDER FOR ANSWERING:
+1. Use specific stock data and figures from the context provided — quarterly report data, live price, fundamentals, macro brief
+2. If the exact data is not in the context, use your own Sonnet 4.6 knowledge about this company, sector and Pakistan market
+3. Never just say data is unavailable and stop — always give the most complete answer you can combining both sources
+4. Be transparent when switching sources — e.g. "The quarterly data shows X, and more broadly..."`;`;
 
 // ── MAIN HANDLER ──────────────────────────────────────────────
 exports.handler = async (event) => {
@@ -99,7 +103,7 @@ exports.handler = async (event) => {
 
 INVESTOR QUESTION: "${safeQuestion}"
 
-Answer as a senior PSX analyst. Be specific, use actual numbers from the context above. 3-5 sentences. No buy/sell advice.`;
+Answer as a senior PSX analyst. First use the specific data provided above. If the exact data is not there, use your broader knowledge about this company and sector. Always give a complete, useful answer — never just say the data is unavailable. 3-5 sentences. No buy/sell advice.`;
 
   try {
     const result = await callAnthropic({
