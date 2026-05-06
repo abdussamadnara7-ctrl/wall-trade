@@ -1,6 +1,41 @@
 const https = require('https');
 
-// ── RATE LIMITING ──────────────────────────────────────────────
+// ── SUPABASE ───────────────────────────────────────────────────
+function supabaseRpc(fn, params) {
+  return new Promise((resolve) => {
+    const data = JSON.stringify(params);
+    const hostname = process.env.SUPABASE_URL.replace('https://', '');
+    const req = https.request({
+      hostname,
+      path: '/rest/v1/rpc/' + fn,
+      method: 'POST',
+      headers: {
+        'Content-Type':   'application/json',
+        'apikey':         process.env.SUPABASE_SERVICE_KEY,
+        'Authorization':  'Bearer ' + process.env.SUPABASE_SERVICE_KEY,
+        'Content-Length': Buffer.byteLength(data)
+      }
+    }, res => {
+      let b = '';
+      res.on('data', c => b += c);
+      res.on('end', () => { try { resolve(JSON.parse(b)); } catch(e) { resolve(null); } });
+    });
+    req.on('error', () => resolve(null));
+    req.write(data);
+    req.end();
+  });
+}
+
+function decodeJWT(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+    return payload.sub || null;
+  } catch(e) { return null; }
+}
+
+// ── RATE LIMITING (legacy IP-based fallback) ───────────────────
 const rateLimitStore = {};
 const RATE_LIMIT = 20;
 const WINDOW_MS  = 60 * 60 * 1000;
@@ -55,11 +90,7 @@ COMMUNICATION STYLE:
 - Connect financial metrics to Pakistan real-world context
 - Mobile-friendly short paragraphs
 - Never give buy or sell advice
-- PRIORITY ORDER FOR ANSWERING:
-1. Use specific stock data and figures from the context provided — quarterly report data, live price, fundamentals, macro brief
-2. If the exact data is not in the context, use your own Sonnet 4.6 knowledge about this company, sector and Pakistan market
-3. Never just say data is unavailable and stop — always give the most complete answer you can combining both sources
-4. Be transparent when switching sources — e.g. "The quarterly data shows X, and more broadly..."`;
+- If you do not know something specific, say so — do not make up numbers`;
 
 // ── MAIN HANDLER ──────────────────────────────────────────────
 exports.handler = async (event) => {
@@ -85,10 +116,36 @@ exports.handler = async (event) => {
   try { payload = JSON.parse(event.body); }
   catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request' }) }; }
 
-  const { ticker, question, stockContext } = payload;
+  const { ticker, question, stockContext, token } = payload;
 
   if (!ticker || !question) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing ticker or question' }) };
+  }
+
+  // ── AUTH + RATE LIMIT ────────────────────────────────────────
+  const userId = token ? decodeJWT(token) : null;
+  if (!userId) {
+    return { statusCode: 401, headers, body: JSON.stringify({ error: 'Please sign in to use the chatbot.' }) };
+  }
+
+  const usageCheck = await supabaseRpc('check_and_increment_usage', {
+    p_user_id: userId,
+    p_type:    'chat'
+  });
+
+  if (!usageCheck?.allowed) {
+    const tier = usageCheck?.tier || 'free';
+    return {
+      statusCode: 429,
+      headers,
+      body: JSON.stringify({
+        error:   tier === 'free'
+          ? 'Chatbot is a Premium feature. Upgrade to Premium for 5 questions/day.'
+          : `Daily chat limit reached (${usageCheck?.limit}/day).`,
+        tier,
+        upgrade: tier === 'free'
+      })
+    };
   }
 
   const safeQuestion = question.replace(/[<>{}[\]\\]/g, '').slice(0, 500);
@@ -103,30 +160,21 @@ exports.handler = async (event) => {
 
 INVESTOR QUESTION: "${safeQuestion}"
 
-Answer as a senior PSX analyst. First use the specific data provided above. If the exact data is not there, use your broader knowledge about this company and sector. Always give a complete, useful answer — never just say the data is unavailable. 3-5 sentences. No buy/sell advice.`;
+Answer as a senior PSX analyst. Be specific, use actual numbers from the context above. 3-5 sentences. No buy/sell advice.`;
 
- try {
+  try {
     const result = await callAnthropic({
-      model:      'claude-sonnet-4-6',
-      max_tokens: 1000,
+      model:      'claude-sonnet-4-20250514',
+      max_tokens: 600,
       system:     SYSTEM,
-      tools:      [{ type: 'web_search_20250305', name: 'web_search' }],
       messages:   [{ role: 'user', content: userPrompt }]
     });
-
-    const fullResponse = result.content
-      ?.map(block => block.type === 'text' ? block.text : '')
-      .filter(Boolean)
-      .join('') || 'Could not get a response.';
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({
-        content: [{ type: 'text', text: fullResponse }]
-      })
+      body: JSON.stringify(result)
     };
-
   } catch(e) {
     console.error('Anthropic error:', e.message);
     return { statusCode: 502, headers, body: JSON.stringify({ error: 'AI service unavailable' }) };
