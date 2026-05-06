@@ -105,19 +105,28 @@ INVESTOR QUESTION: "${safeQuestion}"
 
 Answer as a senior PSX analyst. First use the specific data provided above. If the exact data is not there, use your broader knowledge about this company and sector. Always give a complete, useful answer — never just say the data is unavailable. 3-5 sentences. No buy/sell advice.`;
 
-  try {
+ try {
     const result = await callAnthropic({
       model:      'claude-sonnet-4-6',
       max_tokens: 1000,
       system:     SYSTEM,
+      tools:      [{ type: 'web_search_20250305', name: 'web_search' }],
       messages:   [{ role: 'user', content: userPrompt }]
     });
+
+    const fullResponse = result.content
+      ?.map(block => block.type === 'text' ? block.text : '')
+      .filter(Boolean)
+      .join('') || 'Could not get a response.';
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(result)
+      body: JSON.stringify({
+        content: [{ type: 'text', text: fullResponse }]
+      })
     };
+
   } catch(e) {
     console.error('Anthropic error:', e.message);
     return { statusCode: 502, headers, body: JSON.stringify({ error: 'AI service unavailable' }) };
