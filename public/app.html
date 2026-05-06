@@ -675,6 +675,7 @@ body {
 }
 .broker-frame-close:hover { background: var(--bg4); }
 .broker-frame-iframe { flex: 1; border: none; width: 100%; background: #fff; }
+
 @keyframes progress {
   0%   { width: 5%; }
   50%  { width: 70%; }
@@ -780,22 +781,23 @@ let verdictCache = {};    // AI verdict per ticker
 let livePrices = {};      // live prices from prices.js
 
 // ── MACRO CONTEXT (static, updated periodically) ──────────
-let MACRO = 'Pakistan macro context loading...';
-
-async function loadMacro() {
-  try {
-    const res = await fetch('https://kctfrhxtligaqxdhbevq.supabase.co/rest/v1/macro?select=content&order=updated_at.desc&limit=1', {
-      headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5YW9hbXlxbXR6a2Z6aHZkbm9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NzQ5NjIsImV4cCI6MjA4ODM1MDk2Mn0.SBr5YC0_drekGBoVfkq7DpKNyTK-a_CxA-qATEqkPp4',
-        'Authorization': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5YW9hbXlxbXR6a2Z6aHZkbm9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NzQ5NjIsImV4cCI6MjA4ODM1MDk2Mn0.SBr5YC0_drekGBoVfkq7DpKNyTK-a_CxA-qATEqkPp4'
-      }
-    });
-    const data = await res.json();
-    if (data?.[0]?.content) MACRO = data[0].content;
-  } catch(e) {
-    console.log('Macro fetch failed, using fallback');
-  }
-};
+const MACRO = [
+  "SBP Policy Rate: 11.50% — hiked 100bps on April 27 2026. KIBOR 6M now at 11.9% above policy rate reflecting continued pressure. Next MPC June 2026. No rate reversal expected near term",
+  "Inflation: Back in double digits for first time in nearly two years as of May 2026. Rising energy costs and global oil volatility are primary drivers. SBP target range 5-7% significantly breached",
+  "Oil situation CRITICAL: Brent crude at elevated levels — live price injected separately. Arab Light at $105.2. US conveyed response to Iran 14-point peace proposal via Pakistan on May 4 2026. Trump announced US helping free ships in Strait of Hormuz. If Hormuz fully reopens oil could drop $20-30 per barrel overnight — massive positive for Pakistan",
+  "UAE exited OAPEC and OPEC+ on May 1 2026 to boost its own output. OPEC+ agreed third consecutive output hike of 188,000 bpd for June but largely on paper while Hormuz disrupted",
+  "KSE-100: 162,994 last close — down 2,829 points (-1.71%) on May 2 2026. Down 6.4% year to date. Market cap PKR 15.4 trillion. Broad based selling continues. P/E approximately 7.4x — cheap versus regional peers",
+  "Budget: National Assembly budget session called for June 1 2026. FY2026-27 budget to be presented same week. Next major domestic catalyst for markets",
+  "Cement sector: Regulators flagged deep-rooted cartelisation concerns spanning decades. Budget may include measures targeting sector. PM launched 5-year housing programme — 500,000 homes at PKR 3.2 trillion — medium term positive",
+  "Banking sector: KIBOR 6M at 11.9% above SBP policy rate. Banks repricing books in real time. Near term NIM pressure but medium term positive as investment books reprice at higher yields over 3 to 6 months",
+  "E&P sector IMPORTANT: Brent at elevated levels is fundamentally positive for OGDC PPL MARI dollar-linked revenues. BUT PSX market currently in risk-off mode selling E&Ps due to macro fears not earnings. Verdicts must reflect BOTH dimensions — strong fundamentals but negative near term PSX sentiment",
+  "Fertilizer sector: relatively insulated. Gas pricing stable. Government subsidy programmes provide buffer",
+  "OMC sector: margin pressure from elevated oil — higher dollar import costs against rupee revenues",
+  "FX reserves: $15.8B. Current account in surplus. Remittances strong at $41B annual run rate. IMF EFF programme active",
+  "PKR: 278.8 per USD — stable. Down only 0.5% year to date. SBP rate hike supportive of rupee",
+  "Key positive catalyst: Hormuz diplomatic resolution — would send oil sharply lower, ease inflation, restore rate cut expectations and trigger strong PSX rally across all sectors",
+  "Key risks: Hormuz closure duration, inflation hitting double digits faster than expected, further SBP rate hike, IMF programme slippage, FY27 budget fiscal slippages"
+].join(". ");
 
 // ── COLOUR HELPERS ─────────────────────────────────────────
 const vGrad  = t => ({Positive:'gx-green',Neutral:'gx-beige',Caution:'gx-red'}[t]||'gx-white');
@@ -1183,9 +1185,10 @@ function render(ticker, stockData, verdict) {
         <div class="cv-verdict ${vGrad(vtype)}">${vtype}</div>
         ${gaugeArc(vscore)}
       </div>
+      <div class="cv-summary">${verdict.headline}</div>
       <div style="font-size:13px;color:var(--t2);line-height:1.8;margin-top:10px;">${verdict.body}</div>
       ${signals.length ? `
-      <div class="sigs" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--rim);">
+      <div class="sigs" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--rim);">
         ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
       </div>` : ''}
     </div>` : `
@@ -1513,12 +1516,13 @@ async function loadStock(ticker) {
     render(ticker, stockCache[ticker], verdictCache[ticker]);
     if (livePrices[ticker]) renderLivePrice(ticker);
     return;
-}
-if (stockCache[ticker]) {
+  }
+  // If cached without verdict, render with generate button
+  if (stockCache[ticker]) {
     render(ticker, stockCache[ticker], null);
     if (livePrices[ticker]) renderLivePrice(ticker);
     return;
-}
+  }
 
   renderLoading(ticker);
 
@@ -1541,7 +1545,8 @@ if (stockCache[ticker]) {
 
     // Render with no verdict — shows generate button
     render(ticker, data.stockData, null);
-if (livePrices[ticker]) renderLivePrice(ticker);
+    // Patch live price immediately if already fetched
+    if (livePrices[ticker]) renderLivePrice(ticker);
 
   } catch(e) {
     renderError(ticker, 'Unable to connect. Please check your connection and try again.');
@@ -1557,17 +1562,18 @@ async function generateVerdict(ticker) {
 
   const gate = document.getElementById('verdict-gate');
   if (gate) {
-gate.innerHTML = `
-  <div style="background:var(--bg2);border:1px solid var(--rim2);border-radius:16px;padding:24px 20px;margin:0 20px 12px;text-align:center;">
-    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
-      <div class="spin" style="width:14px;height:14px;border-width:2px;flex-shrink:0;"></div>
-      <div style="font-size:13px;font-weight:600;color:var(--t1);">Generating AI Verdict</div>
-    </div>
-    <div style="font-size:11px;color:var(--t3);line-height:1.6;">Claude is analysing ${ticker} — live prices, fundamentals and Pakistan macro context.<br>This takes about 10 seconds.</div>
-    <div style="margin-top:14px;height:3px;background:var(--rim);border-radius:2px;overflow:hidden;">
-      <div style="height:100%;width:30%;background:linear-gradient(90deg,var(--gb),var(--pb));border-radius:2px;animation:progress 8s ease-in-out forwards;"></div>
-    </div>
-  </div>`;  }
+    gate.innerHTML = `
+      <div style="background:var(--bg2);border:1px solid var(--rim2);border-radius:16px;padding:24px 20px;margin:0 20px 12px;text-align:center;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+          <div class="spin" style="width:14px;height:14px;border-width:2px;flex-shrink:0;"></div>
+          <div style="font-size:13px;font-weight:600;color:var(--t1);">Generating AI Verdict</div>
+        </div>
+        <div style="font-size:11px;color:var(--t3);line-height:1.6;">Claude is analysing ${ticker} — live prices, fundamentals and Pakistan macro context.<br>This takes about 10 seconds.</div>
+        <div style="margin-top:14px;height:3px;background:var(--rim);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:30%;background:linear-gradient(90deg,var(--gb),var(--pb));border-radius:2px;animation:progress 8s ease-in-out forwards;"></div>
+        </div>
+      </div>`;
+  }
 
   // Build live commodity prefix to prepend to MACRO
   const brent  = liveCommodities?.brent;
@@ -1639,15 +1645,46 @@ async function doAsk() {
   const aw = document.getElementById('ans-wrap'), ac = document.getElementById('ans-card');
   aw.classList.add('on'); ac.textContent = 'Thinking…';
   const s = stockCache[cur];
+  const v = verdictCache[cur];
+  const lp = livePrices[cur];
+
+  // Build full context on the frontend — analyze.js just needs to answer
+  const stockContext = [
+    `STOCK: ${cur} — ${s?.name || cur}`,
+    `SECTOR: ${s?.sector || 'N/A'}`,
+    `⚡ LIVE PRICE RIGHT NOW: PKR ${lp?.price || s?.price || 'N/A'} — ${lp?.change || s?.change || '0'}% TODAY — USE THIS PRICE NOT WEB DATA`,
+lp?.volume ? `TODAY'S VOLUME: ${parseInt(lp.volume).toLocaleString()} shares traded` : '',
+Math.abs(parseFloat(lp?.change || s?.change || 0)) > 3 ? `⚠️ SIGNIFICANT MOVE TODAY` : '',
+    s?.eps        ? `EPS: PKR ${s.eps}`          : '',
+    s?.pe         ? `P/E: ${s.pe}×`              : '',
+    s?.pb         ? `P/B: ${s.pb}×`              : '',
+    s?.divYield   ? `Div Yield: ${s.divYield}`   : '',
+    s?.roe        ? `ROE: ${s.roe}`              : '',
+    s?.netMargin  ? `Net Margin: ${s.netMargin}` : '',
+    s?.grossMargin? `Gross Margin: ${s.grossMargin}` : '',
+    s?.debtToEquity ? `D/E: ${s.debtToEquity}`  : '',
+    s?.currentRatio ? `Current Ratio: ${s.currentRatio}` : '',
+    s?.revenue    ? `Revenue: ${s.revenue}`      : '',
+    s?.netProfit  ? `Net Profit: ${s.netProfit}` : '',
+    s?.deposits   ? `Deposits: ${s.deposits}`    : '',
+    s?.casaRatio  ? `CASA: ${s.casaRatio}`       : '',
+    s?.carRatio   ? `CAR: ${s.carRatio}`         : '',
+    s?.nplRatio   ? `NPL: ${s.nplRatio}`         : '',
+    s?.tradeDebts ? `Circular Debt Exposure: ${s.tradeDebts}` : '',
+    s?.totalAssets? `Total Assets: ${s.totalAssets}` : '',
+    '',
+    s?.aiSummary  ? `COMPANY INTELLIGENCE:\n${s.aiSummary}` : '',
+    '',
+    `TODAY'S MACRO CONTEXT:\n${MACRO}`,
+    '',
+    v ? `EXISTING AI VERDICT: ${v.verdict} (${v.score}/10)\n${v.headline}\n${v.body}` : 'No verdict generated yet.'
+  ].filter(Boolean).join('\n');
+
   try {
     const res = await fetch('/.netlify/functions/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'question', ticker: cur, question: q,
-        ratios: s ? Object.entries(buildRatios(s)).map(([k,v])=>`${k}: ${v.v}`).join(', ') : '',
-        macro: MACRO
-      })
+      body: JSON.stringify({ ticker: cur, question: q, stockContext })
     });
     if (res.status === 429) { ac.textContent = 'Usage limit reached. Please try again in an hour.'; btn.disabled = false; btn.textContent = 'Ask'; return; }
     const data = await res.json();
@@ -1890,10 +1927,7 @@ const COIN_NAMES = {
 updateSheetTitle();
 fetchLivePrices();
 setInterval(fetchLivePrices, 60000);
-(async () => {
-  await loadMacro();
-  select('OGDC');
-})();
+select('OGDC');
 
 // ── SECTION SWITCHING ────────────────────────────────────
 
