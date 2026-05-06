@@ -1575,7 +1575,7 @@ async function generateVerdict(ticker) {
       </div>`;
   }
 
-  // Build live commodity prefix to prepend to MACRO
+  // Build live commodity prefix
   const brent  = liveCommodities?.brent;
   const gold   = liveCommodities?.gold;
   const pkrusd = liveCommodities?.pkrusd;
@@ -1583,17 +1583,41 @@ async function generateVerdict(ticker) {
   if (brent)  liveParts.push(`Brent Crude: $${brent.price} (${brent.change >= 0 ? '+' : ''}${brent.change}% today)`);
   if (gold)   liveParts.push(`Gold: $${gold.price}`);
   if (pkrusd) liveParts.push(`PKR/USD: ${pkrusd.rate}`);
-  const livePrefix = liveParts.length
-    ? `LIVE PRICES AS OF NOW: ${liveParts.join(' | ')}. `
-    : '';
-  const enrichedMacro = livePrefix + MACRO;
+  const livePrefix = liveParts.length ? `LIVE PRICES AS OF NOW: ${liveParts.join(' | ')}. ` : '';
+  const enrichedMacro = (livePrefix + MACRO).slice(0, 1500);
+
+  // Get user token for auth + rate limiting
+  const token = localStorage.getItem('wt_token') || '';
 
   try {
     const res = await fetch('/.netlify/functions/stock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker, macroContext: enrichedMacro, stockData: stockCache[ticker] })
+      body: JSON.stringify({ ticker, macroContext: enrichedMacro, stockData: stockCache[ticker], token })
     });
+
+    // Handle rate limit
+    if (res.status === 429) {
+      const err = await res.json();
+      if (document.getElementById('verdict-gate')) {
+        document.getElementById('verdict-gate').innerHTML = `
+          <div style="background:rgba(255,100,50,0.06);border:1px solid rgba(255,100,50,0.2);border-radius:14px;padding:20px;text-align:center;margin:0 20px 12px;">
+            <div style="font-size:15px;margin-bottom:8px;">🔒</div>
+            <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:6px;">${err.error}</div>
+            ${err.upgrade ? `<div style="font-size:11px;color:var(--t3);">Upgrade to Premium for 15 verdicts/day + 5 chatbot questions.</div>` : ''}
+          </div>`;
+      }
+      return;
+    }
+
+    if (res.status === 401) {
+      if (document.getElementById('verdict-gate')) {
+        document.getElementById('verdict-gate').innerHTML = `
+          <div style="font-size:13px;color:var(--ra);padding:12px 0;text-align:center;">Please sign in to generate verdicts.</div>`;
+      }
+      return;
+    }
+
     if (!res.ok) throw new Error('Server error');
 
     const data = await res.json();
@@ -1603,7 +1627,7 @@ async function generateVerdict(ticker) {
   } catch(e) {
     if (document.getElementById('verdict-gate')) {
       document.getElementById('verdict-gate').innerHTML =
-        `<div style="color:var(--ra);font-size:13px;padding:12px 0">Could not generate verdict — please try again.</div>`;
+        `<div style="color:var(--ra);font-size:13px;padding:12px 0;text-align:center;">Could not generate verdict — please try again.</div>`;
     }
   }
 }
@@ -1652,9 +1676,7 @@ async function doAsk() {
   const stockContext = [
     `STOCK: ${cur} — ${s?.name || cur}`,
     `SECTOR: ${s?.sector || 'N/A'}`,
-    `⚡ LIVE PRICE RIGHT NOW: PKR ${lp?.price || s?.price || 'N/A'} — ${lp?.change || s?.change || '0'}% TODAY — USE THIS PRICE NOT WEB DATA`,
-lp?.volume ? `TODAY'S VOLUME: ${parseInt(lp.volume).toLocaleString()} shares traded` : '',
-Math.abs(parseFloat(lp?.change || s?.change || 0)) > 3 ? `⚠️ SIGNIFICANT MOVE TODAY` : '',
+    `LIVE PRICE: PKR ${lp?.price || s?.price || 'N/A'} (${lp?.change || s?.change || '0'}% today)`,
     s?.eps        ? `EPS: PKR ${s.eps}`          : '',
     s?.pe         ? `P/E: ${s.pe}×`              : '',
     s?.pb         ? `P/B: ${s.pb}×`              : '',
@@ -1680,13 +1702,23 @@ Math.abs(parseFloat(lp?.change || s?.change || 0)) > 3 ? `⚠️ SIGNIFICANT MOV
     v ? `EXISTING AI VERDICT: ${v.verdict} (${v.score}/10)\n${v.headline}\n${v.body}` : 'No verdict generated yet.'
   ].filter(Boolean).join('\n');
 
+  const token = localStorage.getItem('wt_token') || '';
+
   try {
     const res = await fetch('/.netlify/functions/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker: cur, question: q, stockContext })
+      body: JSON.stringify({ ticker: cur, question: q, stockContext, token })
     });
-    if (res.status === 429) { ac.textContent = 'Usage limit reached. Please try again in an hour.'; btn.disabled = false; btn.textContent = 'Ask'; return; }
+    if (res.status === 429) {
+      const err = await res.json();
+      ac.innerHTML = `<div style="color:var(--ra)">${err.error || 'Daily limit reached.'}</div>`;
+      btn.disabled = false; btn.textContent = 'Ask'; return;
+    }
+    if (res.status === 401) {
+      ac.textContent = 'Please sign in to use the chatbot.';
+      btn.disabled = false; btn.textContent = 'Ask'; return;
+    }
     const data = await res.json();
     ac.textContent = data.content?.map(i => i.text||'').join('') || 'Could not get a response.';
   } catch(e) { ac.textContent = 'Could not connect — please try again.'; }
