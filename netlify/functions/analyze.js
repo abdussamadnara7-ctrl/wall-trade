@@ -92,6 +92,38 @@ COMMUNICATION STYLE:
 - Never give buy or sell advice
 - If you do not know something specific, say so — do not make up numbers`;
 
+async function getLatestMacro() {
+  return new Promise((resolve) => {
+    const hostname = process.env.SUPABASE_URL.replace('https://', '');
+
+    const req = https.request({
+      hostname,
+      path: '/rest/v1/macro?select=content,updated_at&id=eq.1&limit=1',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': process.env.SUPABASE_SERVICE_KEY,
+        'Authorization': 'Bearer ' + process.env.SUPABASE_SERVICE_KEY
+      }
+    }, res => {
+      let b = '';
+      res.on('data', c => b += c);
+      res.on('end', () => {
+        try {
+          const rows = JSON.parse(b);
+          if (!rows?.[0]?.content) return resolve(null);
+          resolve(`${rows[0].content}\n\nMacro last updated: ${rows[0].updated_at}`);
+        } catch(e) {
+          resolve(null);
+        }
+      });
+    });
+
+    req.on('error', () => resolve(null));
+    req.end();
+  });
+}
+
 // ── MAIN HANDLER ──────────────────────────────────────────────
 exports.handler = async (event) => {
   const headers = {
@@ -156,7 +188,13 @@ exports.handler = async (event) => {
   // - company intelligence (aiSummary)
   // - today's macro from Supabase
   // - existing verdict if generated
-  const userPrompt = `${stockContext}
+  const latestMacro = await getLatestMacro();
+const macroBlock = latestMacro || 'Pakistan macro context unavailable.';
+
+const userPrompt = `${stockContext}
+
+TODAY'S MACRO CONTEXT:
+${macroBlock}
 
 INVESTOR QUESTION: "${safeQuestion}"
 
