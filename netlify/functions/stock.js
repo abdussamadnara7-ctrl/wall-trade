@@ -317,12 +317,26 @@ const PSX_FUNDAMENTALS = {
 
 // ── SECTOR MAP ─────────────────────────────────────────────────
 const SECTOR_MAP = {
-  OGDC:'ENERGY_EP', PPL:'ENERGY_EP', MARI:'ENERGY_EP',
-  PSO:'OMC', APL:'OMC', HASCOL:'OMC',
-  HBL:'BANKING', MCB:'BANKING', UBL:'BANKING',
-  NBP:'BANKING', ABL:'BANKING', BAFL:'BANKING',
+  OGDC:'ENERGY_EP', PPL:'ENERGY_EP', MARI:'ENERGY_EP', POL:'ENERGY_EP',
+  PSO:'OMC', APL:'OMC', SHEL:'OMC', HASCOL:'OMC',
+  HBL:'BANKING', MCB:'BANKING', UBL:'BANKING', NBP:'BANKING',
+  MEBL:'BANKING', BAFL:'BANKING', ABL:'BANKING', FABL:'BANKING',
+  BAHL:'BANKING', AKBL:'BANKING', BOP:'BANKING', SNBL:'BANKING',
   ENGROH:'FERTILISER', FFC:'FERTILISER', EFERT:'FERTILISER',
+  FATIMA:'FERTILISER', FFBL:'FERTILISER',
   LUCK:'CEMENT', MLCF:'CEMENT', CHCC:'CEMENT', DGKC:'CEMENT',
+  FCCL:'CEMENT', PIOC:'CEMENT', KOHC:'CEMENT', ACPL:'CEMENT', POWER:'CEMENT',
+  HUBC:'POWER', KEL:'POWER', KAPCO:'POWER', NPL:'POWER', NCPL:'POWER', PKGP:'POWER',
+  SYS:'TECH', TRG:'TECH', PTC:'TECH', AIRLINK:'TECH', AVN:'TECH', NETSOL:'TECH',
+  INDU:'AUTO', HCAR:'AUTO', PSMC:'AUTO', GHNL:'AUTO', SAZEW:'AUTO', MTL:'AUTO', AGTL:'AUTO',
+  NESTLE:'CONSUMER', UNITY:'CONSUMER', NATF:'CONSUMER', MUREB:'CONSUMER', COLG:'CONSUMER',
+  ILP:'TEXTILE', NML:'TEXTILE', GATM:'TEXTILE', KTML:'TEXTILE', SAPT:'TEXTILE',
+  DAWH:'HOLDING',
+  EPCL:'CHEMICALS', LOTCHEM:'CHEMICALS', SNGP:'CHEMICALS', SSGC:'CHEMICALS',
+  EFUG:'INSURANCE', EFUL:'INSURANCE', JGICL:'INSURANCE',
+  SEARL:'PHARMA', AGP:'PHARMA', GLAXO:'PHARMA', ABOT:'PHARMA',
+  MUGHAL:'STEEL', ASTL:'STEEL', ISL:'STEEL', ASL:'STEEL',
+  PIBTL:'LOGISTICS', PIAA:'AVIATION', HUMNL:'MEDIA',
 };
 
 // ── SECTOR-SPECIFIC PROMPT BUILDERS ────────────────────────────
@@ -464,50 +478,36 @@ async function getPSXPrice(ticker) {
 
 // ── CALCULATE LIVE P/E, P/B, DIV YIELD FROM LIVE PRICE ────────
 function calculateLiveRatios(ticker, livePrice) {
-  const RATIO_INPUTS = {
-    OGDC:   { eps: 26.80, dps: 11.00, shares: 4300   },
-    PPL:    { eps: 22.48, dps: 2.00,  shares: 2722   },
-    MARI:   { eps: 31.32, dps: null,  shares: 1200   },
-    PSO:    { eps: 81.19, dps: null,  shares: 469    },
-    APL:    { eps: 118.67,dps: null,  shares: 124    },
-    HASCOL: { eps: 0.45,  dps: null,  shares: 998    },
-    HBL:    { eps: 44,    dps: 20.00, bvps: 310.4,   shares: 1466.9 },
-    MCB:    { eps: 43,    dps: 36.00, bvps: 249.5,   shares: 1185   },
-    UBL:    { eps: 78,    dps: 44.00, bvps: 166.1,   shares: 2504.2 },
-    NBP:    { eps: 31,    dps: 3.50,  bvps: 205.3,   shares: 2127.5 },
-    ABL:    { eps: 29,    dps: 4.00,  bvps: null,    shares: 1169   },
-    BAFL:   { eps: 14,    dps: null,  bvps: null,    shares: 3148   },
-    ENGROH: { eps: 8.5,   dps: null,  shares: 1420   },
-    FFC:    { eps: 12.14, dps: 8.50,  shares: 1272   },
-    EFERT:  { eps: 2.49,  dps: 2.00,  shares: 1314   },
-    LUCK:   { eps: 25.07, dps: null,  shares: 323    },
-    MLCF:   { eps: 5.81,  dps: null,  shares: 1048   },
-    CHCC:   { eps: 28.40, dps: null,  shares: 194    },
-    DGKC:   { eps: 19.07, dps: null,  shares: 438    },
-  };
-
-  const f = RATIO_INPUTS[ticker];
-  if (!f || !livePrice || livePrice <= 0) return {};
+  const s = PSX_FUNDAMENTALS[ticker];
+  if (!s || !livePrice || livePrice <= 0) return {};
 
   const ratios = {};
+  const eps  = parseFloat(s.eps);
+  const dps  = parseFloat(s.dps);
+  const bvps = parseFloat(s.bvps);
+  const shares = parseFloat(s.sharesOutstanding);
 
-  if (f.eps && f.eps > 0) {
-    ratios.pe = (livePrice / f.eps).toFixed(1);
-    ratios.peNote = `P/E ${ratios.pe}× (PKR ${livePrice} / EPS PKR ${f.eps})`;
+  // P/E — for all non-banking tickers primarily
+  if (eps > 0) {
+    ratios.pe     = (livePrice / eps).toFixed(1);
+    ratios.peNote = `P/E ${ratios.pe}× (PKR ${livePrice} / EPS PKR ${eps})`;
   }
 
-  if (f.bvps && f.bvps > 0) {
-    ratios.pb = (livePrice / f.bvps).toFixed(2);
-    ratios.pbNote = `P/B ${ratios.pb}× (PKR ${livePrice} / BVPS PKR ${f.bvps})`;
+  // P/B — for banking tickers
+  if (bvps > 0) {
+    ratios.pb     = (livePrice / bvps).toFixed(2);
+    ratios.pbNote = `P/B ${ratios.pb}× (PKR ${livePrice} / BVPS PKR ${bvps})`;
   }
 
-  if (f.dps && f.dps > 0) {
-    ratios.divYield = ((f.dps / livePrice) * 100).toFixed(2) + '%';
-    ratios.divNote = `Div Yield ${ratios.divYield} (DPS PKR ${f.dps})`;
+  // Dividend yield
+  if (dps > 0) {
+    ratios.divYield = ((dps / livePrice) * 100).toFixed(2) + '%';
+    ratios.divNote  = `Div Yield ${ratios.divYield} (DPS PKR ${dps})`;
   }
 
-  if (f.shares) {
-    ratios.marketCap = `PKR ${((livePrice * f.shares) / 1000).toFixed(1)}B`;
+  // Market cap
+  if (shares > 0) {
+    ratios.marketCap = `PKR ${((livePrice * shares) / 1000).toFixed(1)}B`;
   }
 
   return ratios;
@@ -521,20 +521,52 @@ async function getStockData(ticker) {
   const livePrice = await getPSXPrice(ticker);
 
   const NAME_MAP = {
-    OGDC:'Oil & Gas Dev Co', PPL:'Pakistan Petroleum',
-    PSO:'Pakistan State Oil', MARI:'Mari Petroleum',
-    APL:'Attock Petroleum', HASCOL:'Hascol Petroleum',
-    HBL:'Habib Bank Ltd', MCB:'MCB Bank',
-    UBL:'United Bank Ltd', NBP:'National Bank',
-    ABL:'Allied Bank Ltd', BAFL:'Bank Al Falah',
-    ENGROH:'Engro Holdings', FFC:'Fauji Fertiliser',
-    EFERT:'Engro Fertilisers', LUCK:'Lucky Cement',
-    MLCF:'Maple Leaf Cement', CHCC:'Cherat Cement', DGKC:'DG Khan Cement',
+  OGDC:'Oil & Gas Dev Co', PPL:'Pakistan Petroleum',
+  PSO:'Pakistan State Oil', MARI:'Mari Petroleum',
+  APL:'Attock Petroleum', HASCOL:'Hascol Petroleum',
+  HBL:'Habib Bank Ltd', MCB:'MCB Bank',
+  UBL:'United Bank Ltd', NBP:'National Bank',
+  ABL:'Allied Bank Ltd', BAFL:'Bank Al Falah',
+  ENGROH:'Engro Holdings', FFC:'Fauji Fertiliser',
+  EFERT:'Engro Fertilisers', LUCK:'Lucky Cement',
+  MLCF:'Maple Leaf Cement', CHCC:'Cherat Cement', DGKC:'DG Khan Cement',
+  MEBL:'Meezan Bank', FABL:'Faysal Bank', BAHL:'Bank Al Habib',
+  AKBL:'Askari Bank', BOP:'Bank of Punjab', SNBL:'Soneri Bank',
+  POL:'Pakistan Oilfields', SHEL:'Shell Pakistan',
+  FATIMA:'Fatima Fertilizer', FFBL:'Fauji Fertilizer Bin Qasim',
+  FCCL:'Fauji Cement', PIOC:'Pioneer Cement', KOHC:'Kohat Cement',
+  ACPL:'Attock Cement', POWER:'Power Cement',
+  HUBC:'Hub Power', KEL:'K-Electric', KAPCO:'Kot Addu Power',
+  NPL:'Nishat Power', NCPL:'Nishat Chunian Power', PKGP:'Pakgen Power',
+  SYS:'Systems Limited', TRG:'TRG Pakistan', PTC:'Pakistan Telecom',
+  AIRLINK:'Air Link Communication', AVN:'Avanceon', NETSOL:'NetSol Technologies',
+  INDU:'Indus Motor', HCAR:'Honda Atlas Cars', PSMC:'Pak Suzuki',
+  GHNL:'Ghandhara Nissan', SAZEW:'Sazgar Engineering',
+  MTL:'Millat Tractors', AGTL:'Al-Ghazi Tractors',
+  NESTLE:'Nestle Pakistan', UNITY:'Unity Foods', NATF:'National Foods',
+  MUREB:'Murree Brewery', COLG:'Colgate Palmolive',
+  ILP:'Interloop', NML:'Nishat Mills', GATM:'Gul Ahmed Textile',
+  KTML:'Kohinoor Textile', SAPT:'Sapphire Textile',
+  DAWH:'Dawood Hercules', EPCL:'Engro Polymer',
+  LOTCHEM:'LOTTE Chemical', SNGP:'Sui Northern Gas', SSGC:'Sui Southern Gas',
+  EFUG:'EFU General', EFUL:'EFU Life', JGICL:'Jubilee General',
+  SEARL:'Searle Company', AGP:'AGP Limited',
+  GLAXO:'GlaxoSmithKline Pakistan', ABOT:'Abbott Laboratories',
+  MUGHAL:'Mughal Iron & Steel', ASTL:'Amreli Steels',
+  ISL:'International Steels', ASL:'Aisha Steel',
+  PIBTL:'Pakistan Int. Bulk Terminal',
+  PIAA:'PIA Holding', HUMNL:'Hum Network',
   };
 
   const SECTOR_LABEL = {
-    ENERGY_EP:'Oil & Gas E&P', OMC:'Oil Marketing',
-    BANKING:'Commercial Banking', FERTILISER:'Fertilizer', CEMENT:'Cement',
+  ENERGY_EP:'Oil & Gas E&P', OMC:'Oil Marketing',
+  BANKING:'Commercial Banking', FERTILISER:'Fertilizer', CEMENT:'Cement',
+  POWER:'Power & Utilities', TECH:'Technology & Telecom',
+  AUTO:'Auto & Engineering', CONSUMER:'Consumer & Food',
+  TEXTILE:'Textile Exports', HOLDING:'Holding & Diversified',
+  CHEMICALS:'Chemicals & Industrial', INSURANCE:'Insurance',
+  PHARMA:'Pharmaceuticals', STEEL:'Steel & Materials',
+  LOGISTICS:'Logistics & Ports', AVIATION:'Aviation', MEDIA:'Media',
   };
 
   const sectorCode = SECTOR_MAP[ticker] || 'GENERAL';
@@ -567,25 +599,17 @@ function setCache(ticker, data) { verdictCache[ticker] = { data, timestamp: Date
 async function generateVerdict(stockData, macroContext) {
   const cached = getCached(stockData.ticker);
   if (cached) return { ...cached, cached: true };
-
   const sectorBlock = buildSectorDataBlock(stockData.ticker, stockData);
-
   const prompt = `You are a sharp PSX equity analyst for Wall-Trade — Pakistan's AI stock analysis platform.
-
 LIVE PRICE DATA:
 Ticker: ${stockData.ticker} — ${stockData.name}
 Price: PKR ${stockData.price ?? '—'} (${stockData.change ?? '—'}% today)
-
 ${sectorBlock}
-
 COMPANY ANALYSIS:
 ${stockData.aiSummary || ''}
-
 PAKISTAN MACRO CONTEXT:
 ${macroContext}
-
 INSTRUCTION: Sector-aware, data-driven verdict. Reference specific numbers. Apply sector logic strictly — do NOT flag high D/E for banks/OMCs, do NOT expect high margins from OMCs, do NOT treat HASCOL as normal valuation stock.
-
 Return ONLY this JSON (no markdown):
 {
   "verdict": "Positive" or "Neutral" or "Caution",
@@ -615,12 +639,23 @@ Return ONLY this JSON (no markdown):
   ],
   "summary": "<one sentence summary with key number>"
 }`;
-
   try {
     const result = await callAnthropic({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1500,
-      system: `You are a senior PSX equity analyst. Generate accurate, sector-specific, data-driven analysis for Pakistani retail investors. Always cite exact figures. Never be generic. High D/E is normal for banks and OMCs. Thin margins are normal for OMCs. High margins are normal for E&P. HASCOL is a turnaround — not a normal stock. Be direct and specific.`,
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2500,
+      system: `You are a senior equity analyst at a top Pakistani brokerage, writing for Wall-Trade — Pakistan's AI stock analysis platform for retail investors.
+
+YOUR JOB: Generate a sharp, data-driven verdict that helps a Pakistani retail investor understand this stock RIGHT NOW.
+
+RULES:
+- Always cite exact figures — never say "strong margins", say "38.4% net margin"
+- Never be generic — every sentence must be specific to THIS stock
+- Connect macro to stock impact directly with numbers
+- Sector logic is mandatory: BANKING = P/B primary, high D/E normal. E&P = circular debt = cash flow risk, high margins normal. OMC = 1-3% margins normal. CEMENT = coal cost is #1 driver. FERTILIZER = dividend yield is the investment case.
+- The body field MUST be 120-150 words minimum — do not truncate
+- Every factor detail MUST include at least one actual number
+- Never give buy or sell advice
+- NEVER mention analyst price targets or consensus ratings`,
       messages: [{ role: 'user', content: prompt }]
     });
     const raw = result.content?.map(i => i.text || '').join('').replace(/```json|```/g, '').trim();
@@ -633,7 +668,6 @@ Return ONLY this JSON (no markdown):
   }
 }
 
-// ── MAIN HANDLER ──────────────────────────────────────────────
 // ── SUPABASE HELPERS ──────────────────────────────────────────
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
