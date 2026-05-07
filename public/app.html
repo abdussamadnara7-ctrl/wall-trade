@@ -780,25 +780,6 @@ let stockCache = {};      // stockData per ticker
 let verdictCache = {};    // AI verdict per ticker
 let livePrices = {};      // live prices from prices.js
 
-// ── MACRO CONTEXT (static, updated periodically) ──────────
-const MACRO = [
-  "SBP Policy Rate: 11.50% — hiked 100bps on April 27 2026. KIBOR 6M now at 11.9% above policy rate reflecting continued pressure. Next MPC June 2026. No rate reversal expected near term",
-  "Inflation: Back in double digits for first time in nearly two years as of May 2026. Rising energy costs and global oil volatility are primary drivers. SBP target range 5-7% significantly breached",
-  "Oil situation CRITICAL: Brent crude at elevated levels — live price injected separately. Arab Light at $105.2. US conveyed response to Iran 14-point peace proposal via Pakistan on May 4 2026. Trump announced US helping free ships in Strait of Hormuz. If Hormuz fully reopens oil could drop $20-30 per barrel overnight — massive positive for Pakistan",
-  "UAE exited OAPEC and OPEC+ on May 1 2026 to boost its own output. OPEC+ agreed third consecutive output hike of 188,000 bpd for June but largely on paper while Hormuz disrupted",
-  "KSE-100: 162,994 last close — down 2,829 points (-1.71%) on May 2 2026. Down 6.4% year to date. Market cap PKR 15.4 trillion. Broad based selling continues. P/E approximately 7.4x — cheap versus regional peers",
-  "Budget: National Assembly budget session called for June 1 2026. FY2026-27 budget to be presented same week. Next major domestic catalyst for markets",
-  "Cement sector: Regulators flagged deep-rooted cartelisation concerns spanning decades. Budget may include measures targeting sector. PM launched 5-year housing programme — 500,000 homes at PKR 3.2 trillion — medium term positive",
-  "Banking sector: KIBOR 6M at 11.9% above SBP policy rate. Banks repricing books in real time. Near term NIM pressure but medium term positive as investment books reprice at higher yields over 3 to 6 months",
-  "E&P sector IMPORTANT: Brent at elevated levels is fundamentally positive for OGDC PPL MARI dollar-linked revenues. BUT PSX market currently in risk-off mode selling E&Ps due to macro fears not earnings. Verdicts must reflect BOTH dimensions — strong fundamentals but negative near term PSX sentiment",
-  "Fertilizer sector: relatively insulated. Gas pricing stable. Government subsidy programmes provide buffer",
-  "OMC sector: margin pressure from elevated oil — higher dollar import costs against rupee revenues",
-  "FX reserves: $15.8B. Current account in surplus. Remittances strong at $41B annual run rate. IMF EFF programme active",
-  "PKR: 278.8 per USD — stable. Down only 0.5% year to date. SBP rate hike supportive of rupee",
-  "Key positive catalyst: Hormuz diplomatic resolution — would send oil sharply lower, ease inflation, restore rate cut expectations and trigger strong PSX rally across all sectors",
-  "Key risks: Hormuz closure duration, inflation hitting double digits faster than expected, further SBP rate hike, IMF programme slippage, FY27 budget fiscal slippages"
-].join(". ");
-
 // ── COLOUR HELPERS ─────────────────────────────────────────
 const vGrad  = t => ({Positive:'gx-green',Neutral:'gx-beige',Caution:'gx-red'}[t]||'gx-white');
 const scGrad = v => v>=7?`linear-gradient(130deg,var(--ga),var(--gb))`:v>=5?`linear-gradient(130deg,#fbbf24,#d97706)`:`linear-gradient(130deg,var(--ra),var(--rb))`;
@@ -1530,7 +1511,7 @@ async function loadStock(ticker) {
     const res = await fetch('/.netlify/functions/stock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker, macroContext: MACRO, priceOnly: true })
+      body: JSON.stringify({ ticker, priceOnly: true })
     });
 
     if (res.status === 404) { const err = await res.json(); renderError(ticker, err.error); return; }
@@ -1583,8 +1564,9 @@ async function generateVerdict(ticker) {
   if (brent)  liveParts.push(`Brent Crude: $${brent.price} (${brent.change >= 0 ? '+' : ''}${brent.change}% today)`);
   if (gold)   liveParts.push(`Gold: $${gold.price}`);
   if (pkrusd) liveParts.push(`PKR/USD: ${pkrusd.rate}`);
-  const livePrefix = liveParts.length ? `LIVE PRICES AS OF NOW: ${liveParts.join(' | ')}. ` : '';
-  const enrichedMacro = (livePrefix + MACRO).slice(0, 1500);
+  const liveMarketContext = liveParts.length
+  ? `LIVE MARKET DATA AS OF NOW: ${liveParts.join(' | ')}.`
+  : '';
 
   // Get user token for auth + rate limiting
   const token = localStorage.getItem('wt_token') || '';
@@ -1593,7 +1575,7 @@ async function generateVerdict(ticker) {
     const res = await fetch('/.netlify/functions/stock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticker, macroContext: enrichedMacro, stockData: stockCache[ticker], token })
+      body: JSON.stringify({ ticker, liveMarketContext, token })
     });
 
     // Handle rate limit
@@ -1696,8 +1678,6 @@ async function doAsk() {
     s?.totalAssets? `Total Assets: ${s.totalAssets}` : '',
     '',
     s?.aiSummary  ? `COMPANY INTELLIGENCE:\n${s.aiSummary}` : '',
-    '',
-    `TODAY'S MACRO CONTEXT:\n${MACRO}`,
     '',
     v ? `EXISTING AI VERDICT: ${v.verdict} (${v.score}/10)\n${v.headline}\n${v.body}` : 'No verdict generated yet.'
   ].filter(Boolean).join('\n');
