@@ -699,6 +699,22 @@ function supabase(path, method = 'GET', body = null) {
   });
 }
 
+async function getLatestMacro() {
+  try {
+    const rows = await supabase('macro?select=content,updated_at&id=eq.1&limit=1');
+
+    if (!rows?.[0]?.content) return null;
+
+    return {
+      content: rows[0].content,
+      updated_at: rows[0].updated_at
+    };
+  } catch (e) {
+    console.error('Macro fetch error:', e.message);
+    return null;
+  }
+}
+
 function supabaseRpc(fn, params) {
   return new Promise((resolve) => {
     const data = JSON.stringify(params);
@@ -846,7 +862,13 @@ exports.handler = async (event) => {
   }
 
   // ── GENERATE VERDICT ─────────────────────────────────────────
-  const verdict = await generateVerdict(stockDataWithRatios, macroContext);
+const latestMacro = await getLatestMacro();
+
+const finalMacro = latestMacro?.content
+  ? `${latestMacro.content}\n\nMacro last updated: ${latestMacro.updated_at}`
+  : 'Pakistan macro context unavailable.';
+
+const verdict = await generateVerdict(stockDataWithRatios, finalMacro);
 
   // Save to server-side cache so next user gets it for free
   if (verdict) await saveVerdictCache(cleanTicker, verdict);
