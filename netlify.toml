@@ -3,7 +3,7 @@
   functions = "netlify/functions"
 
 [functions]
-  node_bundler = "zisi"
+  node_bundler = "esbuild"
 
 [[headers]]
   for = "/*"
@@ -42,3 +42,9 @@
 
 [functions."forex"]
   timeout = 15
+  
+[functions."macro"]
+  timeout = 26
+  
+[functions."extract"]
+  timeout = 26
