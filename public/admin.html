@@ -315,7 +315,7 @@ body {
 <body>
 
 <div class="logo">Wall<span>-Trade</span></div>
-<div class="title">Admin Console · Macro Update</div>
+<div class="title">Admin Console · Macro + Quarterly Reports</div>
 
 <!-- PASSWORD GATE -->
 <div id="gate">
@@ -378,15 +378,125 @@ body {
     <div class="result-box" id="current-macro" style="max-height:160px;">Loading...</div>
   </div>
 
+  <!-- QUARTERLY REPORT CARD -->
+  <div class="card">
+    <div class="card-title">Quarterly Report Extraction</div>
+
+    <div style="margin-bottom:16px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;">Select Ticker</div>
+      <select id="q-ticker" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--t1);font-family:inherit;font-size:13px;outline:none;cursor:pointer;">
+        <option value="">— Select stock —</option>
+        <optgroup label="Banking">
+          <option>HBL</option><option>MCB</option><option>UBL</option><option>NBP</option>
+          <option>MEBL</option><option>BAFL</option><option>ABL</option><option>FABL</option>
+          <option>BAHL</option><option>AKBL</option><option>BOP</option><option>SNBL</option>
+        </optgroup>
+        <optgroup label="E&P">
+          <option>OGDC</option><option>PPL</option><option>MARI</option><option>POL</option>
+        </optgroup>
+        <optgroup label="OMC">
+          <option>PSO</option><option>APL</option><option>SHEL</option><option>HASCOL</option>
+        </optgroup>
+        <optgroup label="Fertilizer">
+          <option>FFC</option><option>EFERT</option><option>FATIMA</option><option>FFBL</option>
+        </optgroup>
+        <optgroup label="Cement">
+          <option>LUCK</option><option>DGKC</option><option>MLCF</option><option>CHCC</option>
+          <option>FCCL</option><option>PIOC</option><option>KOHC</option><option>ACPL</option><option>POWER</option>
+        </optgroup>
+        <optgroup label="Power">
+          <option>HUBC</option><option>KEL</option><option>KAPCO</option>
+          <option>NPL</option><option>NCPL</option><option>PKGP</option>
+        </optgroup>
+        <optgroup label="Technology / Telecom">
+          <option>SYS</option><option>TRG</option><option>PTC</option>
+          <option>AIRLINK</option><option>AVN</option><option>NETSOL</option>
+        </optgroup>
+        <optgroup label="Auto & Engineering">
+          <option>INDU</option><option>HCAR</option><option>PSMC</option><option>GHNL</option>
+          <option>SAZEW</option><option>MTL</option><option>AGTL</option>
+        </optgroup>
+        <optgroup label="Consumer / Food">
+          <option>NESTLE</option><option>UNITY</option><option>NATF</option>
+          <option>MUREB</option><option>COLG</option>
+        </optgroup>
+        <optgroup label="Textile">
+          <option>ILP</option><option>NML</option><option>GATM</option>
+          <option>KTML</option><option>SAPT</option>
+        </optgroup>
+        <optgroup label="Holding / Diversified">
+          <option>ENGROH</option><option>DAWH</option>
+        </optgroup>
+        <optgroup label="Chemicals / Industrial">
+          <option>EPCL</option><option>LOTCHEM</option><option>SNGP</option><option>SSGC</option>
+        </optgroup>
+        <optgroup label="Insurance">
+          <option>EFUG</option><option>EFUL</option><option>JGICL</option>
+        </optgroup>
+        <optgroup label="Pharma">
+          <option>SEARL</option><option>AGP</option><option>GLAXO</option><option>ABOT</option>
+        </optgroup>
+        <optgroup label="Steel / Materials">
+          <option>MUGHAL</option><option>ASTL</option><option>ISL</option><option>ASL</option>
+        </optgroup>
+        <optgroup label="Logistics">
+          <option>PIBTL</option>
+        </optgroup>
+        <optgroup label="Aviation">
+          <option>PIAA</option>
+        </optgroup>
+        <optgroup label="Media">
+          <option>HUMNL</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="tabs">
+      <div class="tab on" id="q-tab-file" onclick="setQTab('file')">PDF / Image</div>
+      <div class="tab" id="q-tab-text" onclick="setQTab('text')">Paste Text</div>
+    </div>
+
+    <div id="q-panel-file">
+      <div class="drop-zone" id="q-drop-zone">
+        <input type="file" id="q-file-input" accept=".pdf,.png,.jpg,.jpeg" onchange="handleQFile(this.files[0])"/>
+        <div class="drop-icon">📊</div>
+        <div class="drop-label"><strong>Upload quarterly report</strong><br>PDF · PNG · JPG</div>
+      </div>
+      <div class="file-preview" id="q-file-preview">
+        <span class="file-preview-icon" id="q-file-icon">📄</span>
+        <span class="file-preview-name" id="q-file-name"></span>
+        <span class="file-preview-remove" onclick="clearQFile()">✕</span>
+      </div>
+    </div>
+
+    <div id="q-panel-text" style="display:none;">
+      <textarea class="text-area" id="q-text-input" placeholder="Paste quarterly report text here..."></textarea>
+    </div>
+
+    <button class="btn btn-primary" id="q-extract-btn" onclick="extractQuarterly()" disabled>
+      Extract & Update stock.js
+    </button>
+
+    <div class="status" id="q-status"></div>
+
+    <div class="result-wrap" id="q-result-wrap">
+      <div class="result-label">Extracted Data — Committed to GitHub</div>
+      <div class="result-box" id="q-result-box"></div>
+      <div style="font-size:10px;color:var(--t3);margin-top:8px;line-height:1.6;">
+        ✓ Committed to GitHub. Netlify auto-deploys in ~60 seconds.
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div class="version-tag">WT-ADMIN v1.0</div>
 
 <script>
 // ── CONFIG ─────────────────────────────────────────────────────
-const ADMIN_PASSWORD = 'ASNXSTOCKKING777'; // change this
-const SUPABASE_URL   = 'https://kctfrhxtligaqxdhbevq.supabase.co';
-const SUPABASE_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5YW9hbXlxbXR6a2Z6aHZkbm9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NzQ5NjIsImV4cCI6MjA4ODM1MDk2Mn0.SBr5YC0_drekGBoVfkq7DpKNyTK-a_CxA-qATEqkPp4';
+const ADMIN_PASSWORD = 'REPLACE_WITH_YOUR_PASSWORD'; // change this
+const SUPABASE_URL   = 'REPLACE_WITH_YOUR_SUPABASE_URL';
+const SUPABASE_KEY   = 'REPLACE_WITH_YOUR_SUPABASE_ANON_KEY';
 
 // ── AUTH ───────────────────────────────────────────────────────
 function checkPw() {
@@ -535,6 +645,122 @@ function fileToBase64(file) {
 
 function setStatus(type, msg) {
   const el = document.getElementById('status');
+  el.className = 'status on ' + type;
+  el.innerHTML = msg;
+}
+
+// ── QUARTERLY EXTRACTION ───────────────────────────────────────
+let qSelectedFile = null;
+let qCurrentTab = 'file';
+
+function setQTab(tab) {
+  qCurrentTab = tab;
+  document.getElementById('q-tab-file').classList.toggle('on', tab === 'file');
+  document.getElementById('q-tab-text').classList.toggle('on', tab === 'text');
+  document.getElementById('q-panel-file').style.display = tab === 'file' ? 'block' : 'none';
+  document.getElementById('q-panel-text').style.display = tab === 'text' ? 'block' : 'none';
+  checkQReady();
+}
+
+function handleQFile(file) {
+  if (!file) return;
+  qSelectedFile = file;
+  const icon = file.type.includes('pdf') ? '📄' : '🖼️';
+  document.getElementById('q-file-icon').textContent = icon;
+  document.getElementById('q-file-name').textContent = file.name;
+  document.getElementById('q-file-preview').classList.add('on');
+  document.getElementById('q-drop-zone').style.display = 'none';
+  checkQReady();
+}
+
+function clearQFile() {
+  qSelectedFile = null;
+  document.getElementById('q-file-input').value = '';
+  document.getElementById('q-file-preview').classList.remove('on');
+  document.getElementById('q-drop-zone').style.display = 'block';
+  checkQReady();
+}
+
+function checkQReady() {
+  const ticker  = document.getElementById('q-ticker').value;
+  const hasFile = qCurrentTab === 'file' && qSelectedFile;
+  const hasText = qCurrentTab === 'text' && document.getElementById('q-text-input').value.trim().length > 20;
+  document.getElementById('q-extract-btn').disabled = !(ticker && (hasFile || hasText));
+}
+
+document.getElementById('q-ticker').addEventListener('change', checkQReady);
+document.getElementById('q-text-input')?.addEventListener('input', checkQReady);
+
+// Drag and drop for quarterly
+const qdz = document.getElementById('q-drop-zone');
+qdz.addEventListener('dragover', e => { e.preventDefault(); qdz.classList.add('drag'); });
+qdz.addEventListener('dragleave', () => qdz.classList.remove('drag'));
+qdz.addEventListener('drop', e => {
+  e.preventDefault();
+  qdz.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) handleQFile(file);
+});
+
+async function extractQuarterly() {
+  const ticker = document.getElementById('q-ticker').value;
+  if (!ticker) return;
+
+  setQStatus('loading', `<span class="spinner"></span> Extracting ${ticker} quarterly data via Claude...`);
+  document.getElementById('q-extract-btn').disabled = true;
+  document.getElementById('q-result-wrap').classList.remove('on');
+
+  try {
+    let body;
+
+    if (qCurrentTab === 'file' && qSelectedFile) {
+      const base64 = await fileToBase64(qSelectedFile);
+      body = JSON.stringify({
+        ticker,
+        type:      qSelectedFile.type.includes('pdf') ? 'pdf' : 'image',
+        mediaType: qSelectedFile.type,
+        data:      base64,
+      });
+    } else {
+      body = JSON.stringify({
+        ticker,
+        type: 'text',
+        text: document.getElementById('q-text-input').value.trim(),
+      });
+    }
+
+    setQStatus('loading', `<span class="spinner"></span> Claude reading report... committing to GitHub...`);
+
+    const res = await fetch('/.netlify/functions/extract', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server error');
+
+    setQStatus('success', `✓ ${ticker} updated for ${data.period}. GitHub committed. Netlify deploying (~60 seconds).`);
+
+    // Show extracted data for review
+    const preview = JSON.stringify(data.extracted, null, 2);
+    document.getElementById('q-result-box').textContent = preview;
+    document.getElementById('q-result-wrap').classList.add('on');
+
+    // Clear form
+    clearQFile();
+    document.getElementById('q-ticker').value = '';
+    document.getElementById('q-extract-btn').disabled = true;
+
+  } catch(e) {
+    setQStatus('error', '✕ Error: ' + e.message);
+  }
+
+  document.getElementById('q-extract-btn').disabled = false;
+}
+
+function setQStatus(type, msg) {
+  const el = document.getElementById('q-status');
   el.className = 'status on ' + type;
   el.innerHTML = msg;
 }
