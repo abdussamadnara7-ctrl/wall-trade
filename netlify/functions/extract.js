@@ -691,7 +691,9 @@ exports.handler = async (event) => {
 
   let payload;
   try { payload = JSON.parse(event.body); }
-  catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request' }) }; }
+  catch(e) { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON: ' + e.message }) }; }
+
+  console.log('Extract called — ticker:', payload?.ticker, 'type:', payload?.type);
 
   const { ticker, type, data, mediaType, text } = payload;
 
@@ -733,6 +735,7 @@ exports.handler = async (event) => {
     const raw = result.content?.map(i => i.text || '').join('').replace(/```json|```/g, '').trim();
     extracted = JSON.parse(raw);
   } catch(e) {
+    console.error('Claude extraction error:', e.message, JSON.stringify(e));
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'Extraction failed: ' + e.message }) };
   }
 
@@ -742,6 +745,7 @@ exports.handler = async (event) => {
     fileData = await getGitHubFile();
     if (!fileData.sha) throw new Error('Could not get file SHA: ' + JSON.stringify(fileData));
   } catch(e) {
+    console.error('GitHub read error:', e.message, JSON.stringify(fileData));
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'GitHub read failed: ' + e.message }) };
   }
 
