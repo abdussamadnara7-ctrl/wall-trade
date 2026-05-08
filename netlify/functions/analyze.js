@@ -90,7 +90,12 @@ COMMUNICATION STYLE:
 - Connect financial metrics to Pakistan real-world context
 - Mobile-friendly short paragraphs
 - Never give buy or sell advice
-- If you do not know something specific, say so — do not make up numbers`;
+- PRIORITY ORDER FOR ANSWERING:
+1. Always use the stock data, fundamentals, live price and macro context provided first — this is your primary source
+2. Only use web search when the question specifically requires today's news or a recent event not covered by the context
+3. For sector mechanics, financial concepts and general Pakistan market knowledge, use your own training
+4. Never invent current figures, prices or filings
+5. Web search is expensive — use it sparingly and only when genuinely needed`;
 
 async function getLatestMacro() {
   return new Promise((resolve) => {
@@ -98,7 +103,7 @@ async function getLatestMacro() {
 
     const req = https.request({
       hostname,
-      path: '/rest/v1/macro?select=content,updated_at&id=eq.1&limit=1',
+      path: '/rest/v1/macro?select=content,updated_at&order=updated_at.desc&limit=1',
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -189,9 +194,9 @@ exports.handler = async (event) => {
   // - today's macro from Supabase
   // - existing verdict if generated
   const latestMacro = await getLatestMacro();
-const macroBlock = latestMacro || 'Pakistan macro context unavailable.';
+  const macroBlock = latestMacro || 'Pakistan macro context unavailable.';
 
-const userPrompt = `${stockContext}
+  const userPrompt = `${stockContext}
 
 TODAY'S MACRO CONTEXT:
 ${macroBlock}
@@ -202,17 +207,25 @@ Answer as a senior PSX analyst. Be specific, use actual numbers from the context
 
   try {
     const result = await callAnthropic({
-      model:      'claude-sonnet-4-20250514',
-      max_tokens: 600,
-      system:     SYSTEM,
-      messages:   [{ role: 'user', content: userPrompt }]
-    });
+  model:      'claude-sonnet-4-6',
+  max_tokens: 1000,
+  system:     SYSTEM,
+  tools:      [{ type: 'web_search_20260209', name: 'web_search', max_uses: 3 }],
+  messages:   [{ role: 'user', content: userPrompt }]
+});
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify(result)
-    };
+const fullResponse = result.content
+  ?.map(block => block.type === 'text' ? block.text : '')
+  .filter(Boolean)
+  .join('') || 'Could not get a response.';
+
+return {
+  statusCode: 200,
+  headers,
+  body: JSON.stringify({
+    content: [{ type: 'text', text: fullResponse }]
+  })
+};
   } catch(e) {
     console.error('Anthropic error:', e.message);
     return { statusCode: 502, headers, body: JSON.stringify({ error: 'AI service unavailable' }) };
