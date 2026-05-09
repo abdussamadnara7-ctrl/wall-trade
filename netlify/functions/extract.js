@@ -677,6 +677,44 @@ function buildTickerBlock(ticker, e) {
   }`;
 }
 
+async function uploadToFilesAPI(base64Data) {
+  return new Promise((resolve) => {
+    const buffer = Buffer.from(base64Data, 'base64');
+    const boundary = '----FormBoundary' + Date.now();
+    const header = Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="report.pdf"\r\nContent-Type: application/pdf\r\n\r\n`
+    );
+    const footer = Buffer.from(`\r\n--${boundary}--\r\n`);
+    const body = Buffer.concat([header, buffer, footer]);
+
+    const req = https.request({
+      hostname: 'api.anthropic.com',
+      path: '/v1/files',
+      method: 'POST',
+      headers: {
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'files-api-2025-04-14',
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Length': body.length
+      }
+    }, res => {
+      let b = '';
+      res.on('data', c => b += c);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(b);
+          resolve(parsed.id || null);
+        } catch(e) { resolve(null); }
+      });
+    });
+
+    req.on('error', () => resolve(null));
+    req.write(body);
+    req.end();
+  });
+}
+
 // ── MAIN HANDLER ──────────────────────────────────────────────
 exports.handler = async (event) => {
   const headers = {
@@ -707,14 +745,18 @@ exports.handler = async (event) => {
 
   // Build Claude message
   let messages;
-  if (type === 'pdf') {
+if (type === 'pdf') {
+    const fileId = await uploadToFilesAPI(data);
+    if (!fileId) return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to upload PDF to Anthropic Files API' }) };
     messages = [{ role: 'user', content: [
-      { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data } },
+      { type: 'document', source: { type: 'file', file_id: fileId } },
       { type: 'text', text: extractionPrompt }
     ]}];
   } else if (type === 'image') {
+    const fileId = await uploadToFilesAPI(data);
+    if (!fileId) return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to upload image to Anthropic Files API' }) };
     messages = [{ role: 'user', content: [
-      { type: 'image', source: { type: 'base64', media_type: mediaType, data } },
+      { type: 'document', source: { type: 'file', file_id: fileId } },
       { type: 'text', text: extractionPrompt }
     ]}];
   } else if (type === 'text') {
