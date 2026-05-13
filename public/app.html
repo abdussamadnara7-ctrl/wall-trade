@@ -1586,8 +1586,7 @@ async function generateVerdict(ticker) {
           <div style="background:rgba(255,100,50,0.06);border:1px solid rgba(255,100,50,0.2);border-radius:14px;padding:20px;text-align:center;margin:0 20px 12px;">
             <div style="font-size:15px;margin-bottom:8px;">🔒</div>
             <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:6px;">${err.error}</div>
-            ${err.upgrade ? `<div style="font-size:11px;color:var(--t3);">Upgrade to Premium for 15 verdicts/day + 5 chatbot questions.</div>` : ''}
-          </div>`;
+            ${err.upgrade ? `<div style="font-size:11px;color:var(--t3);">Beta users get 5 verdicts/day · Upgrade to Premium for 15 verdicts/day + 5 chatbot questions.</div>` : ''}          </div>`;
       }
       return;
     }
