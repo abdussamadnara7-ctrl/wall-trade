@@ -874,7 +874,7 @@ exports.handler = async (event) => {
       statusCode: 429,
       headers,
       body: JSON.stringify({
-        error:    `Daily limit reached. ${isPremium ? `Premium users get ${limit} verdicts/day.` : `Free users get ${limit} verdicts/day. Upgrade to Premium for 15 verdicts/day.`}`,
+      error: `Daily limit reached. ${isPremium ? `Premium users get ${limit} verdicts/day.` : `Beta users get ${limit} AI verdicts/day. Upgrade to Premium for 15 verdicts/day.`}`,        
         tier,
         limit,
         upgrade:  !isPremium
