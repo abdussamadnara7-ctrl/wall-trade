@@ -655,7 +655,7 @@ async function generateVerdict(stockData, macroContext) {
 
   try {
     var result = await callOpenRouter({
-      model: 'z-ai/glm-5.1',
+      model: 'minimax/minimax-01',,
       max_tokens: 2500,
       messages: [
         { role: 'system', content: systemPrompt },
