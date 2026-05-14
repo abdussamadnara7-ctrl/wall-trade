@@ -655,7 +655,7 @@ async function generateVerdict(stockData, macroContext) {
 
   try {
     var result = await callOpenRouter({
-      model: 'minimax/minimax-01',,
+      model: 'minimax/minimax-m2.7',
       max_tokens: 2500,
       messages: [
         { role: 'system', content: systemPrompt },
