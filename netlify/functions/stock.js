@@ -685,15 +685,30 @@ Return ONLY this JSON (no markdown):
   ],
   "summary": "<one sentence summary with key number>"
 }`;
-  try {
+  
+ try {
     const result = await callOpenRouter({
-  model: 'z-ai/glm-5.1',
-  max_tokens: 2500,
-  messages: [
-    { role: 'system', content: `You are a senior equity analyst at a top Pakistani brokerage, writing for Wall-Trade — Pakistan's AI stock analysis platform for retail investors.
+      model: 'z-ai/glm-5.1',
+      max_tokens: 2500,
+      messages: [
+        { role: 'system', content: `You are a senior equity analyst at a top Pakistani brokerage, writing for Wall-Trade — Pakistan's AI stock analysis platform for retail investors.
 
 YOUR JOB: Generate a sharp, data-driven verdict that helps a Pakistani retail investor understand this stock RIGHT NOW.
 
+RULES:
+- Always cite exact figures — never say "strong margins", say "38.4% net margin"
+- Never be generic — every sentence must be specific to THIS stock
+- Connect macro to stock impact directly with numbers
+- Sector logic is mandatory: BANKING = P/B primary, high D/E normal. E&P = circular debt = cash flow risk, high margins normal. OMC = 1-3% margins normal. CEMENT = coal cost is #1 driver. FERTILIZER = dividend yield is the investment case.
+- The body field MUST be 120-150 words minimum — do not truncate
+- Every factor detail MUST include at least one actual number
+- Never give buy or sell advice
+- NEVER mention analyst price targets or consensus ratings` },
+        { role: 'user', content: prompt }
+      ]
+    });
+    const raw = result.choices?.[0]?.message?.content?.replace(/```json|```/g, '').trim();
+   
 RULES:
 - Always cite exact figures — never say "strong margins", say "38.4% net margin"
 - Never be generic — every sentence must be specific to THIS stock
