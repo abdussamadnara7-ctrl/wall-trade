@@ -1,9 +1,6 @@
 const https = require('https');
 
 // ── PSX FUNDAMENTALS — Q3 FY26 (9M ending March 2026) ────────
-// Source: Quarterly reports compiled May 2026
-// All figures 9M FY26 unless noted. Revenue/profit in PKR billions.
-// P/E, P/B, divYield are calculated live in calculateLiveRatios()
 const PSX_FUNDAMENTALS = {
 
   OGDC: {
@@ -105,7 +102,7 @@ const PSX_FUNDAMENTALS = {
     casaRatio:'38.7%', carRatio:'16.7%', cet1Ratio:'13.8%',
     nplRatio:'N/A',
     dividend:'PKR 20/share',
-    aiSummary:"Second-largest bank — PKR 5.4T deposits, PKR 8.1T assets. Q1 2026 profit PKR 16.1B — down 3% YoY from higher provisioning (4.3B vs 2.7B). CASA 38.7% improving. Digital 5.2M+ users, cards = 50% of fee income. CAR 16.7% strong. Rate hike: near-term NIM pressure but investment book repricing positive over 3-6 months. Coverage >100%.",
+    aiSummary:'Second-largest bank — PKR 5.4T deposits, PKR 8.1T assets. Q1 2026 profit PKR 16.1B — down 3% YoY from higher provisioning (4.3B vs 2.7B). CASA 38.7% improving. Digital 5.2M+ users, cards = 50% of fee income. CAR 16.7% strong. Rate hike: near-term NIM pressure but investment book repricing positive over 3-6 months. Coverage >100%.',
     pe:'N/A', pb:'N/A', divYield:'N/A', fwdPe:'N/A',
     opMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
     currentRatio:'N/A', quickRatio:'N/A', debtToEquity:'N/A',
@@ -139,7 +136,7 @@ const PSX_FUNDAMENTALS = {
     casaRatio:'N/A', carRatio:'16.35%', cet1Ratio:'15.35%',
     nplRatio:'N/A', investments:'PKR 9.9T',
     dividend:'PKR 44/share',
-    aiSummary:'Exceptional Q1 2026 profit PKR 48.97B (+35% YoY) but PKR 30.5B came from capital gains — not core banking. EPS ~78 annualised makes it cheap on P/E. CRITICAL: equity collapsed PKR 499B → PKR 416B from PKR 62.8B OCI losses. CAR fell 20.97% → 16.35%. Largest bank by assets (PKR 12.7T) with PKR 9.9T investment book — extremely rate-sensitive. Borrowings 6.6T — high leverage.',
+    aiSummary:'Exceptional Q1 2026 profit PKR 48.97B (+35% YoY) but PKR 30.5B came from capital gains — not core banking. EPS ~78 annualised makes it cheap on P/E. CRITICAL: equity collapsed PKR 499B to PKR 416B from PKR 62.8B OCI losses. CAR fell 20.97% to 16.35%. Largest bank by assets (PKR 12.7T) with PKR 9.9T investment book — extremely rate-sensitive. Borrowings 6.6T — high leverage.',
     pe:'N/A', pb:'N/A', divYield:'N/A', fwdPe:'N/A',
     opMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
     currentRatio:'N/A', quickRatio:'N/A', debtToEquity:'N/A',
@@ -157,7 +154,7 @@ const PSX_FUNDAMENTALS = {
     nplRatio:'N/A', investments:'PKR 5.16T',
     bvps:'205.3', liquidityCoverageRatio:'199%',
     dividend:'PKR 3.50/share (Q1 interim)',
-    aiSummary:'Sovereign/bond bank — PKR 5.16T govt securities out of PKR 7.18T assets. CASA 81.5% is best in Pakistan. But earnings under pressure — Q1 2026 profit DOWN 22% YoY to PKR 16.7B as NIM compressed 4.2% → 2.9%. Equity eroded PKR 531B → PKR 432B from OCI losses. BVPS PKR 205.3. CAR 21.57% very strong. LCR 199%. Government backing provides systemic safety.',
+    aiSummary:'Sovereign/bond bank — PKR 5.16T govt securities out of PKR 7.18T assets. CASA 81.5% is best in Pakistan. But earnings under pressure — Q1 2026 profit DOWN 22% YoY to PKR 16.7B as NIM compressed 4.2% to 2.9%. Equity eroded PKR 531B to PKR 432B from OCI losses. BVPS PKR 205.3. CAR 21.57% very strong. LCR 199%. Government backing provides systemic safety.',
     pe:'N/A', pb:'N/A', divYield:'N/A', fwdPe:'N/A',
     opMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
     currentRatio:'N/A', quickRatio:'N/A', debtToEquity:'N/A',
@@ -185,40 +182,19 @@ const PSX_FUNDAMENTALS = {
   },
 
   BAFL: {
-    eps:'14.12', dps:'N/A',
-    netMargin:'N/A', grossMargin:'N/A',
-    roe:'28.7%', roa:'1.4%',
-    revenue:'N/A', netProfit:'N/A',
+    eps:'14.12', dps:'N/A', netMargin:'N/A', grossMargin:'N/A',
+    roe:'28.7%', roa:'1.4%', revenue:'N/A', netProfit:'N/A',
     totalAssets:'PKR 3.03T', totalCash:'N/A',
-    deposits:'PKR 2.47T', advances:'N/A',
-    investments:'N/A',
-    casaRatio:'42.4%', carRatio:'16.2%',
-    cet1Ratio:'N/A', nplRatio:'N/A',
-    coverageRatio:'N/A', bvps:'N/A',
-    netInterestIncome:'N/A',
-    provisioning:'N/A', costToIncome:'N/A',
-    tradeDebts:'N/A', circularDebt:'N/A',
-    currentRatio:'N/A', debtToEquity:'N/A',
-    financeCost:'N/A', operatingCashFlow:'N/A',
-    capex:'N/A',
-    productionOil:'N/A', productionGas:'N/A',
-    discoveries:'N/A',
-    ureaOfftake:'N/A', ureaMarketShare:'N/A',
-    dapMarketShare:'N/A', investmentIncome:'N/A',
-    capacityUtilization:'N/A',
-    domesticSalesGrowth:'N/A',
-    exportSalesGrowth:'N/A',
-    longTermLoans:'N/A', receivables:'N/A',
-    salesVolume:'N/A', revenueGrowth:'N/A',
-    exportRevenue:'N/A', dividendIncome:'N/A',
-    loadFactor:'N/A', combinedRatio:'N/A',
-    netPremium:'N/A', marketShare:'N/A',
+    deposits:'PKR 2.47T', investments:'N/A',
+    casaRatio:'42.4%', carRatio:'16.2%', cet1Ratio:'N/A', nplRatio:'N/A',
+    coverageRatio:'N/A', bvps:'N/A', netInterestIncome:'N/A',
     dividend:'N/A',
     aiSummary:'BAFL delivered strong earnings in Q1 FY26 with a quarterly EPS of PKR 3.53 (annualised PKR 14.12), reflecting robust profitability momentum driven by high non-interest income and trading gains on the securities book. Return on equity stood at a very strong 28.7% annualised while ROA reached 1.4%, indicating efficient asset deployment across a PKR 3.03T balance sheet. Asset quality showed a positive signal with provision reversals during the quarter, easing credit cost pressure and supporting bottom-line growth. CASA ratio of 42.4% on deposits of PKR 2.47T reflects a reasonably solid low-cost funding base, though there is room for improvement to reduce reliance on higher-cost deposits. Key risks include dependence on securities and trading income for profitability, exposure to OCI losses from bond holdings in a volatile rate environment, and rising operating costs that could compress the cost-to-income ratio going forward.',
     pe:'N/A', pb:'N/A', divYield:'N/A', fwdPe:'N/A',
     opMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
-    quickRatio:'N/A', totalDebt:'N/A', fcf:'N/A', fcfYield:'N/A',
-    beta:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
+    currentRatio:'N/A', quickRatio:'N/A', debtToEquity:'N/A',
+    totalDebt:'N/A', fcf:'N/A', fcfYield:'N/A', beta:'N/A',
+    revenueGrowth:'N/A', earningsGrowth:'N/A', marketCap:'N/A',
     ev_ebitda:'N/A', roic:'N/A', payoutRatio:'N/A', ps:'N/A', interestCover:'N/A',
   },
 
@@ -261,7 +237,7 @@ const PSX_FUNDAMENTALS = {
     grossMargin:'31%', debtToEquity:'0.85',
     revenue:'PKR 37.8B', netProfit:'PKR 3.3B', totalAssets:'PKR 205B',
     dividend:'PKR 2/share (Q1)',
-    aiSummary:'High-dividend fertilizer with ROE annualised ~30%. EPS 2.49 with PKR 2/share dividend — payout culture is core investment case. Urea sales 601 KT vs 592 KT — stable demand. Market share ~27%. Global urea $400 → $800/ton but local prices regulated. D/E 0.85x manageable. Risks: gas input costs and government subsidy policy dependency. FFC = safety, EFERT = dividend + slightly more risk.',
+    aiSummary:'High-dividend fertilizer with ROE annualised ~30%. EPS 2.49 with PKR 2/share dividend — payout culture is core investment case. Urea sales 601 KT vs 592 KT — stable demand. Market share ~27%. Global urea $400 to $800/ton but local prices regulated. D/E 0.85x manageable. Risks: gas input costs and government subsidy policy dependency. FFC = safety, EFERT = dividend + slightly more risk.',
     pe:'N/A', pb:'N/A', divYield:'N/A', fwdPe:'N/A',
     roa:'N/A', opMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
     currentRatio:'N/A', quickRatio:'N/A',
@@ -277,7 +253,7 @@ const PSX_FUNDAMENTALS = {
     revenue:'PKR 143B', netProfit:'PKR 64B', totalAssets:'PKR 796B',
     marketShare:'18.9%', cementSales:'Domestic +10.6%, Exports -9.7%',
     dividend:'N/A',
-    aiSummary:"Largest cement company (18.9% market share). 9M FY26 EPS PKR 25.07 — up 34% YoY. Gross margin 26.5% improved from 24%. Net profit PKR 63.7B inflated by non-operational income — core gross margin is reliable gauge. D/E 0.4x — strong financial flexibility. Local volumes +10.6%, exports -9.7%. Chemicals/polyester segments -25-87%. Iraq/Congo expansion = 5-year growth catalyst. Diversification adds stability vs pure cement players.",
+    aiSummary:'Largest cement company (18.9% market share). 9M FY26 EPS PKR 25.07 — up 34% YoY. Gross margin 26.5% improved from 24%. Net profit PKR 63.7B inflated by non-operational income — core gross margin is reliable gauge. D/E 0.4x — strong financial flexibility. Local volumes +10.6%, exports -9.7%. Chemicals/polyester segments -25-87%. Iraq/Congo expansion = 5-year growth catalyst. Diversification adds stability vs pure cement players.',
     pe:'N/A', pb:'N/A', divYield:'N/A', fwdPe:'N/A',
     roa:'N/A', opMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
     currentRatio:'N/A', quickRatio:'N/A',
@@ -293,7 +269,7 @@ const PSX_FUNDAMENTALS = {
     revenue:'PKR 52B', netProfit:'PKR 6B', totalAssets:'PKR 201B',
     longTermLoans:'PKR 83.5B', operatingCashflow:'PKR 31.9B',
     dividend:'N/A',
-    aiSummary:'Serious earnings problem — 9M FY26 EPS PKR 5.81 down 50% YoY despite domestic volumes +21.8%. Pioneer Cement acquisition (77%) drove massive debt increase — D/E 1.2x is highest in sector. Finance cost rising sharply = profit destruction despite volume growth. Export collapse 54.9%. Gross margin 30.5% decent but net margin fell 23% → 11.6%. Domestic demand recovery insufficient to offset financial leverage stress.',
+    aiSummary:'Serious earnings problem — 9M FY26 EPS PKR 5.81 down 50% YoY despite domestic volumes +21.8%. Pioneer Cement acquisition (77%) drove massive debt increase — D/E 1.2x is highest in sector. Finance cost rising sharply = profit destruction despite volume growth. Export collapse 54.9%. Gross margin 30.5% decent but net margin fell 23% to 11.6%. Domestic demand recovery insufficient to offset financial leverage stress.',
     pe:'N/A', pb:'N/A', divYield:'N/A', fwdPe:'N/A',
     roa:'N/A', opMargin:'N/A', ebitdaMargin:'N/A', ebitda:'N/A',
     currentRatio:'N/A', quickRatio:'N/A',
@@ -365,97 +341,93 @@ function buildSectorDataBlock(ticker, s) {
   const sector = SECTOR_MAP[ticker] || 'GENERAL';
 
   if (sector === 'BANKING') {
-    return `SECTOR: Banking (PSX)
-KEY METRICS:
-• P/B: ${s.pb ?? 'N/A'} | P/E: ${s.pe ?? 'N/A'} | EPS: PKR ${s.eps ?? 'N/A'} (annualised)
-• Div Yield: ${s.divYield ?? 'N/A'} | DPS: PKR ${s.dps ?? 'N/A'}
-• ROE: ${s.roe ?? 'N/A'} | ROA: ${s.roa ?? 'N/A'}
-• CASA: ${s.casaRatio ?? 'N/A'} | CAR: ${s.carRatio ?? 'N/A'} | CET1: ${s.cet1Ratio ?? 'N/A'}
-• NPL/Infection Ratio: ${s.nplRatio ?? s.infectionRatio ?? 'N/A'}
-• Net Profit: ${s.netProfit ?? 'N/A'} | Deposits: ${s.deposits ?? 'N/A'} | Assets: ${s.totalAssets ?? 'N/A'}
-${s.investments ? `• Investment Book: ${s.investments}` : ''}
-${s.liquidityCoverageRatio ? `• LCR: ${s.liquidityCoverageRatio}` : ''}
-SECTOR RULES: P/B is primary valuation metric. High D/E is NORMAL for banks — NEVER flag it. CASA >50% = strong low-cost funding. CAR >18% = well-capitalised. SBP rate hike +100bps Apr 2026: near-term NIM pressure, medium-term investment book repricing positive. OCI losses are paper losses from bond revaluation — watch actual equity book value.`;
+    return 'SECTOR: Banking (PSX)\nKEY METRICS:\n' +
+      '- P/B: ' + (s.pb || 'N/A') + ' | P/E: ' + (s.pe || 'N/A') + ' | EPS: PKR ' + (s.eps || 'N/A') + ' (annualised)\n' +
+      '- Div Yield: ' + (s.divYield || 'N/A') + ' | DPS: PKR ' + (s.dps || 'N/A') + '\n' +
+      '- ROE: ' + (s.roe || 'N/A') + ' | ROA: ' + (s.roa || 'N/A') + '\n' +
+      '- CASA: ' + (s.casaRatio || 'N/A') + ' | CAR: ' + (s.carRatio || 'N/A') + ' | CET1: ' + (s.cet1Ratio || 'N/A') + '\n' +
+      '- NPL/Infection Ratio: ' + (s.nplRatio || s.infectionRatio || 'N/A') + '\n' +
+      '- Net Profit: ' + (s.netProfit || 'N/A') + ' | Deposits: ' + (s.deposits || 'N/A') + ' | Assets: ' + (s.totalAssets || 'N/A') + '\n' +
+      (s.investments ? '- Investment Book: ' + s.investments + '\n' : '') +
+      (s.liquidityCoverageRatio ? '- LCR: ' + s.liquidityCoverageRatio + '\n' : '') +
+      'SECTOR RULES: P/B is primary valuation metric. High D/E is NORMAL for banks. CASA >50% = strong low-cost funding. CAR >18% = well-capitalised. SBP rate hike +100bps Apr 2026: near-term NIM pressure, medium-term investment book repricing positive. OCI losses are paper losses from bond revaluation.';
   }
 
   if (sector === 'ENERGY_EP') {
-    return `SECTOR: Oil & Gas E&P (PSX)
-KEY METRICS:
-• P/E: ${s.pe ?? 'N/A'} | EPS: PKR ${s.eps ?? 'N/A'} (9M FY26)
-• Div Yield: ${s.divYield ?? 'N/A'} | DPS: PKR ${s.dps ?? 'N/A'}
-• Net Margin: ${s.netMargin ?? 'N/A'} | ROE: ${s.roe ?? 'N/A'}
-• Revenue: ${s.revenue ?? 'N/A'} | Net Profit: ${s.netProfit ?? 'N/A'}
-• Circular Debt Exposure: ${s.tradeDebts ?? 'N/A'} | Cash: ${s.totalCash ?? 'N/A'}
-SECTOR RULES: Revenue USD-linked — PKR weakness BOOSTS PKR earnings. Brent crude = #1 earnings driver. Circular debt means cash flow severely lags reported profit. Net margins 35-50% are NORMAL for E&P — not exceptional. Gas curtailment from RLNG oversupply is sector-wide risk.`;
+    return 'SECTOR: Oil & Gas E&P (PSX)\nKEY METRICS:\n' +
+      '- P/E: ' + (s.pe || 'N/A') + ' | EPS: PKR ' + (s.eps || 'N/A') + ' (9M FY26)\n' +
+      '- Div Yield: ' + (s.divYield || 'N/A') + ' | DPS: PKR ' + (s.dps || 'N/A') + '\n' +
+      '- Net Margin: ' + (s.netMargin || 'N/A') + ' | ROE: ' + (s.roe || 'N/A') + '\n' +
+      '- Revenue: ' + (s.revenue || 'N/A') + ' | Net Profit: ' + (s.netProfit || 'N/A') + '\n' +
+      '- Circular Debt Exposure: ' + (s.tradeDebts || 'N/A') + ' | Cash: ' + (s.totalCash || 'N/A') + '\n' +
+      'SECTOR RULES: Revenue USD-linked — PKR weakness BOOSTS PKR earnings. Brent crude = #1 earnings driver. Circular debt means cash flow severely lags reported profit. Net margins 35-50% are NORMAL for E&P. Gas curtailment from RLNG oversupply is sector-wide risk.';
   }
 
   if (sector === 'OMC') {
-    return `SECTOR: Oil Marketing (PSX)
-KEY METRICS:
-• P/E: ${s.pe ?? 'N/A'} | EPS: PKR ${s.eps ?? 'N/A'} (9M FY26)
-• Net Margin: ${s.netMargin ?? 'N/A'} | Revenue: ${s.revenue ?? 'N/A'}
-• Current Ratio: ${s.currentRatio ?? 'N/A'} | Debt/Equity: ${s.debtToEquity ?? 'N/A'}
-• Receivables: ${s.tradeDebts ?? 'N/A'} | Net Profit: ${s.netProfit ?? 'N/A'}
-${s.vitolOwnership ? `• Vitol Ownership: ${s.vitolOwnership}` : ''}
-${s.currentRatio === '0.22' ? '⚠️ CRITICAL: Current ratio 0.22x — GOING CONCERN risk flagged in accounts' : ''}
-SECTOR RULES: Net margins 1-3% NORMAL — not a red flag. D/E 2-3x NORMAL for OMC working capital. Inventory gains = major quarterly swing. PKR weakness HURTS OMCs (USD imports, PKR revenue). HASCOL = special turnaround situation, not normal business.`;
+    return 'SECTOR: Oil Marketing (PSX)\nKEY METRICS:\n' +
+      '- P/E: ' + (s.pe || 'N/A') + ' | EPS: PKR ' + (s.eps || 'N/A') + ' (9M FY26)\n' +
+      '- Net Margin: ' + (s.netMargin || 'N/A') + ' | Revenue: ' + (s.revenue || 'N/A') + '\n' +
+      '- Current Ratio: ' + (s.currentRatio || 'N/A') + ' | Debt/Equity: ' + (s.debtToEquity || 'N/A') + '\n' +
+      '- Receivables: ' + (s.tradeDebts || 'N/A') + ' | Net Profit: ' + (s.netProfit || 'N/A') + '\n' +
+      (s.vitolOwnership ? '- Vitol Ownership: ' + s.vitolOwnership + '\n' : '') +
+      (s.currentRatio === '0.22' ? 'CRITICAL: Current ratio 0.22x — GOING CONCERN risk flagged in accounts\n' : '') +
+      'SECTOR RULES: Net margins 1-3% NORMAL. D/E 2-3x NORMAL for OMC working capital. Inventory gains = major quarterly swing. PKR weakness HURTS OMCs. HASCOL = special turnaround situation, not normal business.';
   }
 
   if (sector === 'FERTILISER') {
-    return `SECTOR: Fertilizer (PSX)
-KEY METRICS:
-• P/E: ${s.pe ?? 'N/A'} | EPS: PKR ${s.eps ?? 'N/A'}
-• Div Yield: ${s.divYield ?? 'N/A'} | DPS: PKR ${s.dps ?? 'N/A'}
-• Net Margin: ${s.netMargin ?? 'N/A'} | ROE: ${s.roe ?? 'N/A'}
-• Gross Margin: ${s.grossMargin ?? 'N/A'} | D/E: ${s.debtToEquity ?? 'N/A'}
-• Revenue: ${s.revenue ?? 'N/A'} | Net Profit: ${s.netProfit ?? 'N/A'}
-${s.ureaMarketShare ? `• Urea Market Share: ${s.ureaMarketShare}` : ''}
-${s.dapMarketShare ? `• DAP Market Share: ${s.dapMarketShare}` : ''}
-${s.investmentIncome ? `• Other/Investment Income: ${s.investmentIncome}` : ''}
-SECTOR RULES: Dividend yield = PRIMARY investment case for FFC/EFERT. Gas feedstock = core margin variable. ENGROH is a holding company — value from EFERT stake, not standalone P&L. FFC = market dominance + dividend. EFERT = growth + dividend. Seasonal urea demand: Kharif/Rabi crop cycles.`;
+    return 'SECTOR: Fertilizer (PSX)\nKEY METRICS:\n' +
+      '- P/E: ' + (s.pe || 'N/A') + ' | EPS: PKR ' + (s.eps || 'N/A') + '\n' +
+      '- Div Yield: ' + (s.divYield || 'N/A') + ' | DPS: PKR ' + (s.dps || 'N/A') + '\n' +
+      '- Net Margin: ' + (s.netMargin || 'N/A') + ' | ROE: ' + (s.roe || 'N/A') + '\n' +
+      '- Gross Margin: ' + (s.grossMargin || 'N/A') + ' | D/E: ' + (s.debtToEquity || 'N/A') + '\n' +
+      '- Revenue: ' + (s.revenue || 'N/A') + ' | Net Profit: ' + (s.netProfit || 'N/A') + '\n' +
+      (s.ureaMarketShare ? '- Urea Market Share: ' + s.ureaMarketShare + '\n' : '') +
+      (s.dapMarketShare ? '- DAP Market Share: ' + s.dapMarketShare + '\n' : '') +
+      (s.investmentIncome ? '- Other/Investment Income: ' + s.investmentIncome + '\n' : '') +
+      'SECTOR RULES: Dividend yield = PRIMARY investment case for FFC/EFERT. Gas feedstock = core margin variable. ENGROH is a holding company — value from EFERT stake. FFC = market dominance + dividend. EFERT = growth + dividend. Seasonal urea demand: Kharif/Rabi crop cycles.';
   }
 
   if (sector === 'CEMENT') {
-    return `SECTOR: Cement (PSX)
-KEY METRICS:
-• P/E: ${s.pe ?? 'N/A'} | EPS: PKR ${s.eps ?? 'N/A'} (9M FY26)
-• Gross Margin: ${s.grossMargin ?? 'N/A'} | Net Margin: ${s.netMargin ?? 'N/A'}
-• ROE: ${s.roe ?? 'N/A'} | D/E: ${s.debtToEquity ?? 'N/A'}
-• Revenue: ${s.revenue ?? 'N/A'} | Net Profit: ${s.netProfit ?? 'N/A'}
-${s.marketShare ? `• Market Share: ${s.marketShare}` : ''}
-${s.financeCostReduction ? `• Finance Cost Change: ${s.financeCostReduction}` : ''}
-${s.longTermLoans ? `• Long-term Debt: ${s.longTermLoans}` : ''}
-${s.expansion ? `• Expansion: ${s.expansion}` : ''}
-SECTOR RULES: Coal (USD) = #1 cost driver — PKR weakness hurts margins. PSDP + rate cuts drive demand. Sector overcapacity = retention price pressure. Exports (Afghanistan) weak across all. LUCK = giant diversified. MLCF = high debt risk. CHCC = quality low-debt. DGKC = recovery but weak ROE.`;
+    return 'SECTOR: Cement (PSX)\nKEY METRICS:\n' +
+      '- P/E: ' + (s.pe || 'N/A') + ' | EPS: PKR ' + (s.eps || 'N/A') + ' (9M FY26)\n' +
+      '- Gross Margin: ' + (s.grossMargin || 'N/A') + ' | Net Margin: ' + (s.netMargin || 'N/A') + '\n' +
+      '- ROE: ' + (s.roe || 'N/A') + ' | D/E: ' + (s.debtToEquity || 'N/A') + '\n' +
+      '- Revenue: ' + (s.revenue || 'N/A') + ' | Net Profit: ' + (s.netProfit || 'N/A') + '\n' +
+      (s.marketShare ? '- Market Share: ' + s.marketShare + '\n' : '') +
+      (s.financeCostReduction ? '- Finance Cost Change: ' + s.financeCostReduction + '\n' : '') +
+      (s.longTermLoans ? '- Long-term Debt: ' + s.longTermLoans + '\n' : '') +
+      (s.expansion ? '- Expansion: ' + s.expansion + '\n' : '') +
+      'SECTOR RULES: Coal (USD) = #1 cost driver — PKR weakness hurts margins. PSDP + rate cuts drive demand. Sector overcapacity = retention price pressure. Exports (Afghanistan) weak across all. LUCK = giant diversified. MLCF = high debt risk. CHCC = quality low-debt. DGKC = recovery but weak ROE.';
   }
 
-  return `KEY METRICS:
-• EPS: PKR ${s.eps ?? 'N/A'} | Net Margin: ${s.netMargin ?? 'N/A'}
-• Revenue: ${s.revenue ?? 'N/A'} | Net Profit: ${s.netProfit ?? 'N/A'}
-• ROE: ${s.roe ?? 'N/A'} | D/E: ${s.debtToEquity ?? 'N/A'}`;
+  return 'KEY METRICS:\n' +
+    '- EPS: PKR ' + (s.eps || 'N/A') + ' | Net Margin: ' + (s.netMargin || 'N/A') + '\n' +
+    '- Revenue: ' + (s.revenue || 'N/A') + ' | Net Profit: ' + (s.netProfit || 'N/A') + '\n' +
+    '- ROE: ' + (s.roe || 'N/A') + ' | D/E: ' + (s.debtToEquity || 'N/A');
 }
 
 // ── HELPERS ────────────────────────────────────────────────────
-function fetchJSON(url, headers = {}) {
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve(null), 6000);
+function fetchJSON(url, headers) {
+  headers = headers || {};
+  return new Promise(function(resolve) {
+    var timer = setTimeout(function() { resolve(null); }, 6000);
     https.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WallTrade/1.0)', ...headers }
-    }, res => {
-      let body = '';
-      res.on('data', c => body += c);
-      res.on('end', () => {
+      headers: Object.assign({ 'User-Agent': 'Mozilla/5.0 (compatible; WallTrade/1.0)' }, headers)
+    }, function(res) {
+      var body = '';
+      res.on('data', function(c) { body += c; });
+      res.on('end', function() {
         clearTimeout(timer);
         try { resolve(JSON.parse(body)); } catch(e) { resolve(null); }
       });
-    }).on('error', () => { clearTimeout(timer); resolve(null); });
+    }).on('error', function() { clearTimeout(timer); resolve(null); });
   });
 }
 
 function callAnthropic(body) {
-  return new Promise((resolve, reject) => {
-    const data = JSON.stringify(body);
-    const req = https.request({
+  return new Promise(function(resolve, reject) {
+    var data = JSON.stringify(body);
+    var req = https.request({
       hostname: 'api.anthropic.com',
       path: '/v1/messages',
       method: 'POST',
@@ -465,10 +437,10 @@ function callAnthropic(body) {
         'anthropic-version': '2023-06-01',
         'Content-Length': Buffer.byteLength(data)
       }
-    }, res => {
-      let b = '';
-      res.on('data', c => b += c);
-      res.on('end', () => { try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
+    }, function(res) {
+      var b = '';
+      res.on('data', function(c) { b += c; });
+      res.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
     });
     req.on('error', reject);
     req.write(data);
@@ -477,23 +449,23 @@ function callAnthropic(body) {
 }
 
 function callOpenRouter(body) {
-  return new Promise((resolve, reject) => {
-    const data = JSON.stringify(body);
-    const req = https.request({
+  return new Promise(function(resolve, reject) {
+    var data = JSON.stringify(body);
+    var req = https.request({
       hostname: 'openrouter.ai',
       path: '/api/v1/chat/completions',
       method: 'POST',
       headers: {
-        'Content-Type':   'application/json',
-        'Authorization':  'Bearer ' + process.env.OPENROUTER_API_KEY,
-        'HTTP-Referer':   'https://walltrade.markets',
-        'X-Title':        'Wall-Trade',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + process.env.OPENROUTER_API_KEY,
+        'HTTP-Referer': 'https://walltrade.markets',
+        'X-Title': 'Wall-Trade',
         'Content-Length': Buffer.byteLength(data)
       }
-    }, res => {
-      let b = '';
-      res.on('data', c => b += c);
-      res.on('end', () => { try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
+    }, function(res) {
+      var b = '';
+      res.on('data', function(c) { b += c; });
+      res.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
     });
     req.on('error', reject);
     req.write(data);
@@ -501,227 +473,202 @@ function callOpenRouter(body) {
   });
 }
 
-// ── FETCH LIVE PRICE FROM PSX PROXY ───────────────────────────
+// ── FETCH LIVE PRICE ──────────────────────────────────────────
 async function getPSXPrice(ticker) {
   try {
-    const data = await fetchJSON(`http://188.166.245.128:3000/timeseries/int/${ticker}`);
-    if (!data?.data?.length) return null;
-    const latest = data.data[0];
-    const price = parseFloat(latest[1]);
+    var data = await fetchJSON('http://188.166.245.128:3000/timeseries/int/' + ticker);
+    if (!data || !data.data || !data.data.length) return null;
+    var latest = data.data[0];
+    var price = parseFloat(latest[1]);
     if (!price || price <= 0) return null;
-    const oldest = data.data[data.data.length - 1];
-    const openPrice = parseFloat(oldest[1]);
-    const changeAmt = price - openPrice;
-    const changePct = openPrice > 0 ? (changeAmt / openPrice) * 100 : 0;
+    var oldest = data.data[data.data.length - 1];
+    var openPrice = parseFloat(oldest[1]);
+    var changeAmt = price - openPrice;
+    var changePct = openPrice > 0 ? (changeAmt / openPrice) * 100 : 0;
     return {
-      price:     price.toFixed(2),
-      change:    changePct.toFixed(2),
+      price: price.toFixed(2),
+      change: changePct.toFixed(2),
       changeAmt: changeAmt.toFixed(2),
-      dir:       changePct >= 0 ? 'up' : 'dn'
+      dir: changePct >= 0 ? 'up' : 'dn'
     };
   } catch(e) { return null; }
 }
 
-// ── CALCULATE LIVE P/E, P/B, DIV YIELD FROM LIVE PRICE ────────
+// ── CALCULATE LIVE RATIOS ─────────────────────────────────────
 function calculateLiveRatios(ticker, livePrice) {
-  const s = PSX_FUNDAMENTALS[ticker];
+  var s = PSX_FUNDAMENTALS[ticker];
   if (!s || !livePrice || livePrice <= 0) return {};
-
-  const ratios = {};
-  const eps  = parseFloat(s.eps);
-  const dps  = parseFloat(s.dps);
-  const bvps = parseFloat(s.bvps);
-  const shares = parseFloat(s.sharesOutstanding);
-
-  // P/E — for all non-banking tickers primarily
+  var ratios = {};
+  var eps = parseFloat(s.eps);
+  var dps = parseFloat(s.dps);
+  var bvps = parseFloat(s.bvps);
+  var shares = parseFloat(s.sharesOutstanding);
   if (eps > 0) {
-    ratios.pe     = (livePrice / eps).toFixed(1);
-    ratios.peNote = `P/E ${ratios.pe}× (PKR ${livePrice} / EPS PKR ${eps})`;
+    ratios.pe = (livePrice / eps).toFixed(1);
+    ratios.peNote = 'P/E ' + ratios.pe + 'x (PKR ' + livePrice + ' / EPS PKR ' + eps + ')';
   }
-
-  // P/B — for banking tickers
   if (bvps > 0) {
-    ratios.pb     = (livePrice / bvps).toFixed(2);
-    ratios.pbNote = `P/B ${ratios.pb}× (PKR ${livePrice} / BVPS PKR ${bvps})`;
+    ratios.pb = (livePrice / bvps).toFixed(2);
+    ratios.pbNote = 'P/B ' + ratios.pb + 'x (PKR ' + livePrice + ' / BVPS PKR ' + bvps + ')';
   }
-
-  // Dividend yield
   if (dps > 0) {
     ratios.divYield = ((dps / livePrice) * 100).toFixed(2) + '%';
-    ratios.divNote  = `Div Yield ${ratios.divYield} (DPS PKR ${dps})`;
+    ratios.divNote = 'Div Yield ' + ratios.divYield + ' (DPS PKR ' + dps + ')';
   }
-
-  // Market cap
   if (shares > 0) {
-    ratios.marketCap = `PKR ${((livePrice * shares) / 1000).toFixed(1)}B`;
+    ratios.marketCap = 'PKR ' + ((livePrice * shares) / 1000).toFixed(1) + 'B';
   }
-
   return ratios;
 }
 
-// ── ASSEMBLE FULL STOCK DATA ───────────────────────────────────
+// ── ASSEMBLE STOCK DATA ───────────────────────────────────────
 async function getStockData(ticker) {
-  const fb = PSX_FUNDAMENTALS[ticker];
+  var fb = PSX_FUNDAMENTALS[ticker];
   if (!fb) return null;
+  var livePrice = await getPSXPrice(ticker);
 
-  const livePrice = await getPSXPrice(ticker);
-
-  const NAME_MAP = {
-  OGDC:'Oil & Gas Dev Co', PPL:'Pakistan Petroleum',
-  PSO:'Pakistan State Oil', MARI:'Mari Petroleum',
-  APL:'Attock Petroleum', HASCOL:'Hascol Petroleum',
-  HBL:'Habib Bank Ltd', MCB:'MCB Bank',
-  UBL:'United Bank Ltd', NBP:'National Bank',
-  ABL:'Allied Bank Ltd', BAFL:'Bank Al Falah',
-  ENGROH:'Engro Holdings', FFC:'Fauji Fertiliser',
-  EFERT:'Engro Fertilisers', LUCK:'Lucky Cement',
-  MLCF:'Maple Leaf Cement', CHCC:'Cherat Cement', DGKC:'DG Khan Cement',
-  MEBL:'Meezan Bank', FABL:'Faysal Bank', BAHL:'Bank Al Habib',
-  AKBL:'Askari Bank', BOP:'Bank of Punjab', SNBL:'Soneri Bank',
-  POL:'Pakistan Oilfields', SHEL:'Shell Pakistan',
-  FATIMA:'Fatima Fertilizer', FFBL:'Fauji Fertilizer Bin Qasim',
-  FCCL:'Fauji Cement', PIOC:'Pioneer Cement', KOHC:'Kohat Cement',
-  ACPL:'Attock Cement', POWER:'Power Cement',
-  HUBC:'Hub Power', KEL:'K-Electric', KAPCO:'Kot Addu Power',
-  NPL:'Nishat Power', NCPL:'Nishat Chunian Power', PKGP:'Pakgen Power',
-  SYS:'Systems Limited', TRG:'TRG Pakistan', PTC:'Pakistan Telecom',
-  AIRLINK:'Air Link Communication', AVN:'Avanceon', NETSOL:'NetSol Technologies',
-  INDU:'Indus Motor', HCAR:'Honda Atlas Cars', PSMC:'Pak Suzuki',
-  GHNL:'Ghandhara Nissan', SAZEW:'Sazgar Engineering',
-  MTL:'Millat Tractors', AGTL:'Al-Ghazi Tractors',
-  NESTLE:'Nestle Pakistan', UNITY:'Unity Foods', NATF:'National Foods',
-  MUREB:'Murree Brewery', COLG:'Colgate Palmolive',
-  ILP:'Interloop', NML:'Nishat Mills', GATM:'Gul Ahmed Textile',
-  KTML:'Kohinoor Textile', SAPT:'Sapphire Textile',
-  DAWH:'Dawood Hercules', EPCL:'Engro Polymer',
-  LOTCHEM:'LOTTE Chemical', SNGP:'Sui Northern Gas', SSGC:'Sui Southern Gas',
-  EFUG:'EFU General', EFUL:'EFU Life', JGICL:'Jubilee General',
-  SEARL:'Searle Company', AGP:'AGP Limited',
-  GLAXO:'GlaxoSmithKline Pakistan', ABOT:'Abbott Laboratories',
-  MUGHAL:'Mughal Iron & Steel', ASTL:'Amreli Steels',
-  ISL:'International Steels', ASL:'Aisha Steel',
-  PIBTL:'Pakistan Int. Bulk Terminal',
-  PIAA:'PIA Holding', HUMNL:'Hum Network',
+  var NAME_MAP = {
+    OGDC:'Oil & Gas Dev Co', PPL:'Pakistan Petroleum',
+    PSO:'Pakistan State Oil', MARI:'Mari Petroleum',
+    APL:'Attock Petroleum', HASCOL:'Hascol Petroleum',
+    HBL:'Habib Bank Ltd', MCB:'MCB Bank',
+    UBL:'United Bank Ltd', NBP:'National Bank',
+    ABL:'Allied Bank Ltd', BAFL:'Bank Al Falah',
+    ENGROH:'Engro Holdings', FFC:'Fauji Fertiliser',
+    EFERT:'Engro Fertilisers', LUCK:'Lucky Cement',
+    MLCF:'Maple Leaf Cement', CHCC:'Cherat Cement', DGKC:'DG Khan Cement',
+    MEBL:'Meezan Bank', FABL:'Faysal Bank', BAHL:'Bank Al Habib',
+    AKBL:'Askari Bank', BOP:'Bank of Punjab', SNBL:'Soneri Bank',
+    POL:'Pakistan Oilfields', SHEL:'Shell Pakistan',
+    FATIMA:'Fatima Fertilizer', FFBL:'Fauji Fertilizer Bin Qasim',
+    FCCL:'Fauji Cement', PIOC:'Pioneer Cement', KOHC:'Kohat Cement',
+    ACPL:'Attock Cement', POWER:'Power Cement',
+    HUBC:'Hub Power', KEL:'K-Electric', KAPCO:'Kot Addu Power',
+    NPL:'Nishat Power', NCPL:'Nishat Chunian Power', PKGP:'Pakgen Power',
+    SYS:'Systems Limited', TRG:'TRG Pakistan', PTC:'Pakistan Telecom',
+    AIRLINK:'Air Link Communication', AVN:'Avanceon', NETSOL:'NetSol Technologies',
+    INDU:'Indus Motor', HCAR:'Honda Atlas Cars', PSMC:'Pak Suzuki',
+    GHNL:'Ghandhara Nissan', SAZEW:'Sazgar Engineering',
+    MTL:'Millat Tractors', AGTL:'Al-Ghazi Tractors',
+    NESTLE:'Nestle Pakistan', UNITY:'Unity Foods', NATF:'National Foods',
+    MUREB:'Murree Brewery', COLG:'Colgate Palmolive',
+    ILP:'Interloop', NML:'Nishat Mills', GATM:'Gul Ahmed Textile',
+    KTML:'Kohinoor Textile', SAPT:'Sapphire Textile',
+    DAWH:'Dawood Hercules', EPCL:'Engro Polymer',
+    LOTCHEM:'LOTTE Chemical', SNGP:'Sui Northern Gas', SSGC:'Sui Southern Gas',
+    EFUG:'EFU General', EFUL:'EFU Life', JGICL:'Jubilee General',
+    SEARL:'Searle Company', AGP:'AGP Limited',
+    GLAXO:'GlaxoSmithKline Pakistan', ABOT:'Abbott Laboratories',
+    MUGHAL:'Mughal Iron & Steel', ASTL:'Amreli Steels',
+    ISL:'International Steels', ASL:'Aisha Steel',
+    PIBTL:'Pakistan Int. Bulk Terminal',
+    PIAA:'PIA Holding', HUMNL:'Hum Network',
   };
 
-  const SECTOR_LABEL = {
-  ENERGY_EP:'Oil & Gas E&P', OMC:'Oil Marketing',
-  BANKING:'Commercial Banking', FERTILISER:'Fertilizer', CEMENT:'Cement',
-  POWER:'Power & Utilities', TECH:'Technology & Telecom',
-  AUTO:'Auto & Engineering', CONSUMER:'Consumer & Food',
-  TEXTILE:'Textile Exports', HOLDING:'Holding & Diversified',
-  CHEMICALS:'Chemicals & Industrial', INSURANCE:'Insurance',
-  PHARMA:'Pharmaceuticals', STEEL:'Steel & Materials',
-  LOGISTICS:'Logistics & Ports', AVIATION:'Aviation', MEDIA:'Media',
+  var SECTOR_LABEL = {
+    ENERGY_EP:'Oil & Gas E&P', OMC:'Oil Marketing',
+    BANKING:'Commercial Banking', FERTILISER:'Fertilizer', CEMENT:'Cement',
+    POWER:'Power & Utilities', TECH:'Technology & Telecom',
+    AUTO:'Auto & Engineering', CONSUMER:'Consumer & Food',
+    TEXTILE:'Textile Exports', HOLDING:'Holding & Diversified',
+    CHEMICALS:'Chemicals & Industrial', INSURANCE:'Insurance',
+    PHARMA:'Pharmaceuticals', STEEL:'Steel & Materials',
+    LOGISTICS:'Logistics & Ports', AVIATION:'Aviation', MEDIA:'Media',
   };
 
-  const sectorCode = SECTOR_MAP[ticker] || 'GENERAL';
+  var sectorCode = SECTOR_MAP[ticker] || 'GENERAL';
 
-  return {
-    ticker,
-    name:       NAME_MAP[ticker] || ticker,
-    sector:     SECTOR_LABEL[sectorCode] || 'Pakistan Stock Exchange',
-    sectorCode,
-    price:      livePrice?.price     ?? null,
-    change:     livePrice?.change    ?? null,
-    changeAmt:  livePrice?.changeAmt ?? null,
-    dir:        livePrice?.dir       ?? 'up',
+  return Object.assign({
+    ticker: ticker,
+    name: NAME_MAP[ticker] || ticker,
+    sector: SECTOR_LABEL[sectorCode] || 'Pakistan Stock Exchange',
+    sectorCode: sectorCode,
+    price: livePrice ? livePrice.price : null,
+    change: livePrice ? livePrice.change : null,
+    changeAmt: livePrice ? livePrice.changeAmt : null,
+    dir: livePrice ? livePrice.dir : 'up',
     dataSource: livePrice ? 'PSX Live' : 'fundamentals only',
-    ...fb,
-  };
+  }, fb);
 }
 
-// ── VERDICT CACHE ──────────────────────────────────────────────
-const verdictCache = {};
-const CACHE_TTL = 6 * 60 * 60 * 1000;
+// ── IN-MEMORY VERDICT CACHE ───────────────────────────────────
+var verdictCache = {};
+var CACHE_TTL = 6 * 60 * 60 * 1000;
 function getCached(ticker) {
-  const c = verdictCache[ticker];
+  var c = verdictCache[ticker];
   if (!c || Date.now() - c.timestamp > CACHE_TTL) { delete verdictCache[ticker]; return null; }
   return c.data;
 }
-function setCache(ticker, data) { verdictCache[ticker] = { data, timestamp: Date.now() }; }
+function setCache(ticker, data) { verdictCache[ticker] = { data: data, timestamp: Date.now() }; }
 
 // ── GENERATE AI VERDICT ────────────────────────────────────────
 async function generateVerdict(stockData, macroContext) {
-  const cached = getCached(stockData.ticker);
-  if (cached) return { ...cached, cached: true };
-  const sectorBlock = buildSectorDataBlock(stockData.ticker, stockData);
-  const prompt = `You are a sharp PSX equity analyst for Wall-Trade — Pakistan's AI stock analysis platform.
-LIVE PRICE DATA:
-Ticker: ${stockData.ticker} — ${stockData.name}
-Price: PKR ${stockData.price ?? '—'} (${stockData.change ?? '—'}% today)
-${sectorBlock}
-COMPANY ANALYSIS:
-${stockData.aiSummary || ''}
-PAKISTAN MACRO CONTEXT:
-${macroContext}
-INSTRUCTION: Sector-aware, data-driven verdict. Reference specific numbers. Apply sector logic strictly — do NOT flag high D/E for banks/OMCs, do NOT expect high margins from OMCs, do NOT treat HASCOL as normal valuation stock.
-Return ONLY this JSON (no markdown):
-{
-  "verdict": "Positive" or "Neutral" or "Caution",
-  "score": <integer 1-10>,
-  "headline": "<sharp one-liner max 12 words with actual data>",
-  "body": "<120-150 words. Lead with verdict rationale. Cover 2-3 strongest data points with numbers. One key risk with numbers. Connect to Pakistan macro. Short paragraphs. No buy/sell advice.>",
-  "insights": [
-    {"icon":"<emoji>","value":"<actual metric>","label":"<plain English max 10 words>","color":"green|amber|red|purple"},
-    {"icon":"<emoji>","value":"<actual metric>","label":"<plain English max 10 words>","color":"green|amber|red|purple"},
-    {"icon":"<emoji>","value":"<actual metric>","label":"<plain English max 10 words>","color":"green|amber|red|purple"}
-  ],
-  "signals": [
-    {"label":"<2-4 word signal>","type":"green|amber|red|purple"},
-    {"label":"<2-4 word signal>","type":"green|amber|red|purple"},
-    {"label":"<2-4 word signal>","type":"green|amber|red|purple"}
-  ],
-  "scores": {
-    "Financial health": <1-10>,
-    "Macro environment": <1-10>,
-    "Growth outlook": <1-10>,
-    "Risk level": <1-10>
-  },
-  "factors": [
-    {"icon":"<emoji>","title":"<factor>","detail":"<2-3 sentences with actual numbers>"},
-    {"icon":"<emoji>","title":"<factor>","detail":"<2-3 sentences with actual numbers>"},
-    {"icon":"<emoji>","title":"<factor>","detail":"<2-3 sentences with actual numbers>"}
-  ],
-  "summary": "<one sentence summary with key number>"
-}`;
-  
- try {
-    const result = await callOpenRouter({
+  var cached = getCached(stockData.ticker);
+  if (cached) return Object.assign({}, cached, { cached: true });
+
+  var sectorBlock = buildSectorDataBlock(stockData.ticker, stockData);
+
+  var prompt = 'You are a sharp PSX equity analyst for Wall-Trade.\n\n' +
+    'LIVE PRICE DATA:\n' +
+    'Ticker: ' + stockData.ticker + ' - ' + stockData.name + '\n' +
+    'Price: PKR ' + (stockData.price || '-') + ' (' + (stockData.change || '-') + '% today)\n\n' +
+    sectorBlock + '\n\n' +
+    'COMPANY ANALYSIS:\n' + (stockData.aiSummary || '') + '\n\n' +
+    'PAKISTAN MACRO CONTEXT:\n' + macroContext + '\n\n' +
+    'INSTRUCTION: Sector-aware, data-driven verdict. Reference specific numbers. Apply sector logic strictly.\n\n' +
+    'Return ONLY this JSON (no markdown):\n' +
+    '{\n' +
+    '  "verdict": "Positive" or "Neutral" or "Caution",\n' +
+    '  "score": <integer 1-10>,\n' +
+    '  "headline": "<sharp one-liner max 12 words with actual data>",\n' +
+    '  "body": "<120-150 words. Lead with verdict rationale. Cover 2-3 strongest data points with numbers. One key risk with numbers. Connect to Pakistan macro. No buy/sell advice.>",\n' +
+    '  "insights": [\n' +
+    '    {"icon":"<emoji>","value":"<actual metric>","label":"<plain English max 10 words>","color":"green|amber|red|purple"},\n' +
+    '    {"icon":"<emoji>","value":"<actual metric>","label":"<plain English max 10 words>","color":"green|amber|red|purple"},\n' +
+    '    {"icon":"<emoji>","value":"<actual metric>","label":"<plain English max 10 words>","color":"green|amber|red|purple"}\n' +
+    '  ],\n' +
+    '  "signals": [\n' +
+    '    {"label":"<2-4 word signal>","type":"green|amber|red|purple"},\n' +
+    '    {"label":"<2-4 word signal>","type":"green|amber|red|purple"},\n' +
+    '    {"label":"<2-4 word signal>","type":"green|amber|red|purple"}\n' +
+    '  ],\n' +
+    '  "scores": {"Financial health":<1-10>,"Macro environment":<1-10>,"Growth outlook":<1-10>,"Risk level":<1-10>},\n' +
+    '  "factors": [\n' +
+    '    {"icon":"<emoji>","title":"<factor>","detail":"<2-3 sentences with actual numbers>"},\n' +
+    '    {"icon":"<emoji>","title":"<factor>","detail":"<2-3 sentences with actual numbers>"},\n' +
+    '    {"icon":"<emoji>","title":"<factor>","detail":"<2-3 sentences with actual numbers>"}\n' +
+    '  ],\n' +
+    '  "summary": "<one sentence summary with key number>"\n' +
+    '}';
+
+  var systemPrompt = 'You are a senior equity analyst at a top Pakistani brokerage, writing for Wall-Trade.\n\n' +
+    'YOUR JOB: Generate a sharp, data-driven verdict that helps a Pakistani retail investor understand this stock RIGHT NOW.\n\n' +
+    'RULES:\n' +
+    '- Always cite exact figures — never say "strong margins", say "38.4% net margin"\n' +
+    '- Never be generic — every sentence must be specific to THIS stock\n' +
+    '- Connect macro to stock impact directly with numbers\n' +
+    '- Sector logic is mandatory: BANKING = P/B primary, high D/E normal. E&P = circular debt = cash flow risk, high margins normal. OMC = 1-3% margins normal. CEMENT = coal cost is #1 driver. FERTILIZER = dividend yield is the investment case.\n' +
+    '- The body field MUST be 120-150 words minimum — do not truncate\n' +
+    '- Every factor detail MUST include at least one actual number\n' +
+    '- Never give buy or sell advice\n' +
+    '- NEVER mention analyst price targets or consensus ratings';
+
+  try {
+    var result = await callOpenRouter({
       model: 'z-ai/glm-5.1',
       max_tokens: 2500,
       messages: [
-        { role: 'system', content: `You are a senior equity analyst at a top Pakistani brokerage, writing for Wall-Trade — Pakistan's AI stock analysis platform for retail investors.
-
-YOUR JOB: Generate a sharp, data-driven verdict that helps a Pakistani retail investor understand this stock RIGHT NOW.
-
-RULES:
-- Always cite exact figures — never say "strong margins", say "38.4% net margin"
-- Never be generic — every sentence must be specific to THIS stock
-- Connect macro to stock impact directly with numbers
-- Sector logic is mandatory: BANKING = P/B primary, high D/E normal. E&P = circular debt = cash flow risk, high margins normal. OMC = 1-3% margins normal. CEMENT = coal cost is #1 driver. FERTILIZER = dividend yield is the investment case.
-- The body field MUST be 120-150 words minimum — do not truncate
-- Every factor detail MUST include at least one actual number
-- Never give buy or sell advice
-- NEVER mention analyst price targets or consensus ratings` },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt }
       ]
     });
-    const raw = result.choices?.[0]?.message?.content?.replace(/```json|```/g, '').trim();
-   
-RULES:
-- Always cite exact figures — never say "strong margins", say "38.4% net margin"
-- Never be generic — every sentence must be specific to THIS stock
-- Connect macro to stock impact directly with numbers
-- Sector logic is mandatory: BANKING = P/B primary, high D/E normal. E&P = circular debt = cash flow risk, high margins normal. OMC = 1-3% margins normal. CEMENT = coal cost is #1 driver. FERTILIZER = dividend yield is the investment case.
-- The body field MUST be 120-150 words minimum — do not truncate
-- Every factor detail MUST include at least one actual number
-- Never give buy or sell advice
-- NEVER mention analyst price targets or consensus ratings`,
-      messages: [{ role: 'user', content: prompt }]
-    });
-    const raw = result.content?.map(i => i.text || '').join('').replace(/```json|```/g, '').trim();
-    const verdict = JSON.parse(raw);
+
+    var raw = '';
+    if (result && result.choices && result.choices[0] && result.choices[0].message) {
+      raw = result.choices[0].message.content || '';
+    }
+    raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+    var verdict = JSON.parse(raw);
     setCache(stockData.ticker, verdict);
     return verdict;
   } catch(e) {
@@ -731,218 +678,187 @@ RULES:
 }
 
 // ── SUPABASE HELPERS ──────────────────────────────────────────
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
-const VERDICT_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours in ms
+var SUPABASE_URL = process.env.SUPABASE_URL;
+var SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
+var VERDICT_CACHE_TTL = 6 * 60 * 60 * 1000;
 
-function supabase(path, method = 'GET', body = null) {
-  return new Promise((resolve) => {
-    const data = body ? JSON.stringify(body) : null;
-    const hostname = SUPABASE_URL.replace('https://', '');
-    const req = https.request({
-      hostname,
+function supabase(path, method, body) {
+  method = method || 'GET';
+  body = body || null;
+  return new Promise(function(resolve) {
+    var data = body ? JSON.stringify(body) : null;
+    var hostname = SUPABASE_URL.replace('https://', '');
+    var headers = {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Prefer': 'return=representation',
+    };
+    if (data) headers['Content-Length'] = Buffer.byteLength(data);
+    var req = https.request({
+      hostname: hostname,
       path: '/rest/v1/' + path,
-      method,
-      headers: {
-        'Content-Type':  'application/json',
-        'apikey':        SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Prefer':        'return=representation',
-        ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
-      }
-    }, res => {
-      let b = '';
-      res.on('data', c => b += c);
-      res.on('end', () => { try { resolve(JSON.parse(b)); } catch(e) { resolve(null); } });
+      method: method,
+      headers: headers
+    }, function(res) {
+      var b = '';
+      res.on('data', function(c) { b += c; });
+      res.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve(null); } });
     });
-    req.on('error', () => resolve(null));
+    req.on('error', function() { resolve(null); });
     if (data) req.write(data);
+    req.end();
+  });
+}
+
+function supabaseRpc(fn, params) {
+  return new Promise(function(resolve) {
+    var data = JSON.stringify(params);
+    var hostname = SUPABASE_URL.replace('https://', '');
+    var req = https.request({
+      hostname: hostname,
+      path: '/rest/v1/rpc/' + fn,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Length': Buffer.byteLength(data)
+      }
+    }, function(res) {
+      var b = '';
+      res.on('data', function(c) { b += c; });
+      res.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { resolve(null); } });
+    });
+    req.on('error', function() { resolve(null); });
+    req.write(data);
     req.end();
   });
 }
 
 async function getLatestMacro() {
   try {
-    const rows = await supabase('macro?select=content,updated_at&id=eq.1&limit=1');
-
-    if (!rows?.[0]?.content) return null;
-
-    return {
-      content: rows[0].content,
-      updated_at: rows[0].updated_at
-    };
-  } catch (e) {
+    var rows = await supabase('macro?select=content,updated_at&order=updated_at.desc&limit=1');
+    if (!rows || !rows[0] || !rows[0].content) return null;
+    return { content: rows[0].content, updated_at: rows[0].updated_at };
+  } catch(e) {
     console.error('Macro fetch error:', e.message);
     return null;
   }
 }
 
-function supabaseRpc(fn, params) {
-  return new Promise((resolve) => {
-    const data = JSON.stringify(params);
-    const hostname = SUPABASE_URL.replace('https://', '');
-    const req = https.request({
-      hostname,
-      path: '/rest/v1/rpc/' + fn,
-      method: 'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'apikey':        SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Content-Length': Buffer.byteLength(data)
-      }
-    }, res => {
-      let b = '';
-      res.on('data', c => b += c);
-      res.on('end', () => { try { resolve(JSON.parse(b)); } catch(e) { resolve(null); } });
-    });
-    req.on('error', () => resolve(null));
-    req.write(data);
-    req.end();
-  });
-}
-
-// Get cached verdict from Supabase
 async function getCachedVerdict(ticker) {
   try {
-    const rows = await supabase(`verdict_cache?ticker=eq.${ticker}&select=verdict,updated_at`);
-    if (!rows?.[0]) return null;
-    const age = Date.now() - new Date(rows[0].updated_at).getTime();
+    var rows = await supabase('verdict_cache?ticker=eq.' + ticker + '&select=verdict,updated_at');
+    if (!rows || !rows[0]) return null;
+    var age = Date.now() - new Date(rows[0].updated_at).getTime();
     if (age > VERDICT_CACHE_TTL) return null;
     return rows[0].verdict;
   } catch(e) { return null; }
 }
 
-// Save verdict to Supabase cache
 async function saveVerdictCache(ticker, verdict) {
   try {
-    await supabase(
-      `verdict_cache?ticker=eq.${ticker}`,
-      'PATCH',
-      { verdict, updated_at: new Date().toISOString() }
-    );
+    await supabase('verdict_cache?ticker=eq.' + ticker, 'PATCH', { verdict: verdict, updated_at: new Date().toISOString() });
   } catch(e) {
-    // If PATCH fails (row doesn't exist), INSERT
     try {
-      await supabase('verdict_cache', 'POST', {
-        ticker,
-        verdict,
-        updated_at: new Date().toISOString()
-      });
+      await supabase('verdict_cache', 'POST', { ticker: ticker, verdict: verdict, updated_at: new Date().toISOString() });
     } catch(e2) {}
   }
 }
 
-// Decode JWT to get user ID
 function decodeJWT(token) {
   try {
-    const parts = token.split('.');
+    var parts = token.split('.');
     if (parts.length !== 3) return null;
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+    var payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
     return payload.sub || null;
   } catch(e) { return null; }
 }
 
 // ── MAIN HANDLER ──────────────────────────────────────────────
-exports.handler = async (event) => {
-  const headers = {
-    'Access-Control-Allow-Origin':  '*',
+exports.handler = async function(event) {
+  var headers = {
+    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json'
   };
 
-  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: headers, body: '' };
 
-  let payload;
+  var payload;
   try { payload = JSON.parse(event.body); }
-  catch { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request' }) }; }
+  catch(e) { return { statusCode: 400, headers: headers, body: JSON.stringify({ error: 'Invalid request' }) }; }
 
-  const { ticker, macroContext, priceOnly, token } = payload;
+  var ticker = payload.ticker;
+  var macroContext = payload.macroContext;
+  var priceOnly = payload.priceOnly;
+  var token = payload.token;
 
   if (!ticker || typeof ticker !== 'string' || ticker.length > 10) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid ticker' }) };
+    return { statusCode: 400, headers: headers, body: JSON.stringify({ error: 'Invalid ticker' }) };
   }
 
-  const cleanTicker = ticker.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  var cleanTicker = ticker.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-  const stockData = await getStockData(cleanTicker);
+  var stockData = await getStockData(cleanTicker);
   if (!stockData) {
-    return { statusCode: 404, headers, body: JSON.stringify({ error: `No data for ${cleanTicker}` }) };
+    return { statusCode: 404, headers: headers, body: JSON.stringify({ error: 'No data for ' + cleanTicker }) };
   }
 
-  const liveRatios = calculateLiveRatios(cleanTicker, parseFloat(stockData.price) || 0);
-  const stockDataWithRatios = { ...stockData, ...liveRatios };
+  var liveRatios = calculateLiveRatios(cleanTicker, parseFloat(stockData.price) || 0);
+  var stockDataWithRatios = Object.assign({}, stockData, liveRatios);
 
-  // Price only — no auth or rate limiting needed
   if (priceOnly) {
-    return { statusCode: 200, headers, body: JSON.stringify({ stockData: stockDataWithRatios, verdict: null }) };
+    return { statusCode: 200, headers: headers, body: JSON.stringify({ stockData: stockDataWithRatios, verdict: null }) };
   }
 
-  // ── AUTH CHECK ───────────────────────────────────────────────
-  const userId = token ? decodeJWT(token) : null;
+  var userId = token ? decodeJWT(token) : null;
   if (!userId) {
-    return { statusCode: 401, headers, body: JSON.stringify({ error: 'Please sign in to generate verdicts.' }) };
+    return { statusCode: 401, headers: headers, body: JSON.stringify({ error: 'Please sign in to generate verdicts.' }) };
   }
 
-  // ── CHECK SERVER-SIDE VERDICT CACHE ─────────────────────────
-  const cachedVerdict = await getCachedVerdict(cleanTicker);
+  var cachedVerdict = await getCachedVerdict(cleanTicker);
   if (cachedVerdict) {
-    console.log(`Cache hit for ${cleanTicker} — returning cached verdict`);
+    console.log('Cache hit for ' + cleanTicker);
     return {
       statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        stockData: stockDataWithRatios,
-        verdict:   cachedVerdict,
-        cached:    true,
-        timestamp: new Date().toISOString()
-      })
+      headers: headers,
+      body: JSON.stringify({ stockData: stockDataWithRatios, verdict: cachedVerdict, cached: true, timestamp: new Date().toISOString() })
     };
   }
 
-  // ── RATE LIMIT CHECK ─────────────────────────────────────────
-  const usageCheck = await supabaseRpc('check_and_increment_usage', {
-    p_user_id: userId,
-    p_type:    'verdict'
-  });
+  var usageCheck = await supabaseRpc('check_and_increment_usage', { p_user_id: userId, p_type: 'verdict' });
 
-  if (!usageCheck?.allowed) {
-    const tier    = usageCheck?.tier || 'free';
-    const limit   = usageCheck?.limit || 2;
-    const isPremium = tier === 'premium';
+  if (!usageCheck || !usageCheck.allowed) {
+    var tier = (usageCheck && usageCheck.tier) || 'free';
+    var limit = (usageCheck && usageCheck.limit) || 5;
+    var isPremium = tier === 'premium';
     return {
       statusCode: 429,
-      headers,
+      headers: headers,
       body: JSON.stringify({
-      error: `Daily limit reached. ${isPremium ? `Premium users get ${limit} verdicts/day.` : `Beta users get ${limit} AI verdicts/day. Upgrade to Premium for 15 verdicts/day.`}`,        
-        tier,
-        limit,
-        upgrade:  !isPremium
+        error: 'Daily limit reached. ' + (isPremium ? 'Premium users get ' + limit + ' verdicts/day.' : 'Beta users get ' + limit + ' AI verdicts/day. Upgrade to Premium for 15 verdicts/day.'),
+        tier: tier,
+        limit: limit,
+        upgrade: !isPremium
       })
     };
   }
 
-  // ── GENERATE VERDICT ─────────────────────────────────────────
-const latestMacro = await getLatestMacro();
+  var latestMacro = await getLatestMacro();
+  var finalMacro = (latestMacro && latestMacro.content)
+    ? latestMacro.content + '\n\nMacro last updated: ' + latestMacro.updated_at
+    : (macroContext && macroContext.length > 50 ? macroContext : 'Pakistan macro context unavailable.');
 
-const finalMacro = latestMacro?.content
-  ? `${latestMacro.content}\n\nMacro last updated: ${latestMacro.updated_at}`
-  : 'Pakistan macro context unavailable.';
+  var verdict = await generateVerdict(stockDataWithRatios, finalMacro);
 
-const verdict = await generateVerdict(stockDataWithRatios, finalMacro);
-
-  // Save to server-side cache so next user gets it for free
   if (verdict) await saveVerdictCache(cleanTicker, verdict);
 
   return {
     statusCode: 200,
-    headers,
-    body: JSON.stringify({
-      stockData: stockDataWithRatios,
-      verdict,
-      cached:    false,
-      timestamp: new Date().toISOString()
-    })
+    headers: headers,
+    body: JSON.stringify({ stockData: stockDataWithRatios, verdict: verdict, cached: false, timestamp: new Date().toISOString() })
   };
 };
