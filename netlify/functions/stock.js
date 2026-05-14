@@ -476,6 +476,31 @@ function callAnthropic(body) {
   });
 }
 
+function callOpenRouter(body) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify(body);
+    const req = https.request({
+      hostname: 'openrouter.ai',
+      path: '/api/v1/chat/completions',
+      method: 'POST',
+      headers: {
+        'Content-Type':   'application/json',
+        'Authorization':  'Bearer ' + process.env.OPENROUTER_API_KEY,
+        'HTTP-Referer':   'https://walltrade.markets',
+        'X-Title':        'Wall-Trade',
+        'Content-Length': Buffer.byteLength(data)
+      }
+    }, res => {
+      let b = '';
+      res.on('data', c => b += c);
+      res.on('end', () => { try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
+    });
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
+}
+
 // ── FETCH LIVE PRICE FROM PSX PROXY ───────────────────────────
 async function getPSXPrice(ticker) {
   try {
@@ -661,10 +686,11 @@ Return ONLY this JSON (no markdown):
   "summary": "<one sentence summary with key number>"
 }`;
   try {
-    const result = await callAnthropic({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2500,
-      system: `You are a senior equity analyst at a top Pakistani brokerage, writing for Wall-Trade — Pakistan's AI stock analysis platform for retail investors.
+    const result = await callOpenRouter({
+  model: 'z-ai/glm-5.1',
+  max_tokens: 2500,
+  messages: [
+    { role: 'system', content: `You are a senior equity analyst at a top Pakistani brokerage, writing for Wall-Trade — Pakistan's AI stock analysis platform for retail investors.
 
 YOUR JOB: Generate a sharp, data-driven verdict that helps a Pakistani retail investor understand this stock RIGHT NOW.
 
