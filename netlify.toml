@@ -48,3 +48,6 @@
   
 [functions."extract"]
   timeout = 26
+
+[functions."chart"]
+  timeout = 10
