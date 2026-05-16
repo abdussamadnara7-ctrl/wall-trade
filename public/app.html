@@ -683,8 +683,7 @@ body {
   100% { width: 95%; }
 }
 </style>
-<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-</head>
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script></head>
 <body>
 
 <header class="hdr">
@@ -1728,32 +1727,30 @@ function initTVChart(ticker) {
   const container = document.getElementById('tv-chart-container');
   if (!container) return;
   container.innerHTML = '';
-  if (typeof TradingView === 'undefined') {
-    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--t3);font-size:13px;">Chart loading...</div>';
-    setTimeout(() => initTVChart(ticker), 1000);
-    return;
-  }
-  new TradingView.widget({
-    autosize: true,
-    symbol: 'PSX:' + ticker,
-    interval: 'D',
-    timezone: 'Asia/Karachi',
-    theme: 'dark',
-    style: '1',
-    locale: 'en',
-    backgroundColor: 'rgba(15,15,24,1)',
-    gridColor: 'rgba(255,255,255,0.04)',
-    toolbar_bg: 'rgba(15,15,24,1)',
-    hide_top_toolbar: false,
-    hide_legend: false,
-    withdateranges: true,
-    range: '6M',
-    save_image: false,
-    container_id: 'tv-chart-container',
-    support_host: 'https://www.tradingview.com'
-  });
+  const iframe = document.createElement('iframe');
+  iframe.style.width = '100%';
+  iframe.style.height = '420px';
+  iframe.style.border = 'none';
+  iframe.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv-chart-container' +
+    '&symbol=PSX%3A' + ticker +
+    '&interval=D' +
+    '&hidesidetoolbar=0' +
+    '&symboledit=0' +
+    '&saveimage=0' +
+    '&toolbarbg=0f0f18' +
+    '&studies=[]' +
+    '&theme=dark' +
+    '&style=1' +
+    '&timezone=Asia%2FKarachi' +
+    '&studies_overrides={}' +
+    '&overrides={}' +
+    '&enabled_features=[]' +
+    '&disabled_features=[]' +
+    '&locale=en' +
+    '&utm_source=walltrade.markets';
+  container.appendChild(iframe);
 }
-
+  
 // ── SHEET (STOCK PICKER) ──────────────────────────────────
 function buildSheet() {
   const list = document.getElementById('sheet-list');
