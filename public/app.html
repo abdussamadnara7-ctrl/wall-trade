@@ -702,7 +702,7 @@ body {
 .chart-loading { height: 160px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--t3); }
 
 </style>
-<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script></head>
+</head>
 <body>
 
 <header class="hdr">
@@ -1135,20 +1135,10 @@ function render(ticker, stockData, verdict) {
 
   <div class="tabs">
     <div class="tab ${tab==='overview'  ?'on':''}" onclick="setTab('overview')">Overview</div>
-    <div class="tab ${tab==='chart'     ?'on':''}" onclick="setTab('chart')">Chart</div>
     <div class="tab ${tab==='financials'?'on':''}" onclick="setTab('financials')">Financials</div>
     <div class="tab ${tab==='factors'   ?'on':''}" onclick="setTab('factors')">Key factors</div>
   </div>
 
-  <!-- ══ CHART TAB ══ -->
-  <div class="tcontent ${tab==='chart'?'on':''}" id="tc-chart">
-    <div style="border-radius:14px;overflow:hidden;margin:0 0 12px;background:var(--bg2);border:1px solid var(--border);">
-      <div style="height:420px;width:100%;" id="tv-chart-container"></div>
-    </div>
-    <div style="font-size:11px;color:var(--t3);text-align:center;padding-bottom:12px;">
-      Powered by TradingView · Tap the chart to add indicators like RSI, MACD, EMA
-    </div>
-  </div>
 
   <!-- ══ OVERVIEW TAB ══ -->
   <div class="tcontent ${tab==='overview'?'on':''}" id="tc-overview">
@@ -1766,7 +1756,7 @@ async function doAsk() {
 // ── TAB SWITCHING ──────────────────────────────────────────
 
 // ── PRICE CHART ───────────────────────────────────────────────
-const PROXY = 'http://188.166.245.128:3000';
+const PROXY = '/.netlify/functions/prices';
 let chartCache = {};
 let chartTicker = null;
 let chartTF = '1M';
@@ -1786,14 +1776,12 @@ async function fetchChartData(ticker, tf) {
   const key = ticker + '_' + tf;
   if (chartCache[key]) return chartCache[key];
   const cfg = TF_CONFIG[tf];
-  const endpoint = cfg.eod
-    ? PROXY + '/timeseries/eod/' + ticker
-    : PROXY + '/timeseries/int/' + ticker;
+  const endpoint = '/.netlify/functions/chart?ticker=' + ticker + '&type=' + (cfg.eod ? 'eod' : 'int');
   try {
     const r = await fetch(endpoint);
     const j = await r.json();
     if (!j || !j.data || !j.data.length) return null;
-    let pts = j.data.map(d => ({ t: d[0] * 1000, p: parseFloat(d[1] || d[3] || 0) }))
+    let pts = j.data.map(d => ({ t: d[0] * 1000, p: parseFloat(d[1]) || 0 }))
                     .filter(d => d.p > 0)
                     .sort((a, b) => a.t - b.t);
     if (cfg.eod && cfg.days < 1000) {
@@ -2010,36 +1998,8 @@ function setTab(t) {
   tab = t;
   document.querySelectorAll('.tab').forEach(el => el.classList.toggle('on', el.textContent.toLowerCase().replace(/\s/g,'') === t.replace(/\s/,'')));
   document.querySelectorAll('.tcontent').forEach(el => el.classList.toggle('on', el.id === 'tc-' + t));
-  if (t === 'chart' && cur) initTVChart(cur);
 }
 
-function initTVChart(ticker) {
-  const container = document.getElementById('tv-chart-container');
-  if (!container) return;
-  container.innerHTML = '';
-  const iframe = document.createElement('iframe');
-  iframe.style.width = '100%';
-  iframe.style.height = '420px';
-  iframe.style.border = 'none';
-  iframe.src = 'https://s.tradingview.com/widgetembed/?frameElementId=tv-chart-container' +
-    '&symbol=PSX%3A' + ticker +
-    '&interval=D' +
-    '&hidesidetoolbar=0' +
-    '&symboledit=0' +
-    '&saveimage=0' +
-    '&toolbarbg=0f0f18' +
-    '&studies=[]' +
-    '&theme=dark' +
-    '&style=1' +
-    '&timezone=Asia%2FKarachi' +
-    '&studies_overrides={}' +
-    '&overrides={}' +
-    '&enabled_features=[]' +
-    '&disabled_features=[]' +
-    '&locale=en' +
-    '&utm_source=walltrade.markets';
-  container.appendChild(iframe);
-}
   
 // ── SHEET (STOCK PICKER) ──────────────────────────────────
 function buildSheet() {
