@@ -683,6 +683,7 @@ body {
   100% { width: 95%; }
 }
 </style>
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 </head>
 <body>
 
@@ -1116,8 +1117,19 @@ function render(ticker, stockData, verdict) {
 
   <div class="tabs">
     <div class="tab ${tab==='overview'  ?'on':''}" onclick="setTab('overview')">Overview</div>
+    <div class="tab ${tab==='chart'     ?'on':''}" onclick="setTab('chart')">Chart</div>
     <div class="tab ${tab==='financials'?'on':''}" onclick="setTab('financials')">Financials</div>
     <div class="tab ${tab==='factors'   ?'on':''}" onclick="setTab('factors')">Key factors</div>
+  </div>
+
+  <!-- ══ CHART TAB ══ -->
+  <div class="tcontent ${tab==='chart'?'on':''}" id="tc-chart">
+    <div style="border-radius:14px;overflow:hidden;margin:0 0 12px;background:var(--bg2);border:1px solid var(--border);">
+      <div style="height:420px;width:100%;" id="tv-chart-container"></div>
+    </div>
+    <div style="font-size:11px;color:var(--t3);text-align:center;padding-bottom:12px;">
+      Powered by TradingView · Tap the chart to add indicators like RSI, MACD, EMA
+    </div>
   </div>
 
   <!-- ══ OVERVIEW TAB ══ -->
@@ -1709,6 +1721,37 @@ function setTab(t) {
   tab = t;
   document.querySelectorAll('.tab').forEach(el => el.classList.toggle('on', el.textContent.toLowerCase().replace(/\s/g,'') === t.replace(/\s/,'')));
   document.querySelectorAll('.tcontent').forEach(el => el.classList.toggle('on', el.id === 'tc-' + t));
+  if (t === 'chart' && cur) initTVChart(cur);
+}
+
+function initTVChart(ticker) {
+  const container = document.getElementById('tv-chart-container');
+  if (!container) return;
+  container.innerHTML = '';
+  if (typeof TradingView === 'undefined') {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--t3);font-size:13px;">Chart loading...</div>';
+    setTimeout(() => initTVChart(ticker), 1000);
+    return;
+  }
+  new TradingView.widget({
+    autosize: true,
+    symbol: 'PSX:' + ticker,
+    interval: 'D',
+    timezone: 'Asia/Karachi',
+    theme: 'dark',
+    style: '1',
+    locale: 'en',
+    backgroundColor: 'rgba(15,15,24,1)',
+    gridColor: 'rgba(255,255,255,0.04)',
+    toolbar_bg: 'rgba(15,15,24,1)',
+    hide_top_toolbar: false,
+    hide_legend: false,
+    withdateranges: true,
+    range: '6M',
+    save_image: false,
+    container_id: 'tv-chart-container',
+    support_host: 'https://www.tradingview.com'
+  });
 }
 
 // ── SHEET (STOCK PICKER) ──────────────────────────────────
