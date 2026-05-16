@@ -2059,15 +2059,15 @@ function renderTechnicals(ticker, ind) {
   // MACD histogram colour
   const macdColor = macd && macd.histogram >= 0 ? '#22d98a' : '#ff8080';
 
-  wrap.innerHTML = \`
+  wrap.innerHTML = `
     <!-- RSI -->
     <div class="tech-card">
       <div class="tech-card-header">
         <div class="tech-card-name">RSI (14)</div>
-        <div class="tech-card-value" style="color:\${rsiFillColor}">\${rsi ?? '—'}</div>
+        <div class="tech-card-value" style="color:${rsiFillColor}">${rsi ?? '—'}</div>
       </div>
       <div class="tech-track">
-        <div class="tech-fill" style="width:\${rsiPct}%;background:\${rsiFillColor}"></div>
+        <div class="tech-fill" style="width:${rsiPct}%;background:${rsiFillColor}"></div>
       </div>
       <div class="tech-track-labels">
         <span class="tech-track-lbl">0</span>
@@ -2083,16 +2083,16 @@ function renderTechnicals(ticker, ind) {
       <div class="tech-card-header">
         <div class="tech-card-name">Moving Averages</div>
         <div style="text-align:right">
-          <div style="font-size:11px;color:var(--t3);margin-bottom:2px;">20-day &nbsp; <span style="font-family:var(--mono,monospace);font-weight:600;color:var(--t1)">PKR \${ma20 ?? '—'}</span></div>
-          <div style="font-size:11px;color:var(--t3);">50-day &nbsp; <span style="font-family:var(--mono,monospace);font-weight:600;color:var(--t1)">PKR \${ma50 ?? '—'}</span></div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:2px;">20-day &nbsp; <span style="font-family:var(--mono,monospace);font-weight:600;color:var(--t1)">PKR ${ma20 ?? '—'}</span></div>
+          <div style="font-size:11px;color:var(--t3);">50-day &nbsp; <span style="font-family:var(--mono,monospace);font-weight:600;color:var(--t1)">PKR ${ma50 ?? '—'}</span></div>
         </div>
       </div>
-      \${price ? \`
+      ${price ? `
       <div style="font-size:11px;color:var(--t2);margin-bottom:8px;">
-        Current price PKR \${price} is
-        <span style="color:\${price > ma20 ? '#22d98a' : '#ff8080'}"> \${price > ma20 ? 'above' : 'below'} MA20</span> and
-        <span style="color:\${price > ma50 ? '#22d98a' : '#ff8080'}"> \${price > ma50 ? 'above' : 'below'} MA50</span>
-      </div>\` : ''}
+        Current price PKR ${price} is
+        <span style="color:${price > ma20 ? '#22d98a' : '#ff8080'}"> ${price > ma20 ? 'above' : 'below'} MA20</span> and
+        <span style="color:${price > ma50 ? '#22d98a' : '#ff8080'}"> ${price > ma50 ? 'above' : 'below'} MA50</span>
+      </div>` : ''}
       <div class="tech-desc">A Simple Moving Average (SMA) calculates the arithmetic mean of closing prices over a defined number of trading days. The 20-day MA reflects short-term price trends. The 50-day MA reflects medium-term trends. When a shorter-period average is above a longer-period average it indicates that recent prices are higher than older prices on average, and vice versa. These averages smooth out daily price fluctuations to reveal the underlying direction of price movement over time.</div>
     </div>
 
@@ -2100,20 +2100,20 @@ function renderTechnicals(ticker, ind) {
     <div class="tech-card">
       <div class="tech-card-header">
         <div class="tech-card-name">MACD (12, 26, 9)</div>
-        <div class="tech-card-value" style="color:\${macdColor}">\${macd ? (macd.histogram >= 0 ? '+' : '') + macd.histogram : '—'}</div>
+        <div class="tech-card-value" style="color:${macdColor}">${macd ? (macd.histogram >= 0 ? '+' : '') + macd.histogram : '—'}</div>
       </div>
       <div class="tech-macd-row">
         <div class="tech-macd-item">
           <div class="tech-macd-lbl">MACD Line</div>
-          <div class="tech-macd-val" style="color:var(--t1)">\${macd?.line ?? '—'}</div>
+          <div class="tech-macd-val" style="color:var(--t1)">${macd?.line ?? '—'}</div>
         </div>
         <div class="tech-macd-item">
           <div class="tech-macd-lbl">Signal Line</div>
-          <div class="tech-macd-val" style="color:var(--t1)">\${macd?.signal ?? '—'}</div>
+          <div class="tech-macd-val" style="color:var(--t1)">${macd?.signal ?? '—'}</div>
         </div>
         <div class="tech-macd-item">
           <div class="tech-macd-lbl">Histogram</div>
-          <div class="tech-macd-val" style="color:\${macdColor}">\${macd ? (macd.histogram >= 0 ? '+' : '') + macd.histogram : '—'}</div>
+          <div class="tech-macd-val" style="color:${macdColor}">${macd ? (macd.histogram >= 0 ? '+' : '') + macd.histogram : '—'}</div>
         </div>
       </div>
       <div class="tech-desc">MACD (Moving Average Convergence Divergence) is calculated by subtracting the 26-day Exponential Moving Average (EMA) from the 12-day EMA. The result is the MACD Line. A 9-day EMA of the MACD Line is then calculated to create the Signal Line. The Histogram shows the difference between the MACD Line and Signal Line. Exponential moving averages give more weight to recent prices than older prices, making them more responsive to recent changes than simple moving averages.</div>
@@ -2124,17 +2124,17 @@ function renderTechnicals(ticker, ind) {
       <div class="tech-card-header">
         <div class="tech-card-name">Bollinger Bands (20, 2σ)</div>
         <div style="text-align:right;font-size:11px;color:var(--t3)">
-          %B &nbsp; <span style="font-family:var(--mono,monospace);font-weight:700;font-size:16px;color:\${bbFillColor}">\${bb ? (bb.percentB * 100).toFixed(0) + '%' : '—'}</span>
+          %B &nbsp; <span style="font-family:var(--mono,monospace);font-weight:700;font-size:16px;color:${bbFillColor}">${bb ? (bb.percentB * 100).toFixed(0) + '%' : '—'}</span>
         </div>
       </div>
       <div style="font-size:10px;color:var(--t3);margin-bottom:6px;display:flex;justify-content:space-between">
-        <span>Lower &nbsp; PKR \${bb?.lower ?? '—'}</span>
-        <span>Middle &nbsp; PKR \${bb?.middle ?? '—'}</span>
-        <span>Upper &nbsp; PKR \${bb?.upper ?? '—'}</span>
+        <span>Lower &nbsp; PKR ${bb?.lower ?? '—'}</span>
+        <span>Middle &nbsp; PKR ${bb?.middle ?? '—'}</span>
+        <span>Upper &nbsp; PKR ${bb?.upper ?? '—'}</span>
       </div>
       <div class="tech-bb-track">
         <div class="tech-bb-inner"></div>
-        <div class="tech-bb-dot" style="left:\${bbPct}%;background:\${bbFillColor}"></div>
+        <div class="tech-bb-dot" style="left:${bbPct}%;background:${bbFillColor}"></div>
       </div>
       <div class="tech-track-labels" style="margin-top:4px">
         <span class="tech-track-lbl" style="color:#60a5fa">Lower Band</span>
@@ -2145,7 +2145,7 @@ function renderTechnicals(ticker, ind) {
     </div>
 
     <div class="tech-disclaimer">Technical data is shown for educational and informational purposes only. These indicators are mathematical calculations based on historical price data. They are not trading signals, investment recommendations, or financial advice. Past price behaviour does not guarantee future results. Wall-Trade is not registered as a Research Analyst with SECP.</div>
-  \`;
+  `;
 }
 
 function initStockChart(ticker) {
