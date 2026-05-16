@@ -682,6 +682,25 @@ body {
   90%  { width: 90%; }
   100% { width: 95%; }
 }
+
+/* ── PRICE CHART ─────────────────────────────────────────── */
+.chart-wrap { padding: 16px 20px 8px; }
+.chart-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+.chart-price-display { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; color: var(--t1); font-family: var(--mono, monospace); }
+.chart-change-display { font-size: 12px; font-weight: 600; margin-left: 8px; }
+.chart-tf-row { display: flex; gap: 4px; margin-bottom: 10px; }
+.chart-tf { padding: 5px 11px; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--rim); color: var(--t3); background: transparent; font-family: inherit; transition: all 0.15s; letter-spacing: 0.04em; }
+.chart-tf.on { background: var(--gdim); border-color: var(--rim2); color: var(--gb); }
+.chart-tf:hover:not(.on) { color: var(--t1); border-color: rgba(255,255,255,0.12); }
+.chart-canvas-wrap { position: relative; height: 160px; margin-bottom: 4px; cursor: crosshair; }
+.chart-canvas-wrap canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.chart-tooltip { position: absolute; top: 4px; left: 0; font-size: 11px; color: var(--t2); pointer-events: none; white-space: nowrap; }
+.chart-y-labels { display: flex; flex-direction: column; justify-content: space-between; position: absolute; right: 0; top: 0; height: 100%; pointer-events: none; }
+.chart-y-lbl { font-size: 9px; color: var(--t3); font-family: var(--mono, monospace); text-align: right; }
+.chart-x-row { display: flex; justify-content: space-between; padding: 0 2px; }
+.chart-x-lbl { font-size: 9px; color: var(--t3); font-family: var(--mono, monospace); }
+.chart-loading { height: 160px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--t3); }
+
 </style>
 <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script></head>
 <body>
@@ -1133,6 +1152,35 @@ function render(ticker, stockData, verdict) {
 
   <!-- ══ OVERVIEW TAB ══ -->
   <div class="tcontent ${tab==='overview'?'on':''}" id="tc-overview">
+
+    <!-- Price Chart -->
+    <div class="chart-wrap" id="stock-chart-section">
+      <div class="chart-header">
+        <div>
+          <span class="chart-price-display">—</span>
+          <span class="chart-change-display">—</span>
+        </div>
+        <div class="chart-tf-row">
+          <button class="chart-tf" data-tf="1D"  onclick="loadChart('1D')">1D</button>
+          <button class="chart-tf" data-tf="1W"  onclick="loadChart('1W')">1W</button>
+          <button class="chart-tf on" data-tf="1M" onclick="loadChart('1M')">1M</button>
+          <button class="chart-tf" data-tf="3M"  onclick="loadChart('3M')">3M</button>
+          <button class="chart-tf" data-tf="6M"  onclick="loadChart('6M')">6M</button>
+          <button class="chart-tf" data-tf="1Y"  onclick="loadChart('1Y')">1Y</button>
+          <button class="chart-tf" data-tf="3Y"  onclick="loadChart('3Y')">3Y</button>
+          <button class="chart-tf" data-tf="5Y"  onclick="loadChart('5Y')">5Y</button>
+        </div>
+      </div>
+      <div style="position:relative;">
+        <div class="chart-canvas-wrap" id="chart-canvas-wrap">
+          <div class="chart-loading">Loading chart...</div>
+        </div>
+        <div class="chart-y-labels" style="position:absolute;right:0;top:0;height:160px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none;padding:0 2px;"></div>
+        <div class="chart-tooltip"></div>
+      </div>
+      <div class="chart-x-row"></div>
+    </div>
+
 
     <!-- Snapshot metrics -->
     ${snapMetrics.length ? `
@@ -1716,6 +1764,248 @@ async function doAsk() {
 }
 
 // ── TAB SWITCHING ──────────────────────────────────────────
+
+// ── PRICE CHART ───────────────────────────────────────────────
+const PROXY = 'http://188.166.245.128:3000';
+let chartCache = {};
+let chartTicker = null;
+let chartTF = '1M';
+
+const TF_CONFIG = {
+  '1D':  { label: '1D',  days: 1,    eod: false },
+  '1W':  { label: '1W',  days: 7,    eod: true  },
+  '1M':  { label: '1M',  days: 30,   eod: true  },
+  '3M':  { label: '3M',  days: 90,   eod: true  },
+  '6M':  { label: '6M',  days: 180,  eod: true  },
+  '1Y':  { label: '1Y',  days: 365,  eod: true  },
+  '3Y':  { label: '3Y',  days: 1095, eod: true  },
+  '5Y':  { label: '5Y',  days: 1825, eod: true  },
+};
+
+async function fetchChartData(ticker, tf) {
+  const key = ticker + '_' + tf;
+  if (chartCache[key]) return chartCache[key];
+  const cfg = TF_CONFIG[tf];
+  const endpoint = cfg.eod
+    ? PROXY + '/timeseries/eod/' + ticker
+    : PROXY + '/timeseries/int/' + ticker;
+  try {
+    const r = await fetch(endpoint);
+    const j = await r.json();
+    if (!j || !j.data || !j.data.length) return null;
+    let pts = j.data.map(d => ({ t: d[0] * 1000, p: parseFloat(d[1] || d[3] || 0) }))
+                    .filter(d => d.p > 0)
+                    .sort((a, b) => a.t - b.t);
+    if (cfg.eod && cfg.days < 1000) {
+      const cutoff = Date.now() - cfg.days * 86400000;
+      pts = pts.filter(d => d.t >= cutoff);
+    }
+    chartCache[key] = pts;
+    return pts;
+  } catch(e) { return null; }
+}
+
+function drawChart(canvas, pts, color) {
+  if (!canvas || !pts || pts.length < 2) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth;
+  const H = canvas.offsetHeight;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const prices = pts.map(d => d.p);
+  const minP = Math.min(...prices);
+  const maxP = Math.max(...prices);
+  const range = maxP - minP || 1;
+
+  const padL = 4, padR = 40, padT = 10, padB = 10;
+  const cW = W - padL - padR;
+  const cH = H - padT - padB;
+
+  const xOf = i => padL + (i / (pts.length - 1)) * cW;
+  const yOf = p => padT + (1 - (p - minP) / range) * cH;
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 3; i++) {
+    const y = padT + (i / 3) * cH;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+  }
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, padT, 0, padT + cH);
+  grad.addColorStop(0, color.replace(')', ', 0.25)').replace('rgb', 'rgba'));
+  grad.addColorStop(1, color.replace(')', ', 0.00)').replace('rgb', 'rgba'));
+  ctx.beginPath();
+  ctx.moveTo(xOf(0), yOf(pts[0].p));
+  pts.forEach((d, i) => { if (i > 0) ctx.lineTo(xOf(i), yOf(d.p)); });
+  ctx.lineTo(xOf(pts.length - 1), padT + cH);
+  ctx.lineTo(xOf(0), padT + cH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(xOf(0), yOf(pts[0].p));
+  pts.forEach((d, i) => { if (i > 0) ctx.lineTo(xOf(i), yOf(d.p)); });
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.8;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Y labels
+  const yLabels = document.querySelector('.chart-y-labels');
+  if (yLabels) {
+    const steps = [maxP, (maxP + minP) / 2, minP];
+    yLabels.innerHTML = steps.map(p =>
+      '<div class="chart-y-lbl">' + p.toFixed(0) + '</div>'
+    ).join('');
+  }
+
+  return { xOf, yOf, pts, minP, maxP, padL, padR, padT, cW, cH, W, H };
+}
+
+function setupTooltip(canvas, chartState, ticker) {
+  if (!chartState) return;
+  const { xOf, yOf, pts, padL, padR, padT, cW, cH, W, H } = chartState;
+  const tooltip = document.querySelector('.chart-tooltip');
+  const priceDisp = document.querySelector('.chart-price-display');
+  const changeDisp = document.querySelector('.chart-change-display');
+  const firstPrice = pts[0].p;
+
+  function onMove(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const x = clientX - rect.left;
+    if (x < padL || x > W - padR) return;
+    const idx = Math.round(((x - padL) / cW) * (pts.length - 1));
+    const pt = pts[Math.max(0, Math.min(idx, pts.length - 1))];
+    const d = new Date(pt.t);
+    const label = d.toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: '2-digit' });
+    if (tooltip) tooltip.textContent = label;
+    if (priceDisp) priceDisp.textContent = 'PKR ' + pt.p.toFixed(2);
+    if (changeDisp) {
+      const chg = ((pt.p - firstPrice) / firstPrice * 100).toFixed(2);
+      const up = chg >= 0;
+      changeDisp.textContent = (up ? '+' : '') + chg + '%';
+      changeDisp.className = 'chart-change-display ' + (up ? 'up' : 'dn');
+    }
+    // Dot
+    const dotCanvas = document.getElementById('chart-dot-canvas');
+    if (dotCanvas) {
+      const dpr = window.devicePixelRatio || 1;
+      const dCtx = dotCanvas.getContext('2d');
+      dCtx.clearRect(0, 0, dotCanvas.width, dotCanvas.height);
+      const cx = xOf(Math.max(0, Math.min(idx, pts.length - 1))) * dpr;
+      const cy = yOf(pt.p) * dpr;
+      const color = document.documentElement.style.getPropertyValue('--chart-color') || '#22d98a';
+      dCtx.beginPath();
+      dCtx.arc(cx, cy, 5 * dpr, 0, Math.PI * 2);
+      dCtx.fillStyle = color;
+      dCtx.fill();
+      dCtx.beginPath();
+      dCtx.arc(cx, cy, 3 * dpr, 0, Math.PI * 2);
+      dCtx.fillStyle = '#09090f';
+      dCtx.fill();
+    }
+  }
+
+  function onLeave() {
+    if (tooltip) tooltip.textContent = '';
+    const last = pts[pts.length - 1];
+    if (priceDisp) priceDisp.textContent = 'PKR ' + last.p.toFixed(2);
+    if (changeDisp) {
+      const chg = ((last.p - firstPrice) / firstPrice * 100).toFixed(2);
+      const up = chg >= 0;
+      changeDisp.textContent = (up ? '+' : '') + chg + '%';
+      changeDisp.className = 'chart-change-display ' + (up ? 'up' : 'dn');
+    }
+    const dotCanvas = document.getElementById('chart-dot-canvas');
+    if (dotCanvas) {
+      const dCtx = dotCanvas.getContext('2d');
+      dCtx.clearRect(0, 0, dotCanvas.width, dotCanvas.height);
+    }
+  }
+
+  canvas.addEventListener('mousemove', onMove);
+  canvas.addEventListener('touchmove', onMove, { passive: true });
+  canvas.addEventListener('mouseleave', onLeave);
+  canvas.addEventListener('touchend', onLeave);
+}
+
+async function loadChart(tf) {
+  if (!chartTicker) return;
+  chartTF = tf;
+  document.querySelectorAll('.chart-tf').forEach(b =>
+    b.classList.toggle('on', b.dataset.tf === tf)
+  );
+  const wrap = document.getElementById('chart-canvas-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="chart-loading">Loading chart...</div>';
+
+  const pts = await fetchChartData(chartTicker, tf);
+  if (!pts || pts.length < 2) {
+    wrap.innerHTML = '<div class="chart-loading">No data available</div>';
+    return;
+  }
+
+  const firstP = pts[0].p;
+  const lastP  = pts[pts.length - 1].p;
+  const isUp   = lastP >= firstP;
+  const color  = isUp ? '#22d98a' : '#ff8080';
+  document.documentElement.style.setProperty('--chart-color', color);
+
+  // Update header
+  const priceDisp = document.querySelector('.chart-price-display');
+  const changeDisp = document.querySelector('.chart-change-display');
+  if (priceDisp) priceDisp.textContent = 'PKR ' + lastP.toFixed(2);
+  if (changeDisp) {
+    const chg = ((lastP - firstP) / firstP * 100).toFixed(2);
+    changeDisp.textContent = (isUp ? '+' : '') + chg + '%';
+    changeDisp.className = 'chart-change-display ' + (isUp ? 'up' : 'dn');
+  }
+
+  // X labels
+  const xRow = document.querySelector('.chart-x-row');
+  if (xRow && pts.length) {
+    const fmt = (ts) => {
+      const d = new Date(ts);
+      return TF_CONFIG[tf].days <= 1
+        ? d.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' })
+        : d.toLocaleDateString('en-PK', { day: 'numeric', month: 'short' });
+    };
+    const idxs = [0, Math.floor(pts.length * 0.25), Math.floor(pts.length * 0.5), Math.floor(pts.length * 0.75), pts.length - 1];
+    xRow.innerHTML = idxs.map(i => '<div class="chart-x-lbl">' + fmt(pts[i].t) + '</div>').join('');
+  }
+
+  // Draw
+  wrap.innerHTML = `
+    <canvas id="chart-main-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
+    <canvas id="chart-dot-canvas"  style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
+  `;
+  const mainCanvas = document.getElementById('chart-main-canvas');
+  const dotCanvas  = document.getElementById('chart-dot-canvas');
+
+  // Size dot canvas same as main
+  requestAnimationFrame(() => {
+    const dpr = window.devicePixelRatio || 1;
+    dotCanvas.width  = mainCanvas.offsetWidth  * dpr;
+    dotCanvas.height = mainCanvas.offsetHeight * dpr;
+    const chartState = drawChart(mainCanvas, pts, color);
+    setupTooltip(mainCanvas, chartState, chartTicker);
+  });
+}
+
+function initStockChart(ticker) {
+  chartTicker = ticker;
+  chartTF = '1M';
+  loadChart('1M');
+}
+
 function setTab(t) {
   tab = t;
   document.querySelectorAll('.tab').forEach(el => el.classList.toggle('on', el.textContent.toLowerCase().replace(/\s/g,'') === t.replace(/\s/,'')));
@@ -1872,7 +2162,7 @@ function closeSheet() {
 
 function select(ticker) {
   closeSheet();
-  cur = ticker.toUpperCase(); tab = 'overview';
+  cur = ticker.toUpperCase(); tab = 'overview'; setTimeout(() => initStockChart(cur), 50);
   currentSection = 'home';
   // Update nav — home is active when viewing a stock
   ['home','stocks','crypto','forex'].forEach(s => {
