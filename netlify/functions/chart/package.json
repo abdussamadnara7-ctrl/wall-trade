@@ -1,0 +1,7 @@
+{
+  "name": "chart",
+  "version": "1.0.0",
+  "dependencies": {
+    "technicalindicators": "^3.1.0"
+  }
+}
