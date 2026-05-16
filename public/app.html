@@ -701,6 +701,30 @@ body {
 .chart-x-lbl { font-size: 9px; color: var(--t3); font-family: var(--mono, monospace); }
 .chart-loading { height: 160px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--t3); }
 
+
+/* ── TECHNICALS ──────────────────────────────────────────── */
+.tech-wrap { padding: 4px 20px 16px; }
+.tech-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.tech-disclaimer { font-size: 10px; color: var(--t3); font-style: italic; line-height: 1.4; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--rim); }
+.tech-card { background: var(--bg2); border: 1px solid var(--rim); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+.tech-card-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.tech-card-name { font-size: 12px; font-weight: 600; color: var(--t1); letter-spacing: 0.02em; }
+.tech-card-value { font-size: 18px; font-weight: 700; color: var(--t1); font-family: var(--mono, monospace); letter-spacing: -0.02em; }
+.tech-track { height: 5px; background: var(--rim); border-radius: 3px; position: relative; margin-bottom: 6px; }
+.tech-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+.tech-track-labels { display: flex; justify-content: space-between; }
+.tech-track-lbl { font-size: 9px; color: var(--t3); font-family: var(--mono, monospace); }
+.tech-desc { font-size: 11px; color: var(--t3); line-height: 1.55; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--rim); }
+.tech-macd-row { display: flex; gap: 8px; margin-bottom: 6px; }
+.tech-macd-item { flex: 1; background: var(--bg3, rgba(255,255,255,0.04)); border-radius: 8px; padding: 8px 10px; }
+.tech-macd-lbl { font-size: 9px; color: var(--t3); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 3px; }
+.tech-macd-val { font-size: 14px; font-weight: 600; font-family: var(--mono, monospace); }
+.tech-bb-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.tech-bb-track { flex: 1; height: 8px; background: var(--rim); border-radius: 4px; position: relative; overflow: hidden; }
+.tech-bb-inner { position: absolute; top: 0; left: 10%; width: 80%; height: 100%; background: rgba(255,255,255,0.06); border-radius: 2px; }
+.tech-bb-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--bg2); transition: left 0.4s ease; }
+.tech-loading { height: 80px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--t3); }
+
 </style>
 </head>
 <body>
@@ -1171,6 +1195,17 @@ function render(ticker, stockData, verdict) {
       <div class="chart-x-row"></div>
     </div>
 
+
+
+    <!-- Technicals -->
+    <div class="tech-wrap" id="tech-wrap" style="display:none;">
+      <div class="tech-title-row">
+        <div class="sec-lbl" style="margin:0;">Technical Indicators</div>
+      </div>
+      <div id="tech-content">
+        <div class="tech-loading">Calculating indicators...</div>
+      </div>
+    </div>
 
     <!-- Snapshot metrics -->
     ${snapMetrics.length ? `
@@ -1772,6 +1807,9 @@ const TF_CONFIG = {
   '5Y':  { label: '5Y',  days: 1825, eod: true  },
 };
 
+// Store indicators separately from price cache
+let indicatorCache = {};
+
 async function fetchChartData(ticker, tf) {
   const key = ticker + '_' + tf;
   if (chartCache[key]) return chartCache[key];
@@ -1781,6 +1819,11 @@ async function fetchChartData(ticker, tf) {
     const r = await fetch(endpoint);
     const j = await r.json();
     if (!j || !j.data || !j.data.length) return null;
+    // Store indicators from the EOD response
+    if (j.indicators && cfg.eod) {
+      indicatorCache[ticker] = j.indicators;
+      renderTechnicals(ticker, j.indicators);
+    }
     let pts = j.data.map(d => ({ t: d[0] * 1000, p: parseFloat(d[1]) || 0 }))
                     .filter(d => d.p > 0)
                     .sort((a, b) => a.t - b.t);
@@ -1988,8 +2031,130 @@ async function loadChart(tf) {
   });
 }
 
+
+function renderTechnicals(ticker, ind) {
+  const wrap = document.getElementById('tech-content');
+  if (!wrap || !ind) return;
+  const techWrap = document.getElementById('tech-wrap');
+  if (techWrap) techWrap.style.display = 'block';
+
+  const rsi = ind.rsi;
+  const ma20 = ind.ma20;
+  const ma50 = ind.ma50;
+  const macd = ind.macd;
+  const bb = ind.bb;
+
+  // RSI colour: <30 blue, 30-70 amber, >70 red
+  const rsiPct = Math.min(100, Math.max(0, rsi || 0));
+  const rsiFillColor = rsi < 30 ? '#60a5fa' : rsi > 70 ? '#ff8080' : '#f59e0b';
+
+  // MA: compare current price vs MAs
+  const lp = livePrices[ticker];
+  const price = lp ? parseFloat(lp.price) : null;
+
+  // Bollinger %B as percentage
+  const bbPct = bb ? Math.min(100, Math.max(0, (bb.percentB || 0.5) * 100)) : 50;
+  const bbFillColor = bb && bb.percentB > 0.8 ? '#ff8080' : bb && bb.percentB < 0.2 ? '#60a5fa' : '#22d98a';
+
+  // MACD histogram colour
+  const macdColor = macd && macd.histogram >= 0 ? '#22d98a' : '#ff8080';
+
+  wrap.innerHTML = \`
+    <!-- RSI -->
+    <div class="tech-card">
+      <div class="tech-card-header">
+        <div class="tech-card-name">RSI (14)</div>
+        <div class="tech-card-value" style="color:\${rsiFillColor}">\${rsi ?? '—'}</div>
+      </div>
+      <div class="tech-track">
+        <div class="tech-fill" style="width:\${rsiPct}%;background:\${rsiFillColor}"></div>
+      </div>
+      <div class="tech-track-labels">
+        <span class="tech-track-lbl">0</span>
+        <span class="tech-track-lbl" style="color:#60a5fa">30 Oversold</span>
+        <span class="tech-track-lbl" style="color:#ff8080">70 Overbought</span>
+        <span class="tech-track-lbl">100</span>
+      </div>
+      <div class="tech-desc">The Relative Strength Index measures the speed and size of recent price changes on a scale of 0 to 100. It is calculated using 14 trading days of closing prices. Values below 30 generally indicate the asset has experienced significant selling pressure. Values above 70 indicate significant buying pressure. The midpoint of 50 represents balanced momentum with no clear directional dominance.</div>
+    </div>
+
+    <!-- Moving Averages -->
+    <div class="tech-card">
+      <div class="tech-card-header">
+        <div class="tech-card-name">Moving Averages</div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--t3);margin-bottom:2px;">20-day &nbsp; <span style="font-family:var(--mono,monospace);font-weight:600;color:var(--t1)">PKR \${ma20 ?? '—'}</span></div>
+          <div style="font-size:11px;color:var(--t3);">50-day &nbsp; <span style="font-family:var(--mono,monospace);font-weight:600;color:var(--t1)">PKR \${ma50 ?? '—'}</span></div>
+        </div>
+      </div>
+      \${price ? \`
+      <div style="font-size:11px;color:var(--t2);margin-bottom:8px;">
+        Current price PKR \${price} is
+        <span style="color:\${price > ma20 ? '#22d98a' : '#ff8080'}"> \${price > ma20 ? 'above' : 'below'} MA20</span> and
+        <span style="color:\${price > ma50 ? '#22d98a' : '#ff8080'}"> \${price > ma50 ? 'above' : 'below'} MA50</span>
+      </div>\` : ''}
+      <div class="tech-desc">A Simple Moving Average (SMA) calculates the arithmetic mean of closing prices over a defined number of trading days. The 20-day MA reflects short-term price trends. The 50-day MA reflects medium-term trends. When a shorter-period average is above a longer-period average it indicates that recent prices are higher than older prices on average, and vice versa. These averages smooth out daily price fluctuations to reveal the underlying direction of price movement over time.</div>
+    </div>
+
+    <!-- MACD -->
+    <div class="tech-card">
+      <div class="tech-card-header">
+        <div class="tech-card-name">MACD (12, 26, 9)</div>
+        <div class="tech-card-value" style="color:\${macdColor}">\${macd ? (macd.histogram >= 0 ? '+' : '') + macd.histogram : '—'}</div>
+      </div>
+      <div class="tech-macd-row">
+        <div class="tech-macd-item">
+          <div class="tech-macd-lbl">MACD Line</div>
+          <div class="tech-macd-val" style="color:var(--t1)">\${macd?.line ?? '—'}</div>
+        </div>
+        <div class="tech-macd-item">
+          <div class="tech-macd-lbl">Signal Line</div>
+          <div class="tech-macd-val" style="color:var(--t1)">\${macd?.signal ?? '—'}</div>
+        </div>
+        <div class="tech-macd-item">
+          <div class="tech-macd-lbl">Histogram</div>
+          <div class="tech-macd-val" style="color:\${macdColor}">\${macd ? (macd.histogram >= 0 ? '+' : '') + macd.histogram : '—'}</div>
+        </div>
+      </div>
+      <div class="tech-desc">MACD (Moving Average Convergence Divergence) is calculated by subtracting the 26-day Exponential Moving Average (EMA) from the 12-day EMA. The result is the MACD Line. A 9-day EMA of the MACD Line is then calculated to create the Signal Line. The Histogram shows the difference between the MACD Line and Signal Line. Exponential moving averages give more weight to recent prices than older prices, making them more responsive to recent changes than simple moving averages.</div>
+    </div>
+
+    <!-- Bollinger Bands -->
+    <div class="tech-card">
+      <div class="tech-card-header">
+        <div class="tech-card-name">Bollinger Bands (20, 2σ)</div>
+        <div style="text-align:right;font-size:11px;color:var(--t3)">
+          %B &nbsp; <span style="font-family:var(--mono,monospace);font-weight:700;font-size:16px;color:\${bbFillColor}">\${bb ? (bb.percentB * 100).toFixed(0) + '%' : '—'}</span>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--t3);margin-bottom:6px;display:flex;justify-content:space-between">
+        <span>Lower &nbsp; PKR \${bb?.lower ?? '—'}</span>
+        <span>Middle &nbsp; PKR \${bb?.middle ?? '—'}</span>
+        <span>Upper &nbsp; PKR \${bb?.upper ?? '—'}</span>
+      </div>
+      <div class="tech-bb-track">
+        <div class="tech-bb-inner"></div>
+        <div class="tech-bb-dot" style="left:\${bbPct}%;background:\${bbFillColor}"></div>
+      </div>
+      <div class="tech-track-labels" style="margin-top:4px">
+        <span class="tech-track-lbl" style="color:#60a5fa">Lower Band</span>
+        <span class="tech-track-lbl">Middle</span>
+        <span class="tech-track-lbl" style="color:#ff8080">Upper Band</span>
+      </div>
+      <div class="tech-desc">Bollinger Bands consist of three lines: a 20-day Simple Moving Average in the middle, and upper and lower bands placed 2 standard deviations above and below it. Standard deviation measures how spread out prices are from the average. When prices are more volatile the bands widen. When prices are less volatile they narrow. The %B indicator shows where the current price sits relative to the bands: 0% means price is at the lower band, 50% means price is at the middle band, and 100% means price is at the upper band.</div>
+    </div>
+
+    <div class="tech-disclaimer">Technical data is shown for educational and informational purposes only. These indicators are mathematical calculations based on historical price data. They are not trading signals, investment recommendations, or financial advice. Past price behaviour does not guarantee future results. Wall-Trade is not registered as a Research Analyst with SECP.</div>
+  \`;
+}
+
 function initStockChart(ticker) {
   chartTicker = ticker;
+  // Reset technicals
+  const tw = document.getElementById('tech-wrap');
+  if (tw) tw.style.display = 'none';
+  const tc = document.getElementById('tech-content');
+  if (tc) tc.innerHTML = '<div class="tech-loading">Calculating indicators...</div>';
   chartTF = '1M';
   loadChart('1M');
 }
