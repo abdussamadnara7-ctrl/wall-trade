@@ -450,6 +450,11 @@ function callAnthropic(body) {
 
 function callOpenRouter(body) {
   return new Promise(function(resolve, reject) {
+    // Hard 20-second timeout — prevents hanging until Netlify kills the function
+    var hardTimeout = setTimeout(function() {
+      reject(new Error('OpenRouter timeout after 20s'));
+    }, 20000);
+
     var data = JSON.stringify(body);
     var req = https.request({
       hostname: 'openrouter.ai',
@@ -465,9 +470,12 @@ function callOpenRouter(body) {
     }, function(res) {
       var b = '';
       res.on('data', function(c) { b += c; });
-      res.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
+      res.on('end', function() {
+        clearTimeout(hardTimeout);
+        try { resolve(JSON.parse(b)); } catch(e) { reject(e); }
+      });
     });
-    req.on('error', reject);
+    req.on('error', function(e) { clearTimeout(hardTimeout); reject(e); });
     req.write(data);
     req.end();
   });
