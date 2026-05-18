@@ -424,21 +424,22 @@ function fetchJSON(url, headers) {
   });
 }
 
-function callZAI(body) {
+// ── ANTHROPIC — Claude Sonnet ─────────────────────────────────
+function callAnthropic(body) {
   return new Promise(function(resolve, reject) {
-    // Hard 25-second timeout
     var hardTimeout = setTimeout(function() {
-      reject(new Error('Z.AI timeout after 25s'));
+      reject(new Error('Anthropic timeout after 25s'));
     }, 25000);
 
     var data = JSON.stringify(body);
     var req = https.request({
-      hostname: 'api.z.ai',
-      path: '/api/paas/v4/chat/completions',
+      hostname: 'api.anthropic.com',
+      path: '/v1/messages',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + process.env.ZAI_API_KEY,
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
         'Content-Length': Buffer.byteLength(data)
       }
     }, function(res) {
@@ -454,6 +455,7 @@ function callZAI(body) {
     req.end();
   });
 }
+
 
 // ── FETCH LIVE PRICE ──────────────────────────────────────────
 async function getPSXPrice(ticker) {
@@ -583,14 +585,10 @@ function getCached(ticker) {
 }
 function setCache(ticker, data) { verdictCache[ticker] = { data: data, timestamp: Date.now() }; }
 
-// ── GENERATE AI VERDICT ────────────────────────────────────────
+// ── GENERATE AI VERDICT — Claude Sonnet ───────────────────────
 async function generateVerdict(stockData, macroContext) {
-  var cached = getCached(stockData.ticker);
-  if (cached) return Object.assign({}, cached, { cached: true });
-
   var sectorBlock = buildSectorDataBlock(stockData.ticker, stockData);
 
-  // Build technicals block if frontend passed indicator data
   var techBlock = '';
   if (stockData.technicals) {
     var t = stockData.technicals;
@@ -669,27 +667,27 @@ async function generateVerdict(stockData, macroContext) {
     '- Every factor detail MUST include at least one actual number\n' +
     '- Never give buy or sell advice — use "Strong Fundamentals", "Mixed Picture", or "Needs Monitoring" only\n' +
     '- NEVER mention analyst price targets or consensus ratings\n' +
-    '- If technicalRead data is unavailable, set "technicalRead" to an empty string ""';
+    '- If technicalRead data is unavailable, set "technicalRead" to an empty string ""\n' +
+    '- Respond with ONLY valid JSON — no markdown, no preamble, no explanation';
 
   try {
-    var result = await callZAI({
-      model: 'glm-5.1',
+    var result = await callAnthropic({
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 2500,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt }
-      ]
+      system: systemPrompt,
+      messages: [{ role: 'user', content: prompt }]
     });
 
     var raw = '';
-    if (result && result.choices && result.choices[0] && result.choices[0].message) {
-      raw = result.choices[0].message.content || '';
+    if (result && result.content && result.content[0] && result.content[0].text) {
+      raw = result.content[0].text;
     }
-    // GLM-5.1 may wrap reasoning in <think>...</think> — strip before JSON parse
-    raw = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    if (!raw) {
+      console.error('Anthropic empty response:', JSON.stringify(result));
+      return null;
+    }
     raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
     var verdict = JSON.parse(raw);
-    setCache(stockData.ticker, verdict);
     return verdict;
   } catch(e) {
     console.error('Verdict error:', e.message);
@@ -857,15 +855,12 @@ exports.handler = async function(event) {
     };
   }
 
-    // Rate limit bypassed for testing — restore original when going live
   var latestMacro = await getLatestMacro();
-
   var finalMacro = (latestMacro && latestMacro.content)
     ? latestMacro.content + '\n\nMacro last updated: ' + latestMacro.updated_at
     : (macroContext && macroContext.length > 50 ? macroContext : 'Pakistan macro context unavailable.');
 
   var verdict = await generateVerdict(stockDataWithRatios, finalMacro);
-
   if (verdict) await saveVerdictCache(cleanTicker, verdict);
 
   return {
@@ -874,3 +869,4 @@ exports.handler = async function(event) {
     body: JSON.stringify({ stockData: stockDataWithRatios, verdict: verdict, cached: false, timestamp: new Date().toISOString() })
   };
 };
+
