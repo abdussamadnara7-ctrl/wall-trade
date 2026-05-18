@@ -1780,9 +1780,11 @@ async function fetchChartData(ticker, tf) {
     const r = await fetch(endpoint);
     const j = await r.json();
     if (!j || !j.data || !j.data.length) return null;
+    // Store indicators but do NOT call renderTechnicals here —
+    // the canvas hasn't been drawn yet so the timing is wrong.
+    // renderTechnicals is called from inside requestAnimationFrame in loadChart.
     if (j.indicators && cfg.eod) {
       indicatorCache[ticker] = j.indicators;
-      renderTechnicals(ticker, j.indicators);
     }
     let pts = j.data.map(d => ({ t: d[0] * 1000, p: parseFloat(d[1]) || 0 }))
                     .filter(d => d.p > 0)
@@ -1973,6 +1975,13 @@ async function loadChart(tf) {
     dotCanvas.height = mainCanvas.offsetHeight * dpr;
     const chartState = drawChart(mainCanvas, pts, color);
     setupTooltip(mainCanvas, chartState, chartTicker);
+
+    // Canvas is fully drawn — now safe to render technicals.
+    // If indicators are already cached (from this or a prior EOD fetch), render them.
+    // If not yet loaded (e.g. first 1D load before 1M), they'll render when 1M fetch completes.
+    if (indicatorCache[chartTicker]) {
+      renderTechnicals(chartTicker, indicatorCache[chartTicker]);
+    }
   });
 }
 
@@ -2118,6 +2127,26 @@ function initStockChart(ticker) {
           <div class="skel-bar w35"></div>
         </div>
       </div>`;
+  }
+
+  // If we don't already have cached indicators for this ticker,
+  // fire a parallel EOD fetch purely to get indicators faster.
+  // The 1M chart fetch will also return indicators, but this runs concurrently
+  // so by the time requestAnimationFrame fires in loadChart, indicators are ready.
+  if (!indicatorCache[ticker]) {
+    fetch('/.netlify/functions/chart?ticker=' + ticker + '&type=eod')
+      .then(r => r.json())
+      .then(j => {
+        if (j && j.indicators && !indicatorCache[ticker]) {
+          indicatorCache[ticker] = j.indicators;
+          // If chart is already drawn, render immediately
+          if (document.getElementById('tech-content') &&
+              !document.getElementById('tech-content').querySelector('.tech-skeleton')) {
+            renderTechnicals(ticker, j.indicators);
+          }
+        }
+      })
+      .catch(() => {});
   }
 
   loadChart('1M');
