@@ -6,7 +6,7 @@ const PSX_PORT  = 3000;
 
 function fetchFromProxy(path) {
   return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve(null), 10000);
+    const timer = setTimeout(() => resolve(null), 6000);
     http.get({
       hostname: PSX_PROXY,
       port:     PSX_PORT,
@@ -85,13 +85,14 @@ exports.handler = async (event) => {
   }
 
   const cleanTicker = ticker.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const eodPath = '/timeseries/eod/' + cleanTicker;
-  const intPath = '/timeseries/int/' + cleanTicker;
 
-  const [eodData, intData] = await Promise.all([
-    fetchFromProxy(eodPath),
-    type === 'int' ? fetchFromProxy(intPath) : Promise.resolve(null)
-  ]);
+  // Always fetch EOD — needed for indicators regardless of type
+  // For 1D (int), also fetch intraday in parallel but don't block on it
+  const eodPromise = fetchFromProxy('/timeseries/eod/' + cleanTicker);
+  const intPromise = type === 'int' ? fetchFromProxy('/timeseries/int/' + cleanTicker) : Promise.resolve(null);
+
+  // Race: don't let either call block past 7s total
+  const [eodData, intData] = await Promise.all([eodPromise, intPromise]);
 
   if (!eodData || !eodData.data) {
     return { statusCode: 502, headers, body: JSON.stringify({ error: 'No data from proxy' }) };
@@ -101,7 +102,8 @@ exports.handler = async (event) => {
   const closes    = eodSorted.map(d => parseFloat(d[1])).filter(p => p > 0);
   const indicators = calculateIndicators(closes);
 
-  const priceData = (type === 'int' && intData && intData.data) ? intData.data : eodData.data;
+  // Use intraday for 1D view if available, otherwise fall back to EOD
+  const priceData = (type === 'int' && intData?.data?.length) ? intData.data : eodData.data;
 
   return {
     statusCode: 200,
