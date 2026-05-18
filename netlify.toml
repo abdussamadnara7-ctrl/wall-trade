@@ -50,4 +50,4 @@
   timeout = 26
 
 [functions."chart"]
-  timeout = 10
+  timeout = 20
