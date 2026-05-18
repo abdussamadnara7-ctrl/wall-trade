@@ -2,934 +2,714 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Wall-Trade — Pakistan's AI Markets Intelligence</title>
-<link rel="manifest" href="/manifest.json">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wall-Trade — Pakistan's Markets Intelligence</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
-}
-</script>
-
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-
-:root {
-  --bg:   #080810;
-  --bg1:  #0d0d1a;
-  --bg2:  #12121f;
-  --rim:  rgba(255,255,255,0.06);
-  --rim2: rgba(255,255,255,0.1);
-  --t1:   #f2f0ff;
-  --t2:   rgba(242,240,255,0.5);
-  --t3:   rgba(242,240,255,0.25);
-  --green:  #00e5a0;
-  --red:    #ff4d6d;
-  --amber:  #ffb547;
-  --blue:   #3d9fff;
-  --purple: #9b6dff;
+:root{
+  --bg:#070710;
+  --bg1:#0c0c18;
+  --bg2:#13131f;
+  --rim:rgba(255,255,255,0.07);
+  --rim2:rgba(255,255,255,0.13);
+  --rim3:rgba(255,255,255,0.22);
+  --t1:#f2f0ff;
+  --t2:rgba(242,240,255,0.62);
+  --t3:rgba(242,240,255,0.35);
+  --t4:rgba(242,240,255,0.18);
+  --green:#00e5a0;
+  --green2:#10b97f;
+  --red:#ff4d6d;
+  --amber:#ffb547;
+  --blue:#3d9fff;
+  --purple:#9b6dff;
+  --serif:'Instrument Serif', Georgia, serif;
+  --mono:'Geist Mono', 'SF Mono', monospace;
+  --sans:'Geist', 'Inter', system-ui, sans-serif;
 }
+html,body{background:var(--bg);color:var(--t1);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden;font-feature-settings:'ss01','cv11'}
 
-html,body {
-  background: var(--bg);
-  color: var(--t1);
-  font-family:'Inter', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-}
+/* Italic-serif accents inside any headline */
+h1 em, h2 em, h3 em, .acc, .pillar-h em, .why-h em, .feature-l h3 em, .vc-headline em, .dispatch-h em, .footer-cta h2 em, .hero h1 em, .sec-h em, .ts-v em, .byline-num em, .brand-mark em{font-family:'Instrument Serif',Georgia,serif !important;font-style:italic !important;font-weight:400 !important;letter-spacing:-0.01em !important}
 
-/* ── GRADIENT TEXT ─────────────────────────── */
-.g-logo {
-  background: linear-gradient(90deg,#00e5a0,#3d9fff,#9b6dff);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;display:inline-block;
-}
-.g-psxp { background:linear-gradient(135deg,#00e5a0,#3d9fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:inline-block; }
-.g-cryp { background:linear-gradient(135deg,#ffb547,#ff4d6d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:inline-block; }
-.g-fxp  { background:linear-gradient(135deg,#9b6dff,#3d9fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:inline-block; }
+/* ── Ambient ── */
+.grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);
+  background-size:80px 80px;
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 30%,#000 30%,transparent 90%)}
+.glow1{position:fixed;top:-200px;left:-300px;width:760px;height:760px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,229,160,0.08),transparent 60%);pointer-events:none;z-index:0;animation:drift 22s ease-in-out infinite alternate}
+.glow2{position:fixed;top:600px;right:-300px;width:680px;height:680px;border-radius:50%;
+  background:radial-gradient(circle,rgba(155,109,255,0.06),transparent 65%);pointer-events:none;z-index:0;animation:drift 26s ease-in-out infinite alternate-reverse}
+@keyframes drift{to{transform:translate(60px,40px)}}
 
-/* ── AMBIENT GLOW ──────────────────────────── */
-.glow-bg { position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden; }
-.glow-bg::before { content:'';position:absolute;top:-20%;left:-10%;width:60%;height:60%;background:radial-gradient(ellipse,rgba(0,229,160,0.06) 0%,transparent 70%);animation:drift 12s ease-in-out infinite alternate; }
-.glow-bg::after  { content:'';position:absolute;top:30%;right:-15%;width:55%;height:55%;background:radial-gradient(ellipse,rgba(155,109,255,0.07) 0%,transparent 70%);animation:drift 16s ease-in-out infinite alternate-reverse; }
-@keyframes drift{0%{transform:translate(0,0)}100%{transform:translate(30px,20px)}}
+/* ── Masthead ── */
+.masthead{position:sticky;top:0;z-index:50;background:rgba(7,7,16,0.85);backdrop-filter:blur(24px);border-bottom:1px solid var(--rim)}
+.meta{display:flex;justify-content:space-between;padding:6px 32px;font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rim)}
+.meta-l{display:flex;gap:24px}
+.meta a{color:inherit;text-decoration:none}
+.meta a:hover{color:var(--t2)}
+.main-bar{display:flex;align-items:center;justify-content:space-between;padding:18px 32px}
+.brand{display:flex;align-items:baseline;gap:12px}
+.brand-mark{font-family:var(--serif);font-weight:500;font-size:30px;letter-spacing:-0.025em;line-height:1}
+.brand-mark em{font-style:italic;font-weight:400;color:var(--green)}
+.brand-tag{font-family:var(--mono);font-size:9px;letter-spacing:0.16em;color:var(--t3);text-transform:uppercase}
+nav.nav{display:flex;gap:32px;font-family:var(--sans);font-size:14px;font-weight:500;letter-spacing:-0.005em}
+nav.nav a{color:var(--t1);text-decoration:none;position:relative}
+nav.nav a:hover{color:var(--green)}
+nav.nav a::after{content:'';position:absolute;left:0;right:0;bottom:-4px;height:1px;background:var(--green);transform:scaleX(0);transform-origin:left;transition:transform 0.2s}
+nav.nav a:hover::after{transform:scaleX(1)}
+.bar-cta{display:flex;gap:14px;align-items:center}
+.bar-link{font-family:var(--sans);font-size:14px;font-weight:500;color:var(--t2);text-decoration:none}
+.bar-link:hover{color:var(--t1)}
+.bar-btn{font-family:var(--sans);font-size:13px;font-weight:600;background:var(--green);color:#070710;padding:11px 18px;border:none;cursor:pointer;letter-spacing:-0.005em;border-radius:2px;box-shadow:0 0 24px rgba(0,229,160,0.22)}
+.bar-btn:hover{filter:brightness(1.08)}
 
-/* ── HEADER ────────────────────────────────── */
-.hdr {
-  position:sticky;top:0;z-index:90;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 20px;
-  background:rgba(8,8,16,0.9);
-  backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--rim);
-}
-.hdr-logo { font-family:'Libre Baskerville',Georgia,serif;font-size:20px;font-weight:700;letter-spacing:-0.02em; }
-.hdr-logo span { font-size:8px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--t3);display:block;margin-top:1px; }
-.hdr-btn {
-  background:var(--green);color:#080810;
-  font-family:'Libre Baskerville',Georgia,serif;font-size:11px;font-weight:700;
-  padding:8px 16px;border-radius:8px;text-decoration:none;letter-spacing:0.02em;
-  box-shadow:0 0 20px rgba(0,229,160,0.3);
-  border:none;cursor:pointer;
-}
-
-/* ── TICKER ────────────────────────────────── */
-.ticker-bar{background:var(--bg1);border-bottom:1px solid var(--rim);padding:6px 0;overflow:hidden;white-space:nowrap;position:relative;z-index:1}
-.ticker-bar::before,.ticker-bar::after{content:'';position:absolute;top:0;width:50px;height:100%;z-index:2;pointer-events:none}
-.ticker-bar::before{left:0;background:linear-gradient(to right,var(--bg1),transparent)}
-.ticker-bar::after{right:0;background:linear-gradient(to left,var(--bg1),transparent)}
-.ticker-track{display:inline-flex;animation:scroll 50s linear infinite;width:max-content}
-.ticker-track:hover{animation-play-state:paused}
+/* ── Ticker ── */
+.ticker{background:#000;border-bottom:1px solid var(--rim);padding:9px 0;overflow:hidden;position:relative;z-index:2}
+.ticker::before,.ticker::after{content:'';position:absolute;top:0;width:100px;height:100%;z-index:2;pointer-events:none}
+.ticker::before{left:0;background:linear-gradient(to right,#000,transparent)}
+.ticker::after{right:0;background:linear-gradient(to left,#000,transparent)}
+.ticker-track{display:inline-flex;animation:scroll 60s linear infinite;width:max-content;font-family:var(--mono);font-size:11px}
+.tk{display:inline-flex;align-items:center;gap:8px;padding:0 24px;border-right:1px solid var(--rim)}
+.tk-sym{color:var(--t2);letter-spacing:0.04em}
+.tk-val{color:var(--t1);font-weight:500}
+.tk-chg.up{color:var(--green)}
+.tk-chg.dn{color:var(--red)}
+.tk-dot{width:5px;height:5px;border-radius:50%;animation:pulse 1.6s infinite}
+.tk-dot.up{background:var(--green);box-shadow:0 0 6px var(--green)}
+.tk-dot.dn{background:var(--red);box-shadow:0 0 6px var(--red)}
 @keyframes scroll{to{transform:translateX(-50%)}}
-.t-seg{display:inline-flex;align-items:center;gap:5px;padding:0 16px;border-right:1px solid var(--rim);font-size:11px}
-.t-kse{font-size:8px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3)}
-.t-val{font-weight:700;color:var(--t1)}
-.t-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
-.t-name{color:var(--t2)}
-.up{color:var(--green)}.dn{color:var(--red)}
+@keyframes pulse{50%{opacity:0.3}}
+@keyframes cin{from{opacity:0}to{opacity:1}}
 
-/* ── HERO ──────────────────────────────────── */
-.hero {
-  position:relative;z-index:1;
-  padding:52px 20px 40px;
-  border-bottom:1px solid var(--rim);
-  overflow:hidden;
+/* ── Section frame ── */
+section{position:relative;z-index:1}
+.sec{max-width:1440px;margin:0 auto;padding:96px 32px;border-bottom:1px solid var(--rim)}
+.sec-rail{display:flex;align-items:baseline;gap:14px;margin-bottom:32px}
+.sec-num{font-family:var(--serif);font-size:42px;font-weight:400;font-style:italic;color:var(--t4);letter-spacing:-0.02em;line-height:1;font-variant-numeric:oldstyle-nums}
+.sec-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--t3);padding-bottom:6px;border-bottom:1px solid var(--rim);flex:1}
+.sec-h{font-family:var(--sans);font-weight:600;font-size:clamp(36px,4.4vw,60px);letter-spacing:-0.035em;line-height:1.05;margin-bottom:20px;max-width:1100px;text-wrap:balance}
+.sec-h em{font-style:italic}
+.sec-h .acc{color:var(--green);font-style:italic}
+.sec-sub{font-family:var(--sans);font-size:17px;color:var(--t2);line-height:1.6;max-width:680px;margin-bottom:56px;font-weight:400}
+
+/* ── Hero ── */
+.hero{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:72px 32px 96px;border-bottom:1px solid var(--rim)}
+.hero-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--t3);margin-bottom:28px;display:flex;align-items:center;gap:14px}
+.hero-eyebrow .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.6s infinite}
+.hero-eyebrow .live-dot.r{background:var(--red);box-shadow:0 0 10px var(--red)}
+.hero-eyebrow .sep{width:1px;height:12px;background:var(--rim2)}
+.hero-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:stretch}
+.hero h1{font-family:var(--sans);font-weight:600;font-size:clamp(52px,7.5vw,108px);letter-spacing:-0.045em;line-height:0.95;margin-bottom:24px;text-wrap:balance}
+.hero h1 em{font-style:italic;font-weight:400}
+.hero h1 .acc{color:var(--green);font-style:italic;font-weight:400}
+.hero .strap{font-family:var(--sans);font-size:18px;font-weight:400;line-height:1.55;color:var(--t2);margin-bottom:40px;max-width:520px}
+.hero .strap strong{color:var(--t1);font-weight:500}
+.byline{display:flex;gap:32px;align-items:flex-end;padding-top:28px;border-top:1px solid var(--rim);margin-bottom:36px;flex-wrap:wrap}
+.byline-num{font-family:var(--sans);font-size:40px;font-weight:600;line-height:1;letter-spacing:-0.03em;font-variant-numeric:tabular-nums}
+.byline-num em{font-style:italic;color:var(--green)}
+.byline-lbl{font-family:var(--sans);font-size:12px;color:var(--t3);letter-spacing:0.02em;line-height:1.35;max-width:140px;margin-top:6px}
+.cta-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.cta-1{font-family:var(--sans);font-size:15px;font-weight:600;background:var(--green);color:#070710;padding:16px 28px;border:none;border-radius:2px;cursor:pointer;letter-spacing:-0.005em;box-shadow:0 4px 28px rgba(0,229,160,0.25)}
+.cta-1:hover{filter:brightness(1.08)}
+.cta-1 span{margin-left:8px}
+.cta-2{font-family:var(--sans);font-size:14px;font-weight:500;background:transparent;color:var(--t1);padding:15px 22px;border:1px solid var(--rim2);border-radius:2px;cursor:pointer;text-decoration:none;letter-spacing:-0.005em;display:inline-flex;align-items:center;gap:8px}
+.cta-2:hover{background:rgba(255,255,255,0.04);border-color:var(--rim3)}
+
+/* Dispatch column with live candle storm */
+.dispatch{display:flex;flex-direction:column;border-left:1px solid var(--rim);padding-left:32px}
+.dispatch-head{font-family:var(--mono);font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--t3);padding-bottom:14px;border-bottom:1px solid var(--rim);margin-bottom:20px;display:flex;justify-content:space-between}
+.dispatch-h{font-family:var(--sans);font-size:24px;font-weight:600;letter-spacing:-0.025em;line-height:1.2;margin-bottom:12px}
+.dispatch-h em{font-style:italic;color:var(--green)}
+.dispatch-d{font-family:var(--sans);font-size:14px;color:var(--t2);line-height:1.6;margin-bottom:24px}
+.candle-stage{position:relative;height:300px;border:1px solid var(--rim);background:#040408;overflow:hidden;margin-bottom:18px}
+.candle-stage-head{position:absolute;top:0;left:0;right:0;padding:10px 14px;border-bottom:1px solid var(--rim);font-family:var(--mono);font-size:10px;background:rgba(0,0,0,0.55);z-index:3;display:flex;justify-content:space-between;color:var(--t3);letter-spacing:0.08em;text-transform:uppercase}
+.candle-stage-head .px{font-family:var(--sans);font-size:13px;color:var(--green);letter-spacing:-0.01em;text-transform:none;font-weight:600;font-variant-numeric:tabular-nums}
+#candle-svg{width:100%;height:100%}
+.fig-cap{font-family:var(--mono);font-size:10px;color:var(--t3);letter-spacing:0.08em;text-transform:uppercase;display:flex;justify-content:space-between;margin-bottom:18px}
+.dispatch-verdict{padding:14px 16px;background:rgba(0,229,160,0.05);border:1px solid var(--rim);border-left:3px solid var(--green)}
+.dv-lbl{font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--green);font-weight:600;margin-bottom:6px}
+.dv-h{font-family:var(--sans);font-size:17px;font-weight:600;letter-spacing:-0.015em;line-height:1.3;margin-bottom:6px}
+.dv-d{font-family:var(--serif);font-size:14px;font-style:italic;color:var(--t2);line-height:1.5}
+
+/* ── Markets table ── */
+.markets-tbl{border-top:1px solid var(--rim2);border-bottom:1px solid var(--rim)}
+.mrow{display:grid;grid-template-columns:240px 1fr 160px 110px 140px;gap:32px;align-items:end;padding:26px 0;border-bottom:1px solid var(--rim);transition:background 0.15s}
+.mrow:last-child{border-bottom:none}
+.mrow:hover{background:rgba(255,255,255,0.015)}
+.m-name{font-family:var(--sans);font-size:22px;font-weight:600;letter-spacing:-0.025em;line-height:1.1;color:var(--t1)}
+.m-name em{font-style:italic;font-weight:400}
+.m-sub{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);margin-top:5px}
+.m-spark{height:52px}
+.m-px{font-family:var(--sans);font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.035em;line-height:1;text-align:right;color:var(--t1)}
+.m-chg{font-family:var(--mono);font-size:13px;font-weight:500;text-align:right;letter-spacing:-0.01em}
+.m-chg.up{color:var(--green)}
+.m-chg.dn{color:var(--red)}
+.m-meta{font-family:var(--serif);font-size:14px;font-style:italic;color:var(--t2);line-height:1.4;text-align:right}
+
+/* ── Pillars ── */
+.pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--rim2);border-bottom:1px solid var(--rim)}
+.pillar{padding:36px 32px 36px 0;border-right:1px solid var(--rim);position:relative}
+.pillar:nth-child(2){padding-left:32px;padding-right:32px}
+.pillar:nth-child(3){border-right:none;padding-left:32px;padding-right:0}
+.pillar-num{font-family:var(--serif);font-size:48px;font-weight:400;font-style:italic;color:var(--t4);line-height:1;margin-bottom:24px;font-variant-numeric:oldstyle-nums}
+.pillar-h{font-family:var(--sans);font-size:26px;font-weight:600;letter-spacing:-0.03em;line-height:1.15;margin-bottom:14px;color:var(--t1)}
+.pillar-h em{font-style:italic;font-weight:400}
+.pillar.psx .pillar-h em{color:var(--green)}
+.pillar.cryp .pillar-h em{color:var(--amber)}
+.pillar.fx .pillar-h em{color:var(--purple)}
+.pillar-d{font-family:var(--sans);font-size:14px;color:var(--t2);line-height:1.65;margin-bottom:28px}
+.pillar-stats{display:flex;gap:28px;padding-top:22px;border-top:1px solid var(--rim)}
+.pst-v{font-family:var(--sans);font-size:26px;font-weight:600;letter-spacing:-0.03em;line-height:1;font-variant-numeric:tabular-nums}
+.pillar.psx .pst-v{color:var(--green)}
+.pillar.cryp .pst-v{color:var(--amber)}
+.pillar.fx .pst-v{color:var(--purple)}
+.pst-l{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);margin-top:6px}
+.pillar-cta{font-family:var(--sans);font-size:13px;font-weight:600;margin-top:24px;display:inline-flex;align-items:center;gap:8px;background:none;border:none;padding:0;cursor:pointer;color:var(--t1);text-decoration:underline;text-decoration-color:var(--rim2);text-underline-offset:5px;text-decoration-thickness:1px;transition:text-decoration-color 0.2s}
+.pillar.psx .pillar-cta{color:var(--green)}
+.pillar.cryp .pillar-cta{color:var(--amber)}
+.pillar.fx .pillar-cta{color:var(--purple)}
+.pillar-cta:hover{text-decoration-color:currentColor}
+
+/* ── Intelligence feature ── */
+.feature{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+.feature-l h3{font-family:var(--sans);font-size:30px;font-weight:600;letter-spacing:-0.03em;line-height:1.2;margin-bottom:14px;color:var(--t1)}
+.feature-l h3 em{font-style:italic;color:var(--green);font-weight:400}
+.feature-l p{font-family:var(--sans);font-size:15px;color:var(--t2);line-height:1.65;margin-bottom:32px}
+.flow-step{display:grid;grid-template-columns:48px 1fr;gap:20px;padding:18px 0;border-bottom:1px solid var(--rim)}
+.flow-step:last-child{border-bottom:none}
+.fs-n{font-family:var(--serif);font-size:28px;font-style:italic;color:var(--green);font-weight:400;font-variant-numeric:oldstyle-nums}
+.fs-t{font-family:var(--sans);font-size:18px;font-weight:600;letter-spacing:-0.02em;margin-bottom:4px;color:var(--t1)}
+.fs-d{font-family:var(--sans);font-size:13px;color:var(--t2);line-height:1.65}
+
+/* Editorial verdict card on dark */
+.verdict-card{border:1px solid var(--rim2);background:linear-gradient(180deg,rgba(12,12,24,0.6),rgba(7,7,16,0.4));position:relative;padding:36px 32px 32px;font-family:var(--sans);overflow:hidden}
+.verdict-card::before{content:'';position:absolute;top:0;right:0;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(0,229,160,0.10),transparent 65%);pointer-events:none}
+.vc-flag{position:absolute;top:0;left:32px;background:var(--green);color:#070710;padding:6px 12px;font-family:var(--mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;font-weight:600;transform:translateY(-50%);z-index:2}
+.vc-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--t3);padding-bottom:18px;border-bottom:1px solid var(--rim);margin-bottom:20px;position:relative}
+.vc-tick{font-family:var(--sans);font-size:44px;font-weight:700;letter-spacing:-0.04em;line-height:1;margin-bottom:6px;color:var(--t1);position:relative}
+.vc-name{font-family:var(--serif);font-size:18px;font-style:italic;color:var(--t2);margin-bottom:22px;position:relative}
+.vc-headline{font-family:var(--sans);font-size:24px;font-weight:600;letter-spacing:-0.03em;line-height:1.22;margin-bottom:18px;color:var(--t1);position:relative}
+.vc-headline em{font-style:italic;color:var(--green);font-weight:400}
+.vc-stance{display:flex;gap:14px;align-items:center;padding:14px 18px;background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.22);margin-bottom:22px;position:relative}
+.vc-stance-pill{font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-weight:600;background:var(--green);color:#070710;padding:4px 8px}
+.vc-stance-text{font-family:var(--serif);font-size:15px;font-style:italic;color:var(--t2)}
+.vc-stance-conf{font-family:var(--sans);font-size:22px;font-weight:600;margin-left:auto;color:var(--green);font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.vc-body{font-family:var(--sans);font-size:14px;line-height:1.7;color:var(--t1);position:relative}
+.vc-body p{margin-bottom:12px}
+.vc-body strong{color:var(--green);font-weight:600}
+.vc-body sup{color:var(--green);font-weight:500;cursor:pointer;font-size:11px;vertical-align:super}
+.vc-foot{margin-top:20px;padding-top:18px;border-top:1px solid var(--rim);font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);display:flex;justify-content:space-between;position:relative}
+
+/* ── Track record ── */
+.track-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--rim2);border-bottom:1px solid var(--rim);margin-bottom:48px}
+.ts-card{padding:28px 24px;border-right:1px solid var(--rim)}
+.ts-card:last-child{border-right:none}
+.ts-l{font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--t3);margin-bottom:14px}
+.ts-v{font-family:var(--sans);font-size:56px;font-weight:600;letter-spacing:-0.04em;line-height:1;font-variant-numeric:tabular-nums;color:var(--t1)}
+.ts-v em{font-style:italic;color:var(--green)}
+.ts-d{font-family:var(--sans);font-size:13px;color:var(--t2);margin-top:10px;line-height:1.4}
+
+.track-table{border-top:1px solid var(--rim);border-bottom:1px solid var(--rim2)}
+.tt-head,.tt-row{display:grid;grid-template-columns:100px 1fr 110px 120px 110px 1fr 100px;gap:24px;padding:18px 0;align-items:center}
+.tt-head{font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rim)}
+.tt-row{font-family:var(--sans);font-size:14px;border-bottom:1px solid var(--rim);transition:background 0.15s}
+.tt-row:last-child{border-bottom:none}
+.tt-row:hover{background:rgba(255,255,255,0.02)}
+.tt-date{font-family:var(--mono);font-size:12px;color:var(--t3)}
+.tt-tick{font-family:var(--sans);font-size:18px;font-weight:600;letter-spacing:-0.025em;color:var(--t1)}
+.tt-name{font-family:var(--serif);font-size:13px;font-style:italic;color:var(--t2);margin-top:1px}
+.tt-v{display:inline-flex;padding:4px 10px;font-family:var(--mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;border-radius:2px}
+.tt-v.b{background:rgba(0,229,160,0.14);color:var(--green);border:1px solid rgba(0,229,160,0.3)}
+.tt-v.h{background:rgba(255,181,71,0.12);color:var(--amber);border:1px solid rgba(255,181,71,0.28)}
+.tt-v.s{background:rgba(255,77,109,0.12);color:var(--red);border:1px solid rgba(255,77,109,0.28)}
+.tt-px{font-family:var(--mono);font-size:13px;color:var(--t2);font-variant-numeric:tabular-nums}
+.tt-pct{font-family:var(--sans);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.03em}
+.tt-pct.up{color:var(--green)}
+.tt-pct.dn{color:var(--red)}
+
+/* ── Why grid ── */
+.why-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border-top:1px solid var(--rim2);border-bottom:1px solid var(--rim)}
+.why-card{padding:40px 32px 40px 0;border-right:1px solid var(--rim);border-bottom:1px solid var(--rim)}
+.why-card:nth-child(2),.why-card:nth-child(4){padding-left:32px;padding-right:0;border-right:none}
+.why-card:nth-child(3),.why-card:nth-child(4){border-bottom:none}
+.why-num{font-family:var(--serif);font-size:48px;font-weight:400;font-style:italic;color:var(--t4);line-height:1;margin-bottom:18px;font-variant-numeric:oldstyle-nums}
+.why-h{font-family:var(--sans);font-size:24px;font-weight:600;letter-spacing:-0.03em;line-height:1.2;margin-bottom:10px;color:var(--t1)}
+.why-h em{font-style:italic;color:var(--green);font-weight:400}
+.why-d{font-family:var(--sans);font-size:15px;color:var(--t2);line-height:1.6}
+
+/* ── Footer CTA ── */
+.footer-cta{position:relative;padding:140px 32px;text-align:center;overflow:hidden;border-bottom:1px solid var(--rim)}
+.footer-cta::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 60% at 50% 50%,rgba(0,229,160,0.10),transparent 60%);pointer-events:none}
+.footer-cta h2{font-family:var(--sans);font-weight:600;font-size:clamp(48px,6.4vw,88px);letter-spacing:-0.045em;line-height:1;margin-bottom:24px;position:relative;max-width:1000px;margin-left:auto;margin-right:auto;text-wrap:balance}
+.footer-cta h2 em{font-style:italic;color:var(--green)}
+.footer-cta p{font-family:var(--sans);font-size:17px;color:var(--t2);max-width:540px;margin:0 auto 40px;position:relative}
+.footer-cta .cta-row{justify-content:center;position:relative}
+
+.footer{padding:40px 32px;display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;color:var(--t3);letter-spacing:0.08em}
+.footer-l{font-family:var(--serif);font-size:14px;font-style:italic;color:var(--t2);letter-spacing:normal;text-transform:none}
+.footer-links{display:flex;gap:24px}
+.footer-links a{color:inherit;text-decoration:none}
+.footer-links a:hover{color:var(--t1)}
+
+/* ── Responsive ── */
+@media (max-width:1100px){
+  .hero-grid{grid-template-columns:1fr;gap:48px}
+  .dispatch{border-left:none;border-top:1px solid var(--rim);padding-left:0;padding-top:32px}
+  .pillars{grid-template-columns:1fr}
+  .pillar{padding:32px 0;border-right:none;border-bottom:1px solid var(--rim)}
+  .pillar:nth-child(2),.pillar:nth-child(3){padding-left:0;padding-right:0}
+  .pillar:last-child{border-bottom:none}
+  .feature{grid-template-columns:1fr;gap:36px}
+  .track-stats{grid-template-columns:repeat(2,1fr)}
+  .ts-card:nth-child(2){border-right:none}
+  .ts-card:nth-child(1),.ts-card:nth-child(2){border-bottom:1px solid var(--rim)}
+  .why-grid{grid-template-columns:1fr}
+  .why-card,.why-card:nth-child(2),.why-card:nth-child(3),.why-card:nth-child(4){padding:32px 0;border-right:none;border-bottom:1px solid var(--rim)}
+  .why-card:last-child{border-bottom:none}
+  .mrow{grid-template-columns:1fr 110px 100px;gap:16px}
+  .mrow .m-spark,.mrow .m-meta{display:none}
+  nav.nav{display:none}
+  .bar-link{display:none}
+  .tt-head,.tt-row{grid-template-columns:80px 1fr 90px 90px;gap:12px}
+  .tt-head .col-px,.tt-row .col-px,.tt-head .col-spark,.tt-row .col-spark,.tt-head .col-days,.tt-row .col-days{display:none}
 }
-.hero-eyebrow {
-  display:inline-flex;align-items:center;gap:7px;
-  background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);
-  border-radius:20px;padding:5px 12px;margin-bottom:20px;
+@media (max-width:640px){
+  .main-bar{padding:14px 18px}
+  .meta{padding:5px 18px;font-size:9px;flex-wrap:wrap;gap:8px}
+  .meta-l{gap:14px}
+  .sec{padding:64px 18px}
+  .hero{padding:48px 18px 64px}
+  .hero h1{font-size:60px;letter-spacing:-0.03em}
+  .hero .strap{font-size:17px}
+  .byline-num{font-size:42px}
+  .ts-v{font-size:44px}
+  .ts-card{padding:20px 16px}
+  .footer-cta{padding:80px 18px}
+  .footer-cta h2{font-size:56px}
+  .footer{flex-direction:column;gap:14px;text-align:center;padding:24px 18px}
+  .vc-tick{font-size:38px}
+  .vc-headline{font-size:22px}
+  .feature-l h3{font-size:28px}
+  .pillar-h{font-size:26px}
+  .why-h{font-size:24px}
+  .candle-stage{height:240px}
+  .verdict-card{padding:32px 20px 24px}
 }
-.hero-eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-.hero-eyebrow span{font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--green)}
-.hero-h1 { font-family:'Libre Baskerville',Georgia,serif;font-size:40px;font-weight:700;letter-spacing:-0.02em;line-height:1.05;margin-bottom:16px; }
-.hero-h1 .line2 { background:linear-gradient(90deg,#00e5a0 0%,#3d9fff 40%,#9b6dff 80%,#ff4d6d 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:inline-block; }
-.hero-sub { font-family:'Inter',system-ui,sans-serif;font-size:15px;font-weight:400;color:var(--t2);line-height:1.7;margin-bottom:28px;max-width:320px; }
-
-.hero-pillars { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px; }
-.pillar-tag { display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border:1px solid; }
-.pillar-psx  { color:var(--green);  border-color:rgba(0,229,160,0.3);  background:rgba(0,229,160,0.07); }
-.pillar-cryp { color:var(--amber);  border-color:rgba(255,181,71,0.3);  background:rgba(255,181,71,0.07); }
-.pillar-fx   { color:var(--purple); border-color:rgba(155,109,255,0.3); background:rgba(155,109,255,0.07); }
-
-.hero-cta { display:flex;gap:10px;align-items:center; }
-.cta-primary {
-  background:linear-gradient(135deg,var(--green),#3d9fff);
-  color:#080810;font-family:'Inter',system-ui,sans-serif;font-weight:700;
-  font-size:14px;padding:14px 26px;border-radius:10px;
-  text-decoration:none;letter-spacing:-0.01em;
-  box-shadow:0 4px 24px rgba(0,229,160,0.3);
-  border:none;cursor:pointer;
-}
-.cta-secondary {
-  background:rgba(255,255,255,0.06);border:1px solid var(--rim2);
-  color:var(--t2);font-family:'Inter',system-ui,sans-serif;
-  font-size:14px;font-weight:500;
-  padding:14px 18px;border-radius:10px;text-decoration:none;
-}
-
-/* ── LIVE SNAPSHOT ─────────────────────────── */
-.snapshot { position:relative;z-index:1;padding:24px 20px 0; }
-.section-label { font-size:8px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--t3);margin-bottom:14px;display:flex;align-items:center;gap:8px; }
-.section-label::after{content:'';flex:1;height:1px;background:var(--rim)}
-
-.macro-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px; }
-.mcard { border-radius:14px;padding:14px;border:1px solid;cursor:pointer;transition:transform 0.15s; }
-.mcard:hover{transform:scale(1.02)}
-.mcard-lbl{font-size:8px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:5px}
-.mcard-price{ font-family:'Inter',system-ui,sans-serif;font-size:21px;font-weight:700;letter-spacing:-0.03em;color:var(--t1);line-height:1;margin-bottom:5px; }
-.mcard-chg{font-size:12px;font-weight:600}
-.mcard-sub{font-size:9px;color:var(--t3);margin-top:4px}
-
-.mc-kse   { background:rgba(0,229,160,0.05);   border-color:rgba(0,229,160,0.15); }
-.mc-sp    { background:rgba(61,159,255,0.05);   border-color:rgba(61,159,255,0.15); }
-.mc-brent { background:rgba(255,181,71,0.05);   border-color:rgba(255,181,71,0.15); }
-.mc-gold  { background:rgba(255,215,0,0.05);    border-color:rgba(255,215,0,0.15); }
-.mc-pkr   { background:rgba(255,77,109,0.05);   border-color:rgba(255,77,109,0.15); }
-.mc-btc   { background:rgba(155,109,255,0.05);  border-color:rgba(155,109,255,0.15); }
-
-.mc-kse   .mcard-lbl { color:var(--green); }
-.mc-sp    .mcard-lbl { color:var(--blue); }
-.mc-brent .mcard-lbl { color:var(--amber); }
-.mc-gold  .mcard-lbl { color:#ffd700; }
-.mc-pkr   .mcard-lbl { color:#ff4d6d; }
-.mc-btc   .mcard-lbl { color:var(--purple); }
-
-/* ── THREE PILLARS ─────────────────────────── */
-.pillars { position:relative;z-index:1;padding:0 20px 24px; }
-.pillar-block { border-radius:16px;padding:20px;margin-bottom:12px;border:1px solid;overflow:hidden;position:relative; }
-.pillar-block::before { content:'';position:absolute;top:0;right:0;width:120px;height:120px;border-radius:50%;filter:blur(40px);opacity:0.15;pointer-events:none; }
-.pb-psx  { background:rgba(0,229,160,0.04);  border-color:rgba(0,229,160,0.15); }
-.pb-psx::before  { background:var(--green); }
-.pb-cryp { background:rgba(255,181,71,0.04);  border-color:rgba(255,181,71,0.15); }
-.pb-cryp::before { background:var(--amber); }
-.pb-fx   { background:rgba(155,109,255,0.04); border-color:rgba(155,109,255,0.15); }
-.pb-fx::before   { background:var(--purple); }
-
-.pb-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:10px; }
-.pb-icon { font-size:24px; }
-.pb-badge { font-size:8px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;border-radius:4px; }
-.badge-live  { background:rgba(0,229,160,0.15);color:var(--green); }
-.badge-paid  { background:rgba(255,181,71,0.15);color:var(--amber); }
-.badge-live2 { background:rgba(155,109,255,0.15);color:var(--purple); }
-
-.pb-title { font-family:'Libre Baskerville',Georgia,serif;font-size:24px;font-weight:700;letter-spacing:-0.01em;margin-bottom:10px; }
-.pb-desc  { font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:400;color:var(--t2);line-height:1.7;margin-bottom:14px; }
-.pb-stats { display:flex;gap:12px; }
-.pb-stat  { text-align:left; }
-.pb-stat-val { font-family:'Inter',system-ui,sans-serif;font-size:20px;font-weight:700;letter-spacing:-0.03em; }
-.pb-stat-lbl { font-family:'Inter',system-ui,sans-serif;font-size:9px;color:var(--t3);margin-top:2px;letter-spacing:0.02em; }
-.pb-link { display:inline-flex;align-items:center;gap:5px;font-family:'Inter',system-ui,sans-serif;font-size:12px;font-weight:600;text-decoration:none;margin-top:14px;letter-spacing:0.01em; }
-.pb-link svg{transition:transform 0.2s}
-.pb-link:hover svg{transform:translateX(3px)}
-
-/* ── WHY WALL-TRADE ─────────────────────────── */
-.why { position:relative;z-index:1;padding:0 20px 24px; }
-.why-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
-.why-card { background:var(--bg1);border:1px solid var(--rim);border-radius:12px;padding:16px; }
-.why-icon { font-size:20px;margin-bottom:8px; }
-.why-title { font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:600;margin-bottom:5px;letter-spacing:-0.01em; }
-.why-desc  { font-family:'Inter',system-ui,sans-serif;font-size:12px;color:var(--t2);line-height:1.65; }
-
-/* ── PSX PERFORMANCE ───────────────────────── */
-.perf { position:relative;z-index:1;padding:0 20px 24px; }
-.perf-row { display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--rim); }
-.perf-row:last-child{border-bottom:none}
-.perf-l { display:flex;align-items:center;gap:10px; }
-.perf-av { width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0; }
-.perf-tick { font-family:'Inter',system-ui,sans-serif;font-size:14px;font-weight:600;letter-spacing:-0.02em; }
-.perf-name { font-size:10px;color:var(--t3);margin-top:1px; }
-.perf-chg  { font-family:'Inter',system-ui,sans-serif;font-size:18px;font-weight:700;letter-spacing:-0.03em; }
-.perf-period { font-size:9px;color:var(--t3);text-align:right;margin-top:1px; }
-
-/* ── NEWS ──────────────────────────────────── */
-.news-sec { position:relative;z-index:1;padding:0 20px 24px; }
-.news-item { padding:14px 0;border-bottom:1px solid var(--rim);cursor:pointer; }
-.news-item:last-child{border-bottom:none}
-.news-meta { display:flex;align-items:center;gap:7px;margin-bottom:6px; }
-.news-src  { font-size:8px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--t3); }
-.news-tag  { font-size:8px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid; }
-.news-title{ font-family:'Inter',system-ui,sans-serif;font-size:13px;font-weight:500;color:var(--t1);line-height:1.55;margin-bottom:3px; }
-.news-time { font-size:10px;color:var(--t3); }
-
-/* ── CTA BANNER ────────────────────────────── */
-.cta-banner {
-  position:relative;z-index:1;margin:0 20px 24px;
-  background:linear-gradient(135deg,rgba(0,229,160,0.1),rgba(155,109,255,0.1));
-  border:1px solid rgba(0,229,160,0.2);
-  border-radius:18px;padding:24px 20px;overflow:hidden;
-}
-.cta-banner::before { content:'';position:absolute;top:-30%;right:-10%;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(0,229,160,0.15),transparent 70%);pointer-events:none; }
-.cta-banner-label { font-size:8px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--green);margin-bottom:10px; }
-.cta-banner-h   { font-family:'Libre Baskerville',Georgia,serif;font-size:24px;font-weight:700;letter-spacing:-0.01em;line-height:1.2;margin-bottom:10px; }
-.cta-banner-sub { font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--t2);line-height:1.65;margin-bottom:18px; }
-.cta-banner-btn {
-  display:block;text-align:center;
-  background:var(--green);color:#080810;
-  font-family:'Libre Baskerville',Georgia,serif;font-weight:700;font-size:13px;
-  padding:13px;border-radius:10px;text-decoration:none;
-  box-shadow:0 4px 20px rgba(0,229,160,0.3);
-  border:none;cursor:pointer;width:100%;
-}
-
-/* ── BOTTOM NAV ────────────────────────────── */
-.bnav {
-  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-  width:100%;max-width:430px;
-  background:rgba(8,8,16,0.96);backdrop-filter:blur(20px);
-  border-top:1px solid var(--rim);
-  display:flex;z-index:99;
-  padding:10px 0 max(20px,env(safe-area-inset-bottom));
-}
-.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;cursor:pointer}
-.bnav-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background 0.15s}
-.bnav-icon.on{background:rgba(0,229,160,0.12);border:1px solid rgba(0,229,160,0.2)}
-.bnav-lbl{font-size:8px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase}
-
-/* ── LOADING ───────────────────────────────── */
-.spin{width:10px;height:10px;border:1.5px solid var(--rim2);border-top-color:var(--green);border-radius:50%;animation:rot 0.7s linear infinite;display:inline-block}
-@keyframes rot{to{transform:rotate(360deg)}}
-
-/* ── AUTH MODAL ──────────────────────────────── */
-.auth-overlay {
-  display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,0.82);backdrop-filter:blur(12px);
-  z-index:500;align-items:center;justify-content:center;
-}
-.auth-overlay.on { display:flex; }
-.auth-box {
-  background:#0d0d1a;border:1px solid rgba(255,255,255,0.1);
-  border-radius:24px;padding:36px 32px 28px;
-  width:100%;max-width:400px;margin:20px;
-  box-shadow:0 40px 120px rgba(0,0,0,0.8);
-  position:relative;
-}
-.auth-close {
-  position:absolute;top:16px;right:18px;
-  background:none;border:none;color:rgba(255,255,255,0.3);
-  font-size:20px;cursor:pointer;line-height:1;padding:4px;
-}
-.auth-close:hover { color:rgba(255,255,255,0.7); }
-.auth-logo { font-family:'Libre Baskerville',Georgia,serif;font-size:18px;font-weight:700;background:linear-gradient(90deg,#00e5a0,#3d9fff,#9b6dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px; }
-.auth-title { font-size:22px;font-weight:700;letter-spacing:-0.03em;color:var(--t1);margin-bottom:6px; }
-.auth-sub   { font-size:13px;color:var(--t3);line-height:1.6;margin-bottom:24px; }
-.auth-spots { display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--green);background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);padding:5px 12px;border-radius:20px;margin-bottom:22px; }
-.auth-spots-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite}
-.auth-tabs { display:flex;border-bottom:1px solid rgba(255,255,255,0.07);margin-bottom:22px; }
-.auth-tab { flex:1;text-align:center;padding:10px;font-size:13px;font-weight:600;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s,border-color 0.15s;letter-spacing:-0.01em; }
-.auth-tab.on { color:var(--green);border-bottom-color:var(--green); }
-.auth-field { margin-bottom:14px; }
-.auth-field label { display:block;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--t3);margin-bottom:7px; }
-.auth-field input {
-  width:100%;background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.1);border-radius:12px;
-  color:var(--t1);font-size:15px;font-family:inherit;
-  padding:13px 16px;outline:none;transition:border-color 0.15s;
-}
-.auth-field input:focus { border-color:rgba(0,229,160,0.4); }
-.auth-field input::placeholder { color:rgba(242,240,255,0.2); }
-.auth-btn {
-  width:100%;margin-top:6px;
-  background:linear-gradient(135deg,var(--green),#3d9fff);
-  color:#080810;font-family:inherit;font-size:15px;font-weight:700;
-  padding:14px;border-radius:13px;border:none;cursor:pointer;
-  box-shadow:0 4px 20px rgba(0,229,160,0.35);
-  transition:opacity 0.15s;letter-spacing:-0.01em;
-}
-.auth-btn:hover { opacity:0.88; }
-.auth-btn:disabled { opacity:0.4;cursor:not-allowed; }
-.auth-msg { margin-top:14px;padding:12px 14px;border-radius:10px;font-size:13px;line-height:1.55;text-align:center;display:none; }
-.auth-msg.err { background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.2);color:var(--red); }
-.auth-msg.ok  { background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);color:var(--green); }
-.auth-msg.on  { display:block; }
-.auth-legal { font-size:10px;color:var(--t3);text-align:center;margin-top:16px;line-height:1.6; }
-
-body { padding-bottom: 80px; }
 </style>
 </head>
 <body>
-<div class="glow-bg"></div>
+<div class="grid-bg"></div>
+<div class="glow1"></div>
+<div class="glow2"></div>
 
-<!-- AUTH MODAL -->
-<div class="auth-overlay" id="auth-overlay">
-  <div class="auth-box">
-    <button class="auth-close" onclick="closeAuth()">✕</button>
-    <div class="auth-logo">Wall-Trade</div>
-
-    <div id="auth-signup-view">
-      <div class="auth-title">Join the beta</div>
-      <div class="auth-sub">Get full access to PSX stocks, crypto intelligence, forex rates, and AI verdicts — free during beta.</div>
-      <div class="auth-spots"><div class="auth-spots-dot"></div><span id="spots-label">100 spots total · Loading…</span></div>
-      <div class="auth-tabs">
-        <div class="auth-tab on" onclick="switchAuthTab('signup')">Sign up</div>
-        <div class="auth-tab" onclick="switchAuthTab('signin')">Sign in</div>
-      </div>
-
-      <div id="auth-form-signup">
-        <div class="auth-field"><label>Email address</label><input type="email" id="su-email" placeholder="your@email.com" autocomplete="email"/></div>
-        <div class="auth-field"><label>Password</label><input type="password" id="su-password" placeholder="Min 8 characters" autocomplete="new-password"/></div>
-        <div class="auth-field"><label>Confirm password</label><input type="password" id="su-confirm" placeholder="Repeat password" autocomplete="new-password"/></div>
-        <button class="auth-btn" id="su-btn" onclick="doSignup()">Create account — it's free</button>
-        <div class="auth-msg" id="su-msg"></div>
-      </div>
-
-      <div id="auth-form-signin" style="display:none">
-        <div class="auth-field"><label>Email address</label><input type="email" id="si-email" placeholder="your@email.com" autocomplete="email"/></div>
-        <div class="auth-field"><label>Password</label><input type="password" id="si-password" placeholder="Your password" autocomplete="current-password"/></div>
-        <button class="auth-btn" id="si-btn" onclick="doSignin()">Sign in</button>
-        <div class="auth-msg" id="si-msg"></div>
-      </div>
-
-      <div class="auth-legal">By signing up you accept our terms. Beta is free — premium pricing will apply post-launch. Not investment advice.</div>
+<header class="masthead">
+  <div class="meta">
+    <div class="meta-l">
+      <span>Karachi · <span id="dateline"></span></span>
+      <span>Vol I · No. 042</span>
     </div>
-
-    <div id="auth-success-view" style="display:none;text-align:center;padding:20px 0">
-      <div style="font-size:48px;margin-bottom:16px">🎉</div>
-      <div style="font-size:22px;font-weight:700;color:var(--t1);margin-bottom:8px;letter-spacing:-0.02em">You're in!</div>
-      <div style="font-size:14px;color:var(--t3);line-height:1.7;margin-bottom:24px" id="success-msg">Welcome to Wall-Trade beta.</div>
-      <button class="auth-btn" onclick="goToApp()">Open Wall-Trade →</button>
+    <div class="meta-l">
+      <a href="#">EN / اردو</a>
+      <a href="#">Method</a>
+      <a href="#">Disclaimer</a>
     </div>
   </div>
-</div>
-
-<!-- HEADER -->
-<header class="hdr">
-  <div>
-    <div class="hdr-logo g-logo">Wall-Trade<span>AI Markets Intelligence</span></div>
+  <div class="main-bar">
+    <div class="brand">
+      <div>
+        <div class="brand-mark">Wall<em>·</em>Trade</div>
+        <div class="brand-tag">Pakistan Markets · Intelligence</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="#markets">Markets</a>
+      <a href="#coverage">Coverage</a>
+      <a href="#intelligence">Method</a>
+      <a href="#track">Track</a>
+    </nav>
+    <div class="bar-cta">
+      <a href="/?signin=1" class="bar-link">Sign in</a>
+      <button class="bar-btn" onclick="window.location.href='/?signin=1'">Open free account</button>
+    </div>
   </div>
-  <button class="hdr-btn" id="hdr-auth-btn" onclick="openAuth()">Sign Up Free ↗</button>
 </header>
 
-<!-- TICKER -->
-<div class="ticker-bar">
-  <div class="ticker-track" id="ticker-track">
-    <div class="t-seg">
-      <span class="t-kse">KSE-100</span>
-      <span class="t-val" id="t-kse">—</span>
-      <span class="up" id="t-kse-chg" style="font-size:10px;font-weight:700"></span>
-    </div>
-    <div class="t-seg"><div class="t-dot up"></div><span class="t-name">OGDC</span><span class="t-val">—</span><span class="up">—</span></div>
-    <div class="t-seg"><div class="t-dot up"></div><span class="t-name">MCB</span><span class="t-val">—</span><span class="up">—</span></div>
-    <div class="t-seg"><div class="t-dot up"></div><span class="t-name">HBL</span><span class="t-val">—</span><span class="up">—</span></div>
-    <div class="t-seg"><div class="t-dot up"></div><span class="t-name">LUCK</span><span class="t-val">—</span><span class="up">—</span></div>
-    <div class="t-seg"><div class="t-dot" style="background:var(--amber)"></div><span class="t-name">BTC</span><span class="t-val">—</span><span style="font-size:10px;font-weight:700">—</span></div>
-    <div class="t-seg"><div class="t-dot" style="background:var(--blue)"></div><span class="t-name">ETH</span><span class="t-val">—</span><span style="font-size:10px;font-weight:700">—</span></div>
-    <!-- duplicate for seamless scroll -->
-    <div class="t-seg">
-      <span class="t-kse">KSE-100</span>
-      <span class="t-val" id="t-kse2">—</span>
-      <span class="up" style="font-size:10px;font-weight:700"></span>
-    </div>
-    <div class="t-seg"><div class="t-dot up"></div><span class="t-name">OGDC</span><span class="t-val">—</span><span class="up">—</span></div>
-    <div class="t-seg"><div class="t-dot up"></div><span class="t-name">MCB</span><span class="t-val">—</span><span class="up">—</span></div>
-    <div class="t-seg"><div class="t-dot up"></div><span class="t-name">HBL</span><span class="t-val">—</span><span class="up">—</span></div>
-    <div class="t-seg"><div class="t-dot up"></div><span class="t-name">LUCK</span><span class="t-val">—</span><span class="up">—</span></div>
-    <div class="t-seg"><div class="t-dot" style="background:var(--amber)"></div><span class="t-name">BTC</span><span class="t-val">—</span><span style="font-size:10px;font-weight:700">—</span></div>
-    <div class="t-seg"><div class="t-dot" style="background:var(--blue)"></div><span class="t-name">ETH</span><span class="t-val">—</span><span style="font-size:10px;font-weight:700">—</span></div>
-  </div>
+<div class="ticker">
+  <div class="ticker-track" id="ticker-track"></div>
 </div>
 
-<!-- HERO -->
 <section class="hero">
   <div class="hero-eyebrow">
-    <div class="hero-eyebrow-dot"></div>
-    <span>Live · PSX + Global Markets</span>
+    <div class="live-dot"></div>Live · PSX · KSE-100 Intelligence Platform
+    <div class="sep"></div>
+    <span>Vol 4.2B PKR</span>
+    <div class="sep"></div>
+    <span>SBP rate decision · Apr 29</span>
   </div>
+  <div class="hero-grid">
+    <div>
+      <h1>Read first.<br>Then <span class="acc">trade</span>.</h1>
+      <p class="strap">Wall-Trade is research-grade intelligence on Pakistan's liquid assets — PSX, crypto, and FX, written for the patient kind of investor.</p>
+      <div class="byline">
+        <div><div class="byline-num">20<em>+</em></div><div class="byline-lbl">PSX equities, continuously covered</div></div>
+        <div><div class="byline-num">10</div><div class="byline-lbl">Crypto pairs in PKR context</div></div>
+        <div><div class="byline-num">6</div><div class="byline-lbl">FX rates, refreshed live</div></div>
+      </div>
+      <div class="cta-row">
+        <button class="cta-1" onclick="window.location.href='/app.html'">Open free terminal<span>→</span></button>
+        <a href="/app.html" class="cta-2">Open the terminal</a>
+      </div>
+    </div>
 
-  <h1 class="hero-h1">
-    <span style="font-family:'Libre Baskerville',Georgia,serif;font-weight:900;color:var(--t1);display:block">Pakistan's only</span>
-    <span class="line2" style="font-family:'Libre Baskerville',Georgia,serif;font-weight:900">AI-Powered Markets<br>Intelligence Platform</span>
-  </h1>
-
-  <p class="hero-sub">
-    Deep AI analysis across PSX stocks, 10 global cryptocurrencies, and 6 live FX pairs. Built exclusively for the Pakistani market watcher.
-  </p>
-
-  <div class="hero-pillars">
-    <div class="pillar-tag pillar-psx">🇵🇰 PSX Stocks</div>
-    <div class="pillar-tag pillar-cryp">₿ Crypto Intelligence</div>
-    <div class="pillar-tag pillar-fx">💱 Forex Rates</div>
-  </div>
-
-  <div class="hero-cta">
-    <button class="cta-primary" onclick="openAuth()">Get Free Access →</button>
-    <a href="#markets" class="cta-secondary">View Markets</a>
-  </div>
-</section>
-
-<!-- LIVE MARKETS -->
-<section class="snapshot" id="markets">
-  <div class="section-label">Live markets</div>
-  <div class="macro-grid">
-    <div class="mcard mc-kse" onclick="openAuth()">
-      <div class="mcard-lbl">🇵🇰 KSE-100</div>
-      <div class="mcard-price" id="mc-kse">—</div>
-      <div class="mcard-chg" id="mc-kse-chg">Live</div>
-      <div class="mcard-sub">Pakistan Stock Exchange</div>
-    </div>
-    <div class="mcard mc-sp">
-      <div class="mcard-lbl">🇺🇸 S&amp;P 500</div>
-      <div class="mcard-price" id="mc-sp">—</div>
-      <div class="mcard-chg" id="mc-sp-chg">Live</div>
-      <div class="mcard-sub">SPY · US Markets</div>
-    </div>
-    <div class="mcard mc-brent">
-      <div class="mcard-lbl">🛢 Brent Crude</div>
-      <div class="mcard-price" id="mc-brent">—</div>
-      <div class="mcard-chg" id="mc-brent-chg">Live</div>
-      <div class="mcard-sub">USD per barrel</div>
-    </div>
-    <div class="mcard mc-gold">
-      <div class="mcard-lbl">✦ Gold</div>
-      <div class="mcard-price" id="mc-gold">—</div>
-      <div class="mcard-chg" id="mc-gold-chg">Live</div>
-      <div class="mcard-sub">USD per troy oz</div>
-    </div>
-    <div class="mcard mc-pkr">
-      <div class="mcard-lbl">💵 PKR / USD</div>
-      <div class="mcard-price" id="mc-pkr">—</div>
-      <div class="mcard-chg" style="color:var(--t3);font-size:11px">Exchange rate</div>
-      <div class="mcard-sub">Pakistani Rupee</div>
-    </div>
-    <div class="mcard mc-btc" onclick="openAuth()">
-      <div class="mcard-lbl">₿ Bitcoin</div>
-      <div class="mcard-price" id="mc-btc">—</div>
-      <div class="mcard-chg" id="mc-btc-chg">Live</div>
-      <div class="mcard-sub">BTC · USD</div>
-    </div>
+    <aside class="dispatch">
+      <div class="dispatch-head"><span>Karachi dispatch</span><span>Live intelligence</span></div>
+      <div class="dispatch-h">Energy <em>quietly</em> outpaces banking on Q3.</div>
+      <p class="dispatch-d">OGDC's beat, MARI's payout guidance, and crude above $78 lift exploration ahead of the SBP meeting.</p>
+      <div class="candle-stage">
+        <div class="candle-stage-head">
+          <span>KSE-100 · D1 · 60 sessions</span>
+          <span class="px">KSE-100 ▲ Live</span>
+        </div>
+        <svg id="candle-svg" preserveAspectRatio="none" viewBox="0 0 800 300"></svg>
+      </div>
+      <div class="fig-cap"><span>Source · PSX</span><span>Illustrative sample</span></div>
+      <div class="dispatch-verdict">
+        <div class="dv-lbl">▲ Wall-Trade verdict</div>
+        <div class="dv-h">OGDC — Strong fundamentals, dollar-linked revenues</div>
+        <div class="dv-d">"Earnings beat with payout intact; macro tail wind from Brent."</div>
+      </div>
+    </aside>
   </div>
 </section>
 
-<!-- THREE PILLARS -->
-<section class="pillars">
-  <div class="section-label">What we cover</div>
-
-  <div class="pillar-block pb-psx">
-    <div class="pb-header">
-      <div class="pb-icon">🇵🇰</div>
-      <span class="pb-badge badge-live">Live PSX Data</span>
-    </div>
-    <div class="pb-title"><span class="g-psxp">PSX Stocks</span></div>
-    <div class="pb-desc">AI verdicts on Pakistan's most traded stocks across Energy, Banking, Fertiliser and Cement sectors. Live prices from PSX with deep fundamentals analysis.</div>
-    <div class="pb-stats">
-      <div class="pb-stat"><div class="pb-stat-val" style="color:var(--green)">20</div><div class="pb-stat-lbl">PSX stocks</div></div>
-      <div class="pb-stat"><div class="pb-stat-val" style="color:var(--green)">4</div><div class="pb-stat-lbl">Sectors covered</div></div>
-      <div class="pb-stat"><div class="pb-stat-val" style="color:var(--green)">AI</div><div class="pb-stat-lbl">Verdicts + chat</div></div>
-    </div>
-    <button class="pb-link" onclick="window.location.href='/app.html'" style="color:var(--green);background:none;border:none;cursor:pointer;padding:0;font-family:'Inter',system-ui,sans-serif;">
-  Analyse stocks
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7H12M8 3L12 7L8 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-</button>
+<section class="sec" id="markets">
+  <div class="sec-rail">
+    <span class="sec-num">I.</span>
+    <span class="sec-eyebrow">Live snapshot — the six numbers that matter</span>
   </div>
+  <h2 class="sec-h">Six numbers. <em class="acc">One screen</em>.</h2>
+  <p class="sec-sub">The rates a Pakistani portfolio actually feels — refreshed continuously, contextualised daily.</p>
 
-  <div class="pillar-block pb-cryp">
-    <div class="pb-header">
-      <div class="pb-icon">₿</div>
-      <span class="pb-badge badge-paid">Live Global Data</span>
-    </div>
-    <div class="pb-title"><span class="g-cryp">Crypto Intelligence</span></div>
-    <div class="pb-desc">AI analysis on Bitcoin, Ethereum, Solana and 7 more top coins — with Pakistan-specific context. P2P, Binance, dollar hedging — explained in plain Urdu-friendly English.</div>
-    <div class="pb-stats">
-      <div class="pb-stat"><div class="pb-stat-val" style="color:var(--amber)">10</div><div class="pb-stat-lbl">Crypto coins</div></div>
-      <div class="pb-stat"><div class="pb-stat-val" style="color:var(--amber)">AI</div><div class="pb-stat-lbl">Bullish/Bearish</div></div>
-      <div class="pb-stat"><div class="pb-stat-val" style="color:var(--amber)">PKR</div><div class="pb-stat-lbl">Context built in</div></div>
-    </div>
-    <button class="pb-link" onclick="window.location.href='/crypto.html'" style="color:var(--amber);background:none;border:none;cursor:pointer;padding:0;font-family:'Inter',system-ui,sans-serif;">
-  View crypto analysis
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7H12M8 3L12 7L8 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-</button>
+  <div class="markets-tbl" id="markets"></div>
+</section>
+
+<section class="sec" id="coverage">
+  <div class="sec-rail">
+    <span class="sec-num">II.</span>
+    <span class="sec-eyebrow">Coverage — three pillars, one voice</span>
   </div>
+  <h2 class="sec-h">Three pillars. <em class="acc">One voice</em>.</h2>
+  <p class="sec-sub">PSX equities, crypto, foreign exchange — one intelligence layer for the assets a Pakistani portfolio actually holds.</p>
 
-  <div class="pillar-block pb-fx">
-    <div class="pb-header">
-      <div class="pb-icon">💱</div>
-      <span class="pb-badge badge-live2">Live FX Rates</span>
+  <div class="pillars">
+    <div class="pillar psx">
+      <div class="pillar-num">i.</div>
+      <div class="pillar-h">PSX equities. <em>Daily verdicts</em>.</div>
+      <p class="pillar-d">Energy, banking, fertiliser, cement — fundamentals, macro, and news behind every call.</p>
+      <div class="pillar-stats">
+        <div><div class="pst-v">20</div><div class="pst-l">Equities</div></div>
+        <div><div class="pst-v">4</div><div class="pst-l">Sectors</div></div>
+        <div><div class="pst-v">D+1</div><div class="pst-l">Verdicts</div></div>
+      </div>
+      <button class="pillar-cta">Browse equities →</button>
     </div>
-    <div class="pb-title"><span class="g-fxp">Forex Rates</span></div>
-    <div class="pb-desc">Live exchange rates for PKR/USD, EUR, GBP, JPY, SAR and AED — the currencies that matter most to Pakistani businesses and investors. Updated in real time.</div>
-    <div class="pb-stats">
-      <div class="pb-stat"><div class="pb-stat-val" style="color:var(--purple)">6</div><div class="pb-stat-lbl">FX pairs</div></div>
-      <div class="pb-stat"><div class="pb-stat-val" style="color:var(--purple)">Live</div><div class="pb-stat-lbl">Real-time rates</div></div>
-      <div class="pb-stat"><div class="pb-stat-val" style="color:var(--purple)">PKR</div><div class="pb-stat-lbl">Always shown</div></div>
+    <div class="pillar cryp">
+      <div class="pillar-num">ii.</div>
+      <div class="pillar-h">Crypto, in <em>PKR terms</em>.</div>
+      <p class="pillar-d">Top-10 coins with PKR-aware analysis — P2P spreads, hedging, and SBP policy context.</p>
+      <div class="pillar-stats">
+        <div><div class="pst-v">10</div><div class="pst-l">Coins</div></div>
+        <div><div class="pst-v">24/7</div><div class="pst-l">Coverage</div></div>
+        <div><div class="pst-v">PKR</div><div class="pst-l">Lens</div></div>
+      </div>
+      <button class="pillar-cta">View crypto desk →</button>
     </div>
-    <button class="pb-link" onclick="window.location.href='/fx.html'" style="color:var(--purple);background:none;border:none;cursor:pointer;padding:0;font-family:'Inter',system-ui,sans-serif;">
-  See FX rates
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7H12M8 3L12 7L8 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-</button>
+    <div class="pillar fx">
+      <div class="pillar-num">iii.</div>
+      <div class="pillar-h">Six FX pairs. <em>Live spreads</em>.</div>
+      <p class="pillar-d">USD, EUR, GBP, JPY, SAR, AED — interbank and open-market against the rupee.</p>
+      <div class="pillar-stats">
+        <div><div class="pst-v">6</div><div class="pst-l">Pairs</div></div>
+        <div><div class="pst-v">Live</div><div class="pst-l">Spreads</div></div>
+        <div><div class="pst-v">SBP</div><div class="pst-l">Context</div></div>
+      </div>
+      <button class="pillar-cta">Track FX →</button>
+    </div>
   </div>
 </section>
 
-<!-- WHY WALL-TRADE -->
-<section class="why">
-  <div class="section-label">Why Wall-Trade</div>
+<section class="sec" id="intelligence">
+  <div class="sec-rail">
+    <span class="sec-num">III.</span>
+    <span class="sec-eyebrow">Intelligence — the method</span>
+  </div>
+  <h2 class="sec-h">Every verdict, <em class="acc">explained</em>.</h2>
+  <p class="sec-sub">No black boxes. Four reasoning layers. Every claim is traceable to a public source.</p>
+
+  <div class="feature" id="sample">
+    <div class="feature-l">
+      <h3>A research analyst that <em>shows its work</em>.</h3>
+      <p>Wall-Trade reads every PSX filing, every SBP circular, every relevant crypto event — and writes you a one-screen verdict you can act on.</p>
+      <div class="flow-step"><div class="fs-n">i.</div><div><div class="fs-t">Fundamental scan</div><div class="fs-d">Earnings, debt, payout history, sector position.</div></div></div>
+      <div class="flow-step"><div class="fs-n">ii.</div><div><div class="fs-t">Macro overlay</div><div class="fs-d">SBP rate path, FX, oil, PKR sensitivity.</div></div></div>
+      <div class="flow-step"><div class="fs-n">iii.</div><div><div class="fs-t">News &amp; sentiment</div><div class="fs-d">PSX filings, Dawn, Business Recorder.</div></div></div>
+      <div class="flow-step"><div class="fs-n">iv.</div><div><div class="fs-t">One-screen verdict</div><div class="fs-d">Strong Fundamentals, Mixed Picture, or Needs Monitoring — with full reasoning.</div></div></div>
+    </div>
+    <div class="verdict-card">
+      <div class="vc-flag">Wall-Trade · Sample Analysis</div>
+      <div class="vc-meta"><span>OGDC · Pakistan Stock Exchange</span><span>Sample output</span></div>
+      <div class="vc-tick">OGDC</div>
+      <div class="vc-name">Oil &amp; Gas Development Company Ltd · KSE-100</div>
+      <div class="vc-headline"><em>Dollar-linked</em> revenues cushion PKR weakness.</div>
+      <div class="vc-stance">
+        <div class="vc-stance-pill">Strong Fundamentals</div>
+        <div class="vc-stance-text">Fundamental view</div>
+        <div class="vc-stance-conf">8.2/10</div>
+      </div>
+      <div class="vc-body">
+        <p><strong>Fundamentals.</strong> Net margin 38.4% — strongest in E&amp;P sector. EPS PKR 26.80 (9M FY26). Circular debt receivables above PKR 530B remain the key cash flow risk.</p>
+        <p><strong>Macro.</strong> Dollar-denominated revenues act as a natural hedge against PKR weakness. Brent above $78 supports margins. Rate environment affects capex financing costs.</p>
+        <p><strong>Technicals.</strong> RSI neutral at 52. Price above MA20 and MA50 — momentum positive. No extreme readings to flag divergence from fundamentals.</p>
+        <p style="font-size:11px;color:var(--t3);margin-top:10px">This is illustrative output. Not investment advice. Always do your own research.</p>
+      </div>
+      <div class="vc-foot"><span>PSX fundamentals · macro overlay</span><span>Not investment advice</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="track">
+  <div class="sec-rail">
+    <span class="sec-num">IV.</span>
+    <span class="sec-eyebrow">Sample analyses — illustrative only</span>
+  </div>
+  <h2 class="sec-h">Transparent. <em class="acc">No hidden calls</em>.</h2>
+  <p class="sec-sub">Wall-Trade generates fundamental analyses, not buy/sell recommendations. The table below shows the type of output you receive — all figures are illustrative samples, not real past performance claims.</p>
+
+  <div class="track-stats">
+    <div class="ts-card"><div class="ts-l">PSX stocks covered</div><div class="ts-v">80+</div><div class="ts-d">across all major sectors</div></div>
+    <div class="ts-card"><div class="ts-l">Analyses run</div><div class="ts-v"><em>100+</em></div><div class="ts-d">since beta launch</div></div>
+    <div class="ts-card"><div class="ts-l">Verdict types</div><div class="ts-v">3</div><div class="ts-d">Fundamentals · Mixed · Monitor</div></div>
+    <div class="ts-card"><div class="ts-l">Data sources</div><div class="ts-v">Live</div><div class="ts-d">PSX, SBP, commodities</div></div>
+  </div>
+
+  <div class="track-table">
+    <div class="tt-head">
+      <div>Date</div>
+      <div>Equity</div>
+      <div>Verdict</div>
+      <div class="col-px">Price at analysis</div>
+      <div>Score</div>
+      <div class="col-spark">Chart</div>
+      <div class="col-days">Sector</div>
+    </div>
+    <div class="tt-row">
+      <div class="tt-date">Sample</div>
+      <div><div class="tt-tick">OGDC</div><div class="tt-name">Oil &amp; Gas Dev Co</div></div>
+      <div><span class="tt-v b">Strong Fundamentals</span></div>
+      <div class="tt-px col-px">Live price</div>
+      <div><div class="tt-pct up">8.2/10</div></div>
+      <div class="col-spark"><svg viewBox="0 0 100 24" preserveAspectRatio="none" style="height:24px;width:100%"><polyline fill="none" stroke="#00e5a0" stroke-width="1.5" points="0,18 10,16 20,14 30,15 40,12 50,10 60,9 70,7 80,6 90,5 100,3"/></svg></div>
+      <div class="tt-px col-days">E&amp;P</div>
+    </div>
+    <div class="tt-row">
+      <div class="tt-date">Sample</div>
+      <div><div class="tt-tick">MCB</div><div class="tt-name">MCB Bank</div></div>
+      <div><span class="tt-v b">Strong Fundamentals</span></div>
+      <div class="tt-px col-px">Live price</div>
+      <div><div class="tt-pct up">7.8/10</div></div>
+      <div class="col-spark"><svg viewBox="0 0 100 24" preserveAspectRatio="none" style="height:24px;width:100%"><polyline fill="none" stroke="#00e5a0" stroke-width="1.5" points="0,16 15,15 30,13 45,14 60,11 75,9 90,8 100,7"/></svg></div>
+      <div class="tt-px col-days">Banking</div>
+    </div>
+    <div class="tt-row">
+      <div class="tt-date">Sample</div>
+      <div><div class="tt-tick">LUCK</div><div class="tt-name">Lucky Cement</div></div>
+      <div><span class="tt-v h">Mixed Picture</span></div>
+      <div class="tt-px col-px">Live price</div>
+      <div><div class="tt-pct" style="color:var(--amber)">6.1/10</div></div>
+      <div class="col-spark"><svg viewBox="0 0 100 24" preserveAspectRatio="none" style="height:24px;width:100%"><polyline fill="none" stroke="#ffb547" stroke-width="1.5" points="0,12 12,14 24,11 36,13 48,12 60,12 72,13 84,11 100,11"/></svg></div>
+      <div class="tt-px col-days">Cement</div>
+    </div>
+    <div class="tt-row">
+      <div class="tt-date">Sample</div>
+      <div><div class="tt-tick">ENGRO</div><div class="tt-name">Engro Holdings</div></div>
+      <div><span class="tt-v h">Mixed Picture</span></div>
+      <div class="tt-px col-px">Live price</div>
+      <div><div class="tt-pct" style="color:var(--amber)">5.8/10</div></div>
+      <div class="col-spark"><svg viewBox="0 0 100 24" preserveAspectRatio="none" style="height:24px;width:100%"><polyline fill="none" stroke="#ffb547" stroke-width="1.5" points="0,8 12,9 24,10 36,12 48,14 60,13 72,12 84,11 100,11"/></svg></div>
+      <div class="tt-px col-days">Holding</div>
+    </div>
+    <div class="tt-row">
+      <div class="tt-date">Sample</div>
+      <div><div class="tt-tick">HBL</div><div class="tt-name">Habib Bank Ltd</div></div>
+      <div><span class="tt-v b">Strong Fundamentals</span></div>
+      <div class="tt-px col-px">Live price</div>
+      <div><div class="tt-pct up">7.4/10</div></div>
+      <div class="col-spark"><svg viewBox="0 0 100 24" preserveAspectRatio="none" style="height:24px;width:100%"><polyline fill="none" stroke="#00e5a0" stroke-width="1.5" points="0,18 12,16 24,15 36,12 48,11 60,9 72,8 84,7 100,5"/></svg></div>
+      <div class="tt-px col-days">Banking</div>
+    </div>
+    <div class="tt-row">
+      <div class="tt-date">Sample</div>
+      <div><div class="tt-tick">SYS</div><div class="tt-name">Systems Limited</div></div>
+      <div><span class="tt-v s">Needs Monitoring</span></div>
+      <div class="tt-px col-px">Live price</div>
+      <div><div class="tt-pct" style="color:var(--red)">4.2/10</div></div>
+      <div class="col-spark"><svg viewBox="0 0 100 24" preserveAspectRatio="none" style="height:24px;width:100%"><polyline fill="none" stroke="#ff4d6d" stroke-width="1.5" points="0,10 12,11 24,12 36,13 48,12 60,14 72,15 84,14 100,14"/></svg></div>
+      <div class="tt-px col-days">Tech</div>
+    </div>
+  </div>
+  <p style="font-size:11px;color:var(--t3);margin-top:20px;padding-top:16px;border-top:1px solid var(--rim)">⚠️ These are sample outputs only. Wall-Trade does not make buy or sell recommendations. Scores and verdicts are AI-generated analytical opinions, not investment advice. Past analytical output does not predict future market performance. Always consult a SECP-registered financial advisor before investing.</p>
+</section>
+
+<section class="sec" id="why" style="border-bottom:none">
+  <div class="sec-rail">
+    <span class="sec-num">V.</span>
+    <span class="sec-eyebrow">Why Wall-Trade — and not the other thing</span>
+  </div>
+  <h2 class="sec-h">Built for the <em class="acc">rupee</em>.</h2>
+  <p class="sec-sub">Not Bloomberg for institutions. Not a US robo-adviser. A research-grade lens on the assets the rupee actually touches.</p>
+
   <div class="why-grid">
     <div class="why-card">
-      <div class="why-icon">🧠</div>
-      <div class="why-title">AI-Powered</div>
-      <div class="why-desc">Real analyst-level verdicts on every stock and coin — not just price data.</div>
+      <div class="why-num">i.</div>
+      <div class="why-h"><em>Reasoning</em>, not vibes.</div>
+      <p class="why-d">Four-layer logic — fundamental, macro, news, sentiment. Every source one tap away.</p>
     </div>
     <div class="why-card">
-      <div class="why-icon">🇵🇰</div>
-      <div class="why-title">Built for Pakistan</div>
-      <div class="why-desc">PKR context, PSX sectors, SBP policy — everything through a Pakistan lens.</div>
+      <div class="why-num">ii.</div>
+      <div class="why-h">Built for the <em>rupee</em>.</div>
+      <p class="why-d">PSX sector logic, SBP rate context, FX against PKR — designed for Pakistan, not retrofitted.</p>
     </div>
     <div class="why-card">
-      <div class="why-icon">⚡</div>
-      <div class="why-title">Live Data</div>
-      <div class="why-desc">PSX prices, global macro, crypto and forex — all updating in real time.</div>
+      <div class="why-num">iii.</div>
+      <div class="why-h"><em>Patient</em> by design.</div>
+      <p class="why-d">No push notifications. No FOMO. Verdicts that think before they answer.</p>
     </div>
     <div class="why-card">
-      <div class="why-icon">💬</div>
-      <div class="why-title">Ask Anything</div>
-      <div class="why-desc">Chat with our AI about any stock or coin. Get answers in seconds, not hours.</div>
+      <div class="why-num">iv.</div>
+      <div class="why-h"><em>Receipts</em>, always.</div>
+      <p class="why-d">Track record is public. Sources are linked. Wrong calls stay on the page.</p>
     </div>
   </div>
 </section>
 
-<!-- PSX AI PERFORMANCE -->
-<section class="perf">
-  <div class="section-label">AI Analysis · PSX Stocks</div>
-  <div id="perf-list">
-    <div class="perf-row">
-      <div class="perf-l">
-        <div class="perf-av" style="background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);color:var(--green)">OGD</div>
-        <div><div class="perf-tick">OGDC</div><div class="perf-name">Oil &amp; Gas Dev Co</div></div>
-      </div>
-      <div style="text-align:right"><div class="perf-chg up" id="pf-ogdc">—</div><div class="perf-period">Today</div></div>
-    </div>
-    <div class="perf-row">
-      <div class="perf-l">
-        <div class="perf-av" style="background:rgba(61,159,255,0.1);border:1px solid rgba(61,159,255,0.2);color:var(--blue)">MCB</div>
-        <div><div class="perf-tick">MCB</div><div class="perf-name">MCB Bank</div></div>
-      </div>
-      <div style="text-align:right"><div class="perf-chg up" id="pf-mcb">—</div><div class="perf-period">Today</div></div>
-    </div>
-    <div class="perf-row">
-      <div class="perf-l">
-        <div class="perf-av" style="background:rgba(155,109,255,0.1);border:1px solid rgba(155,109,255,0.2);color:var(--purple)">LCK</div>
-        <div><div class="perf-tick">LUCK</div><div class="perf-name">Lucky Cement</div></div>
-      </div>
-      <div style="text-align:right"><div class="perf-chg up" id="pf-luck">—</div><div class="perf-period">Today</div></div>
-    </div>
-    <div class="perf-row">
-      <div class="perf-l">
-        <div class="perf-av" style="background:rgba(255,181,71,0.1);border:1px solid rgba(255,181,71,0.2);color:var(--amber)">ENG</div>
-        <div><div class="perf-tick">ENGROH</div><div class="perf-name">Engro Holdings</div></div>
-      </div>
-      <div style="text-align:right"><div class="perf-chg up" id="pf-engroh">—</div><div class="perf-period">Today</div></div>
-    </div>
-    <div class="perf-row">
-      <div class="perf-l">
-        <div class="perf-av" style="background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2);color:var(--green)">HBL</div>
-        <div><div class="perf-tick">HBL</div><div class="perf-name">Habib Bank Ltd</div></div>
-      </div>
-      <div style="text-align:right"><div class="perf-chg up" id="pf-hbl">—</div><div class="perf-period">Today</div></div>
-    </div>
-  </div>
-<button onclick="window.location.href='/app.html'" style="display:block;text-align:center;margin-top:14px;font-size:11px;color:var(--green);text-decoration:none;font-weight:600;letter-spacing:0.04em;background:none;border:none;cursor:pointer;width:100%">View all 20 stocks →</button>
-</section>
-
-<!-- NEWS -->
-<section class="news-sec">
-  <div class="section-label">Market Intelligence</div>
-  <div id="news-list">
-    <div style="display:flex;align-items:center;gap:8px;padding:16px 0;color:var(--t3);font-size:12px">
-      <div class="spin"></div>Loading market news…
-    </div>
+<section class="footer-cta">
+  <h2>Read first. <em>Then trade</em>.</h2>
+  <p>Free during beta. PSX, crypto, and FX intelligence — in one calm screen.</p>
+  <div class="cta-row">
+    <button class="cta-1" onclick="window.location.href='/app.html'">Open free terminal<span>→</span></button>
+    <a href="/app.html" class="cta-2">Open the terminal</a>
   </div>
 </section>
 
-<!-- CTA BANNER -->
-<div class="cta-banner">
-  <div class="cta-banner-label">Pakistan's AI Markets Platform</div>
-  <div class="cta-banner-h" style="font-family:'Libre Baskerville',Georgia,serif">PSX Stocks, Crypto Intelligence &amp; Forex Rates — all with AI analysis</div>
-  <div class="cta-banner-sub">Be among the first to access Wall-Trade. Free during beta.</div>
-  <button class="cta-banner-btn" onclick="openAuth()">Get Free Beta Access →</button>
-</div>
-
-<!-- BOTTOM NAV -->
-<nav class="bnav">
-  <a href="/" class="bnav-item">
-    <div class="bnav-icon on">🏠</div>
-    <span class="bnav-lbl" style="color:var(--green)">Home</span>
-  </a>
-  <a href="/app.html" class="bnav-item">
-    <div class="bnav-icon">📊</div>
-    <span class="bnav-lbl" style="color:var(--t3)">Stocks</span>
-  </a>
-  <a href="/crypto.html" class="bnav-item">
-    <div class="bnav-icon">₿</div>
-    <span class="bnav-lbl" style="color:var(--t3)">Crypto</span>
-  </a>
-  <a href="/app.html#fx" class="bnav-item">
-    <div class="bnav-icon">💱</div>
-    <span class="bnav-lbl" style="color:var(--t3)">Forex</span>
-  </a>
-</nav>
+<footer class="footer">
+  <div class="footer-l"><em>Wall-Trade · Karachi, Pakistan · © 2026. Not investment advice.</em></div>
+  <div class="footer-links">
+    <a href="#">Method</a>
+    <a href="#">Disclaimer</a>
+    <a href="#">Privacy</a>
+    <a href="#">Contact</a>
+  </div>
+</footer>
 
 <script>
-// ── HELPERS ──────────────────────────────────────────────
-function fmt(n, prefix='') {
-  if (n == null) return '—';
-  return prefix + Number(n).toLocaleString();
-}
-function chgHtml(val, suffix='%') {
-  if (val == null) return '';
-  const n = parseFloat(val);
-  const cls = n >= 0 ? 'up' : 'dn';
-  return `<span class="${cls}">${n >= 0 ? '+' : ''}${n.toFixed(2)}${suffix}</span>`;
+/* Dateline */
+{
+  const d=new Date();
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  document.getElementById('dateline').textContent = `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-// ── AUTH HELPERS ──────────────────────────────────────────────
-function openAuth() {
-  // Only skip modal if token exists AND we're on Netlify (not a local file)
-  const token = localStorage.getItem('wt_token');
-  const isNetlify = window.location.hostname !== 'localhost' && window.location.protocol !== 'file:';
-  if (token && isNetlify) { goToApp(); return; }
-  document.getElementById('auth-overlay').classList.add('on');
-  loadSpots();
-}
-function closeAuth() { document.getElementById('auth-overlay').classList.remove('on'); }
-function goToApp() { window.location.href = '/'; }
-
-function switchAuthTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach((el, i) => {
-    el.classList.toggle('on', (i === 0 && tab === 'signup') || (i === 1 && tab === 'signin'));
-  });
-  document.getElementById('auth-form-signup').style.display = tab === 'signup' ? 'block' : 'none';
-  document.getElementById('auth-form-signin').style.display = tab === 'signin' ? 'block' : 'none';
-}
-
-async function loadSpots() {
-  // Skip Netlify function when running as a local file
-  const isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost';
-  if (isLocal) {
-    const label = document.getElementById('spots-label');
-    if (label) label.textContent = '100 beta spots available';
-    return;
-  }
-  try {
-    const res = await fetch('/.netlify/functions/auth', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'spots' })
-    });
-    const data = await res.json();
-    const label = document.getElementById('spots-label');
-    if (label && data.remaining != null) {
-      if (data.remaining <= 0) {
-        label.textContent = 'Beta is full — join waitlist below';
-        document.getElementById('su-btn').disabled = true;
-        document.getElementById('su-btn').textContent = 'Beta full';
-      } else {
-        label.textContent = `${data.remaining} of 100 spots remaining`;
-      }
-    }
-  } catch(e) {
-    const label = document.getElementById('spots-label');
-    if (label) label.textContent = 'Beta spots available';
-  }
-}
-
-async function doSignup() {
-  const email = document.getElementById('su-email').value.trim();
-  const password = document.getElementById('su-password').value;
-  const confirm = document.getElementById('su-confirm').value;
-  const btn = document.getElementById('su-btn');
-  const msg = document.getElementById('su-msg');
-  msg.className = 'auth-msg'; msg.style.display = 'none';
-  if (!email || !email.includes('@')) return showMsg(msg, 'err', 'Please enter a valid email address.');
-  if (password.length < 8) return showMsg(msg, 'err', 'Password must be at least 8 characters.');
-  if (password !== confirm) return showMsg(msg, 'err', 'Passwords do not match.');
-  btn.disabled = true; btn.textContent = 'Creating account…';
-  try {
-    const res = await fetch('/.netlify/functions/auth', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'signup', email, password })
-    });
-    const data = await res.json();
-    if (data.success) {
-      document.getElementById('auth-signup-view').style.display = 'none';
-      document.getElementById('auth-success-view').style.display = 'block';
-      document.getElementById('success-msg').textContent = data.message || 'Welcome to Wall-Trade!';
-      await signInSilent(email, password);
-    } else if (data.error === 'beta_full') {
-      showMsg(msg, 'err', '⚠️ Beta is full. All 100 spots have been claimed.');
-    } else {
-      showMsg(msg, 'err', data.error || 'Something went wrong. Please try again.');
-    }
-  } catch(e) { showMsg(msg, 'err', 'Network error — please check your connection.'); }
-  btn.disabled = false; btn.textContent = "Create account — it's free";
-}
-
-async function doSignin() {
-  const email = document.getElementById('si-email').value.trim();
-  const password = document.getElementById('si-password').value;
-  const btn = document.getElementById('si-btn');
-  const msg = document.getElementById('si-msg');
-  msg.className = 'auth-msg'; msg.style.display = 'none';
-  if (!email || !email.includes('@')) return showMsg(msg, 'err', 'Please enter a valid email address.');
-  if (!password) return showMsg(msg, 'err', 'Password required.');
-  btn.disabled = true; btn.textContent = 'Signing in…';
-  try {
-    const res = await fetch('/.netlify/functions/auth', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'signin', email, password })
-    });
-    const data = await res.json();
-    if (data.success && data.access_token) {
-      localStorage.setItem('wt_token', data.access_token);
-      localStorage.setItem('wt_email', data.user?.email || email);
-      if (data.refresh_token) localStorage.setItem('wt_refresh', data.refresh_token);
-      goToApp();
-    } else {
-      showMsg(msg, 'err', data.error || 'Invalid email or password.');
-    }
-  } catch(e) { showMsg(msg, 'err', 'Network error — please try again.'); }
-  btn.disabled = false; btn.textContent = 'Sign in';
-}
-
-async function signInSilent(email, password) {
-  try {
-    const res = await fetch('/.netlify/functions/auth', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'signin', email, password })
-    });
-    const data = await res.json();
-    if (data.access_token) {
-      localStorage.setItem('wt_token', data.access_token);
-      localStorage.setItem('wt_email', data.user?.email || email);
-      if (data.refresh_token) localStorage.setItem('wt_refresh', data.refresh_token);
-    }
-  } catch(e) {}
-}
-
-function showMsg(el, type, text) {
-  el.className = `auth-msg ${type} on`;
-  el.textContent = text;
-}
-
-document.getElementById('auth-overlay').addEventListener('click', function(e) {
-  if (e.target === this) closeAuth();
-});
-
-// Auth state handled in auto-open block below
-
-if (window.location.search.includes('signin=1')) {
-  openAuth(); switchAuthTab('signin');
-}
-
-// ── AUTO-OPEN AUTH ON HOMEPAGE LOAD ────────────────────────
-// If user has no token, show auth modal immediately
-// This makes the homepage an auth gate, not a marketing page
-(function() {
-  const token = localStorage.getItem('wt_token');
-  const isNetlify = window.location.protocol !== 'file:' && window.location.hostname !== 'localhost';
-  if (!token) {
-    // Small delay so the page renders first, then modal appears
-    setTimeout(() => openAuth(), 300);
-  } else if (isNetlify) {
-    // Already logged in on Netlify — update button
-    const btn = document.getElementById('hdr-auth-btn');
-    if (btn) btn.textContent = 'Open App ↗';
-  }
-})();
-
-// ── LOAD PRICES ───────────────────────────────────────────
-async function loadPrices() {
-  try {
-    const res = await fetch('/.netlify/functions/prices', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({tickers:['OGDC','PPL','PSO','MARI','APL','HASCOL','HBL','MCB','UBL','NBP','ABL','BAFL','ENGROH','FFC','EFERT','LUCK','MLCF','CHCC','DGKC']})
-    });
-    if (!res.ok) return;
-    const d = await res.json();
-
-    // KSE-100
-    if (d.kse100) {
-      const k = d.kse100;
-      document.getElementById('mc-kse').textContent = k.price;
-      document.getElementById('mc-kse-chg').innerHTML = chgHtml(k.change).replace(/<span[^>]*>|<\/span>/g,'');
-      document.getElementById('mc-kse-chg').className = 'mcard-chg ' + (parseFloat(k.change)>=0?'up':'dn');
-      ['t-kse','t-kse2'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = k.price; });
-    }
-
-    // S&P
-    const sp = d.sp500 || d.globalMacro?.sp500;
-    if (sp) {
-      document.getElementById('mc-sp').textContent = '$' + sp.price;
-      document.getElementById('mc-sp-chg').innerHTML = chgHtml(sp.change).replace(/<span[^>]*>|<\/span>/g,'');
-      document.getElementById('mc-sp-chg').className = 'mcard-chg ' + (parseFloat(sp.change)>=0?'up':'dn');
-    }
-
-    // Commodities
-    const comms = d.commodities || {};
-    if (comms.brent) {
-      document.getElementById('mc-brent').textContent = '$' + comms.brent.price;
-      document.getElementById('mc-brent-chg').innerHTML = chgHtml(comms.brent.change).replace(/<span[^>]*>|<\/span>/g,'');
-      document.getElementById('mc-brent-chg').className = 'mcard-chg ' + (parseFloat(comms.brent.change)>=0?'up':'dn');
-    }
-    if (comms.gold) {
-      document.getElementById('mc-gold').textContent = '$' + comms.gold.price;
-      document.getElementById('mc-gold-chg').innerHTML = chgHtml(comms.gold.change).replace(/<span[^>]*>|<\/span>/g,'');
-      document.getElementById('mc-gold-chg').className = 'mcard-chg ' + (parseFloat(comms.gold.change)>=0?'up':'dn');
-    }
-
-    // PKR
-    const pkr = d.pkrusd || d.fx?.USDPKR;
-    if (pkr) { document.getElementById('mc-pkr').textContent = pkr.rate || pkr; }
-
-    // BTC
-    const crypto = d.crypto || [];
-    if (crypto.length) {
-      const btc = crypto.find(c => c.symbol === 'BTC');
-      if (btc) {
-        document.getElementById('mc-btc').textContent = '$' + Number(btc.price).toLocaleString();
-        document.getElementById('mc-btc-chg').innerHTML = chgHtml(btc.change).replace(/<span[^>]*>|<\/span>/g,'');
-        document.getElementById('mc-btc-chg').className = 'mcard-chg ' + btc.dir;
-      }
-    }
-
-    // PSX stock performance
-    const stockMap = { 'OGDC':'pf-ogdc','MCB':'pf-mcb','LUCK':'pf-luck','ENGROH':'pf-engroh','HBL':'pf-hbl' };
-    Object.entries(stockMap).forEach(([ticker, elId]) => {
-      const p = d.prices?.[ticker];
-      const el = document.getElementById(elId);
-      if (p && el) {
-        const n = parseFloat(p.change);
-        el.textContent = (n>=0?'+':'') + n.toFixed(2) + '%';
-        el.className = 'perf-chg ' + (n>=0?'up':'dn');
-      }
-    });
-
-    // Update live ticker
-    updateTicker(d.prices, d.crypto, d.kse100);
-
-  } catch(e) { console.error('Prices error:', e); }
-}
-
-// ── UPDATE TICKER ─────────────────────────────────────────
-const TICKER_STOCKS = [
-  {t:'OGDC'},{t:'PPL'},{t:'PSO'},{t:'HBL'},
-  {t:'MCB'},{t:'LUCK'},{t:'ENGROH'},{t:'FFC'}
+/* Ticker */
+const tickers=[
+  {sym:'KSE-100',val:'17,234.62',chg:'+0.42%',dir:'up'},
+  {sym:'OGDC',val:'142.85',chg:'+1.20%',dir:'up'},
+  {sym:'MCB',val:'218.94',chg:'+0.62%',dir:'up'},
+  {sym:'HBL',val:'121.45',chg:'−0.18%',dir:'dn'},
+  {sym:'LUCK',val:'812.50',chg:'+0.34%',dir:'up'},
+  {sym:'ENGRO',val:'296.40',chg:'−0.91%',dir:'dn'},
+  {sym:'PSO',val:'168.30',chg:'+0.78%',dir:'up'},
+  {sym:'SYS',val:'408.90',chg:'−1.20%',dir:'dn'},
+  {sym:'PKR/USD',val:'278.42',chg:'+0.04%',dir:'up'},
+  {sym:'BTC',val:'67,842',chg:'+1.84%',dir:'up'},
+  {sym:'ETH',val:'3,412',chg:'+2.11%',dir:'up'},
+  {sym:'SOL',val:'164.20',chg:'−0.42%',dir:'dn'},
+  {sym:'GOLD',val:'2,338',chg:'+0.31%',dir:'up'},
+  {sym:'BRENT',val:'82.10',chg:'−0.62%',dir:'dn'},
 ];
+const tkHtml=tickers.map(t=>`<div class="tk"><div class="tk-dot ${t.dir}"></div><span class="tk-sym">${t.sym}</span><span class="tk-val">${t.val}</span><span class="tk-chg ${t.dir}">${t.chg}</span></div>`).join('');
+document.getElementById('ticker-track').innerHTML = tkHtml+tkHtml;
 
-function updateTicker(prices, crypto, kse100) {
-  const track = document.getElementById('ticker-track');
-  if (!track) return;
-
-  const kseHtml = kse100 ? `
-    <div class="t-seg">
-      <span class="t-kse">KSE-100</span>
-      <span class="t-val">${kse100.price}</span>
-      <span class="${kse100.dir}" style="font-size:10px;font-weight:700">${parseFloat(kse100.change)>=0?'+':''}${kse100.change}%</span>
-    </div>` : '';
-
-  const stockSegs = TICKER_STOCKS.map(({t}) => {
-    const p = prices?.[t];
-    if (!p) return `<div class="t-seg"><div class="t-dot" style="background:var(--t3)"></div><span class="t-name">${t}</span><span class="t-val">—</span></div>`;
-    const n = parseFloat(p.change);
-    const cls = n>=0?'up':'dn';
-    return `<div class="t-seg"><div class="t-dot ${cls}" style="box-shadow:0 0 4px ${n>=0?'var(--green)':'var(--red)'}"></div><span class="t-name">${t}</span><span class="t-val">PKR ${p.price}</span><span class="${cls}" style="font-size:10px;font-weight:700">${n>=0?'+':''}${n.toFixed(2)}%</span></div>`;
-  }).join('');
-
-  const cryptoSegs = (crypto||[]).slice(0,3).map(c => {
-    const n = parseFloat(c.change);
-    const cls = n>=0?'up':'dn';
-    return `<div class="t-seg"><div class="t-dot" style="background:var(--amber)"></div><span class="t-name">${c.symbol}</span><span class="t-val">$${Number(c.price).toLocaleString()}</span><span class="${cls}" style="font-size:10px;font-weight:700">${n>=0?'+':''}${n.toFixed(2)}%</span></div>`;
-  }).join('');
-
-  const content = kseHtml + stockSegs + cryptoSegs;
-  track.innerHTML = content + content; // duplicate for seamless loop
+/* Candle storm */
+{
+  const svg = document.getElementById('candle-svg');
+  const w = 800, h = 300;
+  const padTop = 36, padBot = 18, padX = 18;
+  const count = 60;
+  const cw = (w - padX*2) / count;
+  const cbw = cw * 0.58;
+  let price = 17050;
+  const candles = [];
+  for(let i=0;i<count;i++){
+    const drift = (Math.sin(i*0.18) + Math.random()*1.4 - 0.6) * 18;
+    const open = price;
+    const close = price + drift + (Math.random()-0.5)*26;
+    const hi = Math.max(open,close) + Math.random()*16;
+    const lo = Math.min(open,close) - Math.random()*16;
+    candles.push({open,close,hi,lo});
+    price = close;
+  }
+  const minP = Math.min(...candles.map(c=>c.lo));
+  const maxP = Math.max(...candles.map(c=>c.hi));
+  const range = maxP - minP || 1;
+  const y = p => padTop + (h - padTop - padBot) * (1 - (p - minP)/range);
+  let html = '';
+  for(let i=1;i<5;i++){
+    const gy = padTop + (h - padTop - padBot) * i/5;
+    html += `<line x1="${padX}" y1="${gy}" x2="${w-padX}" y2="${gy}" stroke="rgba(255,255,255,0.035)" stroke-width="1"/>`;
+  }
+  candles.forEach((c,i)=>{
+    const x = padX + i*cw + cw/2;
+    const up = c.close >= c.open;
+    const col = up ? '#00e5a0' : '#ff4d6d';
+    const yo = y(c.open), yc = y(c.close);
+    const top = Math.min(yo,yc), bot = Math.max(yo,yc);
+    const delay = (i * 18);
+    html += `<g><line x1="${x}" y1="${y(c.hi)}" x2="${x}" y2="${y(c.lo)}" stroke="${col}" stroke-width="1" opacity="0.65"/><rect x="${x-cbw/2}" y="${top}" width="${cbw}" height="${Math.max(1,bot-top)}" fill="${col}" opacity="${up?0.92:0.85}"/></g>`;
+  });
+  const pts = candles.map((c,i)=>`${padX + i*cw + cw/2},${y(c.close)}`).join(' ');
+  html += `<polyline fill="none" stroke="#00e5a0" stroke-width="1.2" points="${pts}" opacity="0.45" stroke-dasharray="1500" stroke-dashoffset="1500"><animate attributeName="stroke-dashoffset" from="1500" to="0" dur="3s" fill="freeze"/></polyline>`;
+  svg.innerHTML = html;
 }
 
-// ── LOAD NEWS ─────────────────────────────────────────────
-async function loadNews() {
-  try {
-    const res = await fetch('/.netlify/functions/news');
-    if (!res.ok) throw new Error('failed');
-    const d = await res.json();
-    const el = document.getElementById('news-list');
-    if (!d.news?.length) { el.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:12px 0">No news available</div>'; return; }
-    el.innerHTML = d.news.slice(0,5).map(n => `
-      <div class="news-item" onclick="window.open('${n.url||'#'}','_blank')">
-        <div class="news-meta">
-          <span class="news-src">${n.source}</span>
-          ${n.tag ? `<span class="news-tag" style="color:${n.tagColor};background:${n.tagBg};border-color:${n.tagBorder}">${n.tag}</span>` : ''}
-        </div>
-        <div class="news-title">${n.title}</div>
-        <div class="news-time">${n.time}</div>
-      </div>`).join('');
-  } catch(e) { document.getElementById('news-list').innerHTML = '<div style="color:var(--t3);font-size:12px;padding:12px 0">News unavailable</div>'; }
-}
-
-// ── INIT ──────────────────────────────────────────────────
-loadPrices();
-loadNews();
-setInterval(loadPrices, 60000);
+/* Markets table */
+const mkts=[
+  {name:'KSE-100',sub:'Pakistan Stock Exchange',px:'17,234.62',chg:'+0.42%',dir:'up',meta:'Vol 4.2B PKR',col:'#00e5a0',ital:false},
+  {name:'PKR / USD',sub:'Open market · interbank',px:'278.42',chg:'+0.04%',dir:'up',meta:'Stable',col:'#ff4d6d',ital:true},
+  {name:'BTC / USD',sub:'Bitcoin · spot',px:'67,842',chg:'+1.84%',dir:'up',meta:'24h vol $34B',col:'#ffb547',ital:false},
+  {name:'Gold',sub:'USD per troy oz',px:'2,338.10',chg:'+0.31%',dir:'up',meta:'New record',col:'#e8c87a',ital:true},
+  {name:'Brent',sub:'USD per barrel',px:'82.10',chg:'−0.62%',dir:'dn',meta:'Above $78 threshold',col:'#9b6dff',ital:false},
+  {name:'S&P 500',sub:'US large-cap · SPX',px:'5,182.40',chg:'+0.14%',dir:'up',meta:'NY pre-open',col:'#3d9fff',ital:false},
+];
+document.getElementById('markets').innerHTML = mkts.map((m,i)=>{
+  let pts='', v=24+Math.random()*8;
+  for(let j=0;j<32;j++){
+    v += (Math.random()-0.5)*3.5 + (m.dir==='up'?-0.3:0.3);
+    pts += `${j*100/31},${Math.max(3,Math.min(45,v))} `;
+  }
+  return `<div class="mrow">
+    <div><div class="m-name">${m.ital?`<em>${m.name}</em>`:m.name}</div><div class="m-sub">${m.sub}</div></div>
+    <div><svg class="m-spark" viewBox="0 0 100 48" preserveAspectRatio="none"><polyline fill="none" stroke="${m.col}" stroke-width="1.4" points="${pts}"/></svg></div>
+    <div class="m-px">${m.px}</div>
+    <div class="m-chg ${m.dir}">${m.chg}</div>
+    <div class="m-meta">${m.meta}</div>
+  </div>`;
+}).join('');
 </script>
 </body>
 </html>
