@@ -1,4 +1,5 @@
 const https = require('https');
+const http = require('http'); 
 
 // ── PSX FUNDAMENTALS — Q3 FY26 ────────────────────────────────
 const PSX_FUNDAMENTALS = {
@@ -22,7 +23,9 @@ function buildSectorDataBlock(ticker, s) {
 function fetchJSON(url, headers) {
   headers = headers || {};
   return new Promise(function(resolve) {
-    var req = https.get(url, {
+    var client = url.startsWith('https') ? https : http;  // ← pick the right module
+
+    var req = client.get(url, {
       headers: Object.assign({ 'User-Agent': 'Mozilla/5.0 (compatible; WallTrade/1.0)' }, headers)
     }, function(res) {
       var body = '';
@@ -32,7 +35,6 @@ function fetchJSON(url, headers) {
       });
     });
     req.on('error', function() { resolve(null); });
-    // Properly timeout AND destroy the request
     req.setTimeout(4000, function() {
       req.destroy();
       resolve(null);
