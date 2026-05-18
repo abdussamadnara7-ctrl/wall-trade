@@ -699,13 +699,17 @@ async function generateVerdict(stockData, macroContext) {
 
   try {
     var result = await callOpenRouter({
-      model: 'minimax/minimax-m2.7',
-      max_tokens: 2500,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt }
-      ]
-    });
+  model: 'minimax/minimax-m2.7',
+  max_tokens: 2500,
+  provider: {
+    order: ['MiniMax'],        // hit MiniMax's own API first, not a reseller
+    allow_fallbacks: true      // if that fails, try others automatically
+  },
+  messages: [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: prompt }
+  ]
+});
 
     var raw = '';
     if (result && result.choices && result.choices[0] && result.choices[0].message) {
