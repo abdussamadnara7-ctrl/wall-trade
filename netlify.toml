@@ -26,7 +26,7 @@
   timeout = 26
 
 [functions."stock"]
-  timeout = 26
+  timeout = 30
 
 [functions."crypto"]
   timeout = 26
