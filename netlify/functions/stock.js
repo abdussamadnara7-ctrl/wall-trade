@@ -424,30 +424,6 @@ function fetchJSON(url, headers) {
   });
 }
 
-function callAnthropic(body) {
-  return new Promise(function(resolve, reject) {
-    var data = JSON.stringify(body);
-    var req = https.request({
-      hostname: 'api.anthropic.com',
-      path: '/v1/messages',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Length': Buffer.byteLength(data)
-      }
-    }, function(res) {
-      var b = '';
-      res.on('data', function(c) { b += c; });
-      res.on('end', function() { try { resolve(JSON.parse(b)); } catch(e) { reject(e); } });
-    });
-    req.on('error', reject);
-    req.write(data);
-    req.end();
-  });
-}
-
 function callZAI(body) {
   return new Promise(function(resolve, reject) {
     // Hard 25-second timeout
