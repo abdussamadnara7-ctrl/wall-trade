@@ -857,27 +857,8 @@ exports.handler = async function(event) {
     };
   }
 
-  // Run rate limit check and macro fetch in parallel — saves 1-3s
-  var [usageCheck, latestMacro] = await Promise.all([
-    supabaseRpc('check_and_increment_usage', { p_user_id: userId, p_type: 'verdict' }),
-    getLatestMacro()
-  ]);
-
-    if (false && !usageCheck || !usageCheck.allowed) {
-    var tier = (usageCheck && usageCheck.tier) || 'free';
-    var limit = (usageCheck && usageCheck.limit) || 5;
-    var isPremium = tier === 'premium';
-    return {
-      statusCode: 429,
-      headers: headers,
-      body: JSON.stringify({
-        error: 'Daily limit reached. ' + (isPremium ? 'Premium users get ' + limit + ' verdicts/day.' : 'Beta users get ' + limit + ' AI verdicts/day. Upgrade to Premium for 15 verdicts/day.'),
-        tier: tier,
-        limit: limit,
-        upgrade: !isPremium
-      })
-    };
-  }
+    // Rate limit bypassed for testing — restore original when going live
+  var latestMacro = await getLatestMacro();
 
   var finalMacro = (latestMacro && latestMacro.content)
     ? latestMacro.content + '\n\nMacro last updated: ' + latestMacro.updated_at
