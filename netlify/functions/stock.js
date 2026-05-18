@@ -410,7 +410,7 @@ function buildSectorDataBlock(ticker, s) {
 function fetchJSON(url, headers) {
   headers = headers || {};
   return new Promise(function(resolve) {
-    var timer = setTimeout(function() { resolve(null); }, 6000);
+    var timer = setTimeout(function() { resolve(null); }, 4000);
     https.get(url, {
       headers: Object.assign({ 'User-Agent': 'Mozilla/5.0 (compatible; WallTrade/1.0)' }, headers)
     }, function(res) {
@@ -839,7 +839,12 @@ exports.handler = async function(event) {
 
   var cleanTicker = ticker.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-  var stockData = await getStockData(cleanTicker);
+  // Run stock data fetch and verdict cache check in parallel — saves 2-6s
+  var [stockData, cachedVerdict] = await Promise.all([
+    getStockData(cleanTicker),
+    getCachedVerdict(cleanTicker)
+  ]);
+
   if (!stockData) {
     return { statusCode: 404, headers: headers, body: JSON.stringify({ error: 'No data for ' + cleanTicker }) };
   }
@@ -859,7 +864,6 @@ exports.handler = async function(event) {
     return { statusCode: 401, headers: headers, body: JSON.stringify({ error: 'Please sign in to generate verdicts.' }) };
   }
 
-  var cachedVerdict = await getCachedVerdict(cleanTicker);
   if (cachedVerdict) {
     console.log('Cache hit for ' + cleanTicker);
     return {
@@ -869,7 +873,11 @@ exports.handler = async function(event) {
     };
   }
 
-  var usageCheck = await supabaseRpc('check_and_increment_usage', { p_user_id: userId, p_type: 'verdict' });
+  // Run rate limit check and macro fetch in parallel — saves 1-3s
+  var [usageCheck, latestMacro] = await Promise.all([
+    supabaseRpc('check_and_increment_usage', { p_user_id: userId, p_type: 'verdict' }),
+    getLatestMacro()
+  ]);
 
   if (!usageCheck || !usageCheck.allowed) {
     var tier = (usageCheck && usageCheck.tier) || 'free';
@@ -887,7 +895,6 @@ exports.handler = async function(event) {
     };
   }
 
-  var latestMacro = await getLatestMacro();
   var finalMacro = (latestMacro && latestMacro.content)
     ? latestMacro.content + '\n\nMacro last updated: ' + latestMacro.updated_at
     : (macroContext && macroContext.length > 50 ? macroContext : 'Pakistan macro context unavailable.');
