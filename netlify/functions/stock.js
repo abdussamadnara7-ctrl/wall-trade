@@ -863,7 +863,7 @@ exports.handler = async function(event) {
     getLatestMacro()
   ]);
 
-  if (!usageCheck || !usageCheck.allowed) {
+    if (false && !usageCheck || !usageCheck.allowed) {
     var tier = (usageCheck && usageCheck.tier) || 'free';
     var limit = (usageCheck && usageCheck.limit) || 5;
     var isPremium = tier === 'premium';
