@@ -608,20 +608,55 @@ async function generateVerdict(stockData, macroContext) {
 
   var sectorBlock = buildSectorDataBlock(stockData.ticker, stockData);
 
+  // Build technicals block if frontend passed indicator data
+  var techBlock = '';
+  if (stockData.technicals) {
+    var t = stockData.technicals;
+    var rsiRead = !t.rsi ? 'N/A'
+      : t.rsi < 30 ? 'Oversold (' + t.rsi + ')'
+      : t.rsi > 70 ? 'Overbought (' + t.rsi + ')'
+      : 'Neutral (' + t.rsi + ')';
+    var macdRead = t.macd
+      ? (t.macd.histogram >= 0
+          ? 'Positive histogram (+' + t.macd.histogram + ') — momentum building'
+          : 'Negative histogram (' + t.macd.histogram + ') — momentum fading')
+      : 'N/A';
+    var bbRead = t.bb
+      ? (t.bb.percentB > 0.8
+          ? 'Near upper band (' + (t.bb.percentB * 100).toFixed(0) + '%) — price extended'
+          : t.bb.percentB < 0.2
+          ? 'Near lower band (' + (t.bb.percentB * 100).toFixed(0) + '%) — price compressed'
+          : 'Mid-range (' + (t.bb.percentB * 100).toFixed(0) + '%)')
+      : 'N/A';
+    var p = parseFloat(stockData.price);
+    var maRead = (t.ma20 && t.ma50 && p)
+      ? 'Price ' + (p > t.ma20 ? 'above' : 'below') + ' MA20 (PKR ' + t.ma20 + ') and '
+        + (p > t.ma50 ? 'above' : 'below') + ' MA50 (PKR ' + t.ma50 + ')'
+      : 'N/A';
+    techBlock = '\n\nTECHNICAL INDICATORS (supporting context only — fundamentals take priority):\n' +
+      'RSI(14): ' + rsiRead + '\n' +
+      'MACD: ' + macdRead + '\n' +
+      'Bollinger %B: ' + bbRead + '\n' +
+      'Moving Averages: ' + maRead + '\n' +
+      'NOTE: Use technicals only to corroborate or flag divergence from fundamentals. Never lead with them.';
+  }
+
   var prompt = 'You are a sharp PSX equity analyst for Wall-Trade.\n\n' +
     'LIVE PRICE DATA:\n' +
     'Ticker: ' + stockData.ticker + ' - ' + stockData.name + '\n' +
     'Price: PKR ' + (stockData.price || '-') + ' (' + (stockData.change || '-') + '% today)\n\n' +
     sectorBlock + '\n\n' +
     'COMPANY ANALYSIS:\n' + (stockData.aiSummary || '') + '\n\n' +
-    'PAKISTAN MACRO CONTEXT:\n' + macroContext + '\n\n' +
-    'INSTRUCTION: Sector-aware, data-driven verdict. Reference specific numbers. Apply sector logic strictly.\n\n' +
+    'PAKISTAN MACRO CONTEXT:\n' + macroContext +
+    techBlock + '\n\n' +
+    'INSTRUCTION: Sector-aware, data-driven analysis. Reference specific numbers. Apply sector logic strictly.\n\n' +
     'Return ONLY this JSON (no markdown):\n' +
     '{\n' +
-    '  "verdict": "Positive" or "Neutral" or "Caution",\n' +
+    '  "verdict": "Strong Fundamentals" or "Mixed Picture" or "Needs Monitoring",\n' +
     '  "score": <integer 1-10>,\n' +
     '  "headline": "<sharp one-liner max 12 words with actual data>",\n' +
-    '  "body": "<120-150 words. Lead with verdict rationale. Cover 2-3 strongest data points with numbers. One key risk with numbers. Connect to Pakistan macro. No buy/sell advice.>",\n' +
+    '  "body": "<120-150 words. Lead with fundamental rationale. Cover 2-3 strongest data points with numbers. One key risk with numbers. Where technicals support or contradict fundamentals, note it briefly. Connect to Pakistan macro. No buy/sell advice.>",\n' +
+    '  "technicalRead": "<1 factual sentence on what RSI, MACD and Bollinger Bands collectively show about recent price momentum — no advice, just what the data says>",\n' +
     '  "insights": [\n' +
     '    {"icon":"<emoji>","value":"<actual metric>","label":"<plain English max 10 words>","color":"green|amber|red|purple"},\n' +
     '    {"icon":"<emoji>","value":"<actual metric>","label":"<plain English max 10 words>","color":"green|amber|red|purple"},\n' +
@@ -642,7 +677,7 @@ async function generateVerdict(stockData, macroContext) {
     '}';
 
   var systemPrompt = 'You are a senior equity analyst at a top Pakistani brokerage, writing for Wall-Trade.\n\n' +
-    'YOUR JOB: Generate a sharp, data-driven verdict that helps a Pakistani retail investor understand this stock RIGHT NOW.\n\n' +
+    'YOUR JOB: Generate a sharp, data-driven analysis that helps a Pakistani retail investor understand this stock RIGHT NOW.\n\n' +
     'RULES:\n' +
     '- Always cite exact figures — never say "strong margins", say "38.4% net margin"\n' +
     '- Never be generic — every sentence must be specific to THIS stock\n' +
@@ -650,8 +685,9 @@ async function generateVerdict(stockData, macroContext) {
     '- Sector logic is mandatory: BANKING = P/B primary, high D/E normal. E&P = circular debt = cash flow risk, high margins normal. OMC = 1-3% margins normal. CEMENT = coal cost is #1 driver. FERTILIZER = dividend yield is the investment case.\n' +
     '- The body field MUST be 120-150 words minimum — do not truncate\n' +
     '- Every factor detail MUST include at least one actual number\n' +
-    '- Never give buy or sell advice\n' +
-    '- NEVER mention analyst price targets or consensus ratings';
+    '- Never give buy or sell advice — use "Strong Fundamentals", "Mixed Picture", or "Needs Monitoring" only\n' +
+    '- NEVER mention analyst price targets or consensus ratings\n' +
+    '- If technicalRead data is unavailable, set "technicalRead" to an empty string ""';
 
   try {
     var result = await callOpenRouter({
@@ -795,6 +831,7 @@ exports.handler = async function(event) {
   var macroContext = payload.macroContext;
   var priceOnly = payload.priceOnly;
   var token = payload.token;
+  var technicals = payload.technicals || null; // passed from frontend indicatorCache
 
   if (!ticker || typeof ticker !== 'string' || ticker.length > 10) {
     return { statusCode: 400, headers: headers, body: JSON.stringify({ error: 'Invalid ticker' }) };
@@ -809,6 +846,9 @@ exports.handler = async function(event) {
 
   var liveRatios = calculateLiveRatios(cleanTicker, parseFloat(stockData.price) || 0);
   var stockDataWithRatios = Object.assign({}, stockData, liveRatios);
+
+  // Attach technicals from frontend so generateVerdict can use them in the prompt
+  if (technicals) stockDataWithRatios.technicals = technicals;
 
   if (priceOnly) {
     return { statusCode: 200, headers: headers, body: JSON.stringify({ stockData: stockDataWithRatios, verdict: null }) };
