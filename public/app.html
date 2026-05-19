@@ -63,6 +63,7 @@
 
   --card-shadow: 0 0 0 1px var(--rim2), 0 2px 8px rgba(0,0,0,0.5), 0 12px 32px rgba(0,0,0,0.3);
   --float-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 4px 16px rgba(0,0,0,0.6), 0 24px 64px rgba(0,0,0,0.4);
+  --gdim: rgba(34,217,138,0.08);
 }
 
 html, body { background: var(--bg); }
@@ -223,7 +224,7 @@ h1 em, h2 em, h3 em, .acc, .h-h em, .sh-name, .kse-name, .mover-name,
 .kse-px { font-family: var(--sans); font-size: 34px; font-weight: 600; letter-spacing: -0.04em; color: var(--t1); line-height: 1; font-variant-numeric: tabular-nums; }
 .kse-chg { font-family: var(--mono); font-size: 12px; color: var(--green); margin-top: 4px; letter-spacing: -0.01em; }
 .kse-chg.dn { color: var(--red); }
-.kse-spark { width: 100%; height: 56px; margin-top: 8px; display: block; }
+.kse-spark { width: 100%; height: 80px; margin-top: 8px; display: block; }
 
 /* ── DISPATCH CARD ── */
 .dispatch-card { padding: 18px; border: 1px solid var(--rim); border-left: 3px solid var(--green); background: rgba(0,229,160,0.04); border-radius: 4px; }
@@ -285,15 +286,10 @@ h1 em, h2 em, h3 em, .acc, .h-h em, .sh-name, .kse-name, .mover-name,
 .ask-input-go { width: 28px; height: 28px; border-radius: 50%; background: var(--green); color: #070710; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
 
 /* ── OVERLAY / SHEET ── */
-.overlay {
-  display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200;
-  backdrop-filter: blur(8px);
-  opacity: 0; pointer-events: none;
-  transition: opacity 0.22s ease;
-}
-.overlay.on { opacity: 1; pointer-events: auto; }
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; backdrop-filter: blur(8px); }
+.overlay.on { display: block; }
 .sheet {
-  display: block; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
+  display: none; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
   width: 100%; max-width: 480px;
   background: var(--bg1); border: 1px solid var(--rim2); border-bottom: none;
   border-radius: 22px 22px 0 0;
@@ -303,9 +299,7 @@ h1 em, h2 em, h3 em, .acc, .h-h em, .sh-name, .kse-name, .mover-name,
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   scroll-behavior: smooth;
-  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
-.sheet.on { transform: translateX(-50%) translateY(0); }
 .sheet-bar { width: 32px; height: 3px; background: var(--rim2); border-radius: 2px; margin: 12px auto 20px; }
 .sheet-ttl { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t3); padding: 0 20px 10px; }
 .si { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; cursor: pointer; transition: background 0.1s; min-height: 64px; -webkit-tap-highlight-color: transparent; }
@@ -361,8 +355,7 @@ h1 em, h2 em, h3 em, .acc, .h-h em, .sh-name, .kse-name, .mover-name,
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 .tcontent { display: none; }
-.tcontent.on { display: block; animation: tab-fade 0.19s ease forwards; }
-@keyframes tab-fade { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+.tcontent.on { display: block; }
 
 /* ── SUGGESTION CARD ── */
 .sc-wrap { padding: 0 20px 4px; }
@@ -615,16 +608,15 @@ h1 em, h2 em, h3 em, .acc, .h-h em, .sh-name, .kse-name, .mover-name,
 }
 .bnav-item svg { transition: color 0.15s; }
 .bnav-item.on { color: var(--green); }
-.bnav-item.on .bnav-icon { filter: drop-shadow(0 0 6px rgba(0,229,160,0.45)); }
 .bnav-item:hover { color: var(--t2); }
 .bnav-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
 .bnav-lbl { font-family: var(--mono); font-size: 8px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; }
 
 /* push main content above bottom nav */
-#root, #crypto-root, #forex-root, #compare-root { padding-bottom: 80px; }
+#root, #crypto-root, #forex-root { padding-bottom: 80px; }
 
 /* smooth section transitions */
-#root, #crypto-root, #forex-root, #compare-root {
+#root, #crypto-root, #forex-root {
   animation: fadeIn 0.18s ease;
 }
 @keyframes fadeIn {
@@ -910,72 +902,6 @@ h1 em, h2 em, h3 em, .acc, .h-h em, .sh-name, .kse-name, .mover-name,
 .skel-bar.w40  { width: 40%; }
 .skel-bar.w35  { width: 35%; }
 
-/* ── MARKET STATUS DOT ── */
-.mkt-dot { display:inline-block; width:5px; height:5px; border-radius:50%; vertical-align:middle; margin-right:3px; background:var(--t4); }
-.mkt-dot.open { background:var(--green); box-shadow:0 0 4px var(--green); animation:mkt-blink 2.2s ease-in-out infinite; }
-.mkt-dot.closed { background:var(--ra); }
-@keyframes mkt-blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-/* ── COMPARE BUTTON IN HEADER ── */
-.hdr-cmp { display:none; width:34px; height:34px; border-radius:99px; background:var(--bg2); border:1px solid var(--rim); align-items:center; justify-content:center; color:var(--t2); cursor:pointer; flex-shrink:0; transition:color 0.15s,border-color 0.15s; }
-.hdr-cmp.on { display:flex; }
-.hdr-cmp:hover { color:var(--t1); border-color:var(--rim2); }
-.hdr-cmp.active { border-color:rgba(0,229,160,0.4); color:var(--green); background:rgba(0,229,160,0.07); }
-
-/* ── COMPARE VIEW ── */
-.cmp-wrap { padding-bottom: 80px; }
-.cmp-selectors { display:flex; align-items:center; gap:8px; padding:0 20px 20px; }
-.cmp-sel { flex:1; display:flex; align-items:center; gap:10px; padding:12px 14px; background:var(--bg2); border:1px solid var(--rim2); border-radius:14px; cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background 0.12s; }
-.cmp-sel:hover { background:var(--bg3); border-color:var(--rim3); }
-.cmp-av { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:9px; font-weight:700; flex-shrink:0; border:1px solid var(--rim2); }
-.cmp-av.a { background:rgba(0,229,160,0.12); color:var(--green); border-color:rgba(0,229,160,0.25); }
-.cmp-av.b { background:rgba(61,159,255,0.12); color:var(--blue); border-color:rgba(61,159,255,0.25); }
-.cmp-sel-info { flex:1; min-width:0; }
-.cmp-sel-tick { font-size:14px; font-weight:700; color:var(--t1); letter-spacing:-0.02em; }
-.cmp-sel-name { font-size:11px; color:var(--t3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.cmp-sel-arr { font-size:11px; color:var(--t3); }
-.cmp-vs { font-size:11px; font-weight:700; letter-spacing:0.06em; color:var(--t3); text-transform:uppercase; flex-shrink:0; padding:0 2px; }
-.cmp-chart-box { position:relative; height:170px; background:var(--bg1); border:1px solid var(--rim); border-radius:14px; overflow:hidden; margin-bottom:10px; }
-.cmp-chart-box canvas { position:absolute; top:0; left:0; }
-.cmp-loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--t3); }
-.cmp-legend { display:flex; gap:18px; padding-bottom:16px; }
-.cmp-leg { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--t2); }
-.cmp-leg-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-.cmp-leg-dot.a { background:#22d98a; }
-.cmp-leg-dot.b { background:#3d9fff; }
-.cmp-leg-pct { font-family:var(--mono); font-size:11px; font-weight:600; }
-.cmp-leg-pct.up { color:var(--green); }
-.cmp-leg-pct.dn { color:var(--ra); }
-.cmp-table { background:var(--bg1); border:1px solid var(--rim); border-radius:14px; overflow:hidden; margin-bottom:20px; }
-.cmp-thead { display:grid; grid-template-columns:1.2fr 1fr 1fr; padding:10px 14px; background:var(--bg2); border-bottom:1px solid var(--rim); }
-.cmp-th { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; }
-.cmp-th.lbl { color:var(--t4); }
-.cmp-th.a { color:var(--green); text-align:center; }
-.cmp-th.b { color:var(--blue); text-align:center; }
-.cmp-row { display:grid; grid-template-columns:1.2fr 1fr 1fr; padding:10px 14px; border-bottom:1px solid var(--rim); }
-.cmp-row:last-child { border-bottom:none; }
-.cmp-row:nth-child(even) { background:rgba(255,255,255,0.015); }
-.cmp-cell { font-size:12px; color:var(--t2); font-family:var(--mono); }
-.cmp-cell.lbl { font-family:var(--sans); font-size:11px; color:var(--t3); font-weight:500; }
-.cmp-cell.a,.cmp-cell.b { text-align:center; }
-.cmp-cell.win { color:var(--green) !important; font-weight:700; }
-.cmp-cell.up-c { color:var(--green); }
-.cmp-cell.dn-c { color:var(--ra); }
-.cmp-ai-row { display:flex; gap:10px; margin-bottom:20px; }
-.cmp-ai-card { flex:1; background:var(--bg2); border:1px solid var(--rim2); border-radius:14px; padding:16px; text-align:center; }
-.cmp-ai-card.a { border-color:rgba(0,229,160,0.22); }
-.cmp-ai-card.b { border-color:rgba(61,159,255,0.22); }
-.cmp-ai-ticker { font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--t3); margin-bottom:8px; }
-.cmp-ai-score-num { font-size:34px; font-weight:800; letter-spacing:-0.04em; line-height:1; }
-.cmp-ai-score-num span { font-size:14px; font-weight:400; color:var(--t3); }
-.cmp-ai-verdict-lbl { font-size:11px; color:var(--t3); margin-top:5px; line-height:1.4; }
-.cmp-ai-na { font-size:11px; color:var(--t4); padding:10px 0; line-height:1.5; }
-.cmp-ai-vs { display:flex; align-items:flex-start; justify-content:center; padding-top:28px; font-size:11px; font-weight:700; color:var(--t4); letter-spacing:0.06em; }
-.cmp-hdr-row { display:flex; align-items:center; justify-content:space-between; padding:20px 20px 12px; }
-.cmp-back { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--t3); cursor:pointer; padding:6px 0; -webkit-tap-highlight-color:transparent; }
-.cmp-back:hover { color:var(--t1); }
-.cmp-ttl { font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--t3); }
-
 </style>
 </head>
 <body>
@@ -983,7 +909,7 @@ h1 em, h2 em, h3 em, .acc, .h-h em, .sh-name, .kse-name, .mover-name,
 <header class="hdr" id="main-hdr">
   <div class="hdr-meta">
     <span id="hdr-time">Karachi · PKT</span>
-    <span><span class="mkt-dot" id="mkt-dot"></span><span id="mkt-lbl" id="hdr-date"></span></span>
+    <span><span class="mkt-dot" id="mkt-dot"></span><span id="mkt-lbl"></span></span>
   </div>
   <div class="hdr-main">
     <div class="brand">Wall<em>·</em>Trade</div>
@@ -1032,7 +958,7 @@ h1 em, h2 em, h3 em, .acc, .h-h em, .sh-name, .kse-name, .mover-name,
       <div><div class="kse-lbl" id="kse-card-lbl">◎ KSE-100</div><div class="kse-name">Pakistan Stock Exchange</div></div>
       <div style="text-align:right"><div class="kse-px" id="kse-card-px">—</div><div class="kse-chg" id="kse-card-chg">loading…</div></div>
     </div>
-    <svg class="kse-spark" id="kse-spark-svg" preserveAspectRatio="none" viewBox="0 0 380 56"></svg>
+    <svg class="kse-spark" id="kse-spark-svg" preserveAspectRatio="none" viewBox="0 0 380 80"></svg>
   </div>
 
   <section class="scn">
@@ -1076,10 +1002,10 @@ h1 em, h2 em, h3 em, .acc, .h-h em, .sh-name, .kse-name, .mover-name,
 
 <!-- Bottom navigation -->
 <nav class="bnav" id="bnav">
-  <div class="bnav-item on" id="bnav-home" onclick="switchSection('home')">
+  <a href="/" class="bnav-item on" id="bnav-home">
     <div class="bnav-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
     <div class="bnav-lbl">Home</div>
-  </div>
+  </a>
   <div class="bnav-item" id="bnav-stocks" onclick="switchSection('stocks')">
     <div class="bnav-icon"><svg width="20" height="20" fill="none" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16 7 22 7 22 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <div class="bnav-lbl">Stocks</div>
@@ -1469,9 +1395,10 @@ function render(ticker, stockData, verdict) {
   </div>
 
   <div class="tabs">
-    <div class="tab ${tab==='overview'  ?'on':''}" data-tab="overview"   onclick="setTab('overview')">Overview</div>
-    <div class="tab ${tab==='financials'?'on':''}" data-tab="financials" onclick="setTab('financials')">Financials</div>
-    <div class="tab ${tab==='factors'   ?'on':''}" data-tab="factors"    onclick="setTab('factors')">Key factors</div>
+    <div class="tab ${tab==='overview'   ?'on':''}" data-tab="overview"   onclick="setTab('overview')">Overview</div>
+    <div class="tab ${tab==='technicals' ?'on':''}" data-tab="technicals" onclick="setTab('technicals')">Technicals</div>
+    <div class="tab ${tab==='financials' ?'on':''}" data-tab="financials" onclick="setTab('financials')">Financials</div>
+    <div class="tab ${tab==='factors'    ?'on':''}" data-tab="factors"    onclick="setTab('factors')">Key Factors</div>
   </div>
 
   <!-- ══ OVERVIEW TAB ══ -->
@@ -1506,26 +1433,6 @@ function render(ticker, stockData, verdict) {
     </div>
 
     <!-- Technicals — always visible, skeleton shown until data arrives -->
-    <div class="tech-wrap" id="tech-wrap">
-      <div class="tech-title-row">
-        <div class="sec-lbl" style="margin:0;">Technical Indicators</div>
-      </div>
-      <div id="tech-content">
-        <div class="tech-skeleton">
-          <div class="tech-skel-card">
-            <div class="skel-bar w60"></div>
-            <div class="skel-bar w100 tall"></div>
-            <div class="skel-bar w40"></div>
-          </div>
-          <div class="tech-skel-card">
-            <div class="skel-bar w50"></div>
-            <div class="skel-bar w100 tall"></div>
-            <div class="skel-bar w35"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Snapshot metrics -->
     ${snapMetrics.length ? `
     <div class="snap-wrap">
@@ -1549,102 +1456,122 @@ function render(ticker, stockData, verdict) {
         </div>`).join('')}
     </div>` : ''}
 
-    <!-- Key signals + AI Verdict / Generate button — surgically updated by applyVerdictPatch() -->
-    <div id="ov-ai-section">
+    <!-- Key signals from verdict -->
+    ${signals.length ? `
+    <div class="sigs-wrap">
+      <div class="sec-lbl">Key signals</div>
+      <div class="sigs">
+        ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- AI Verdict / Generate button -->
+    ${hasVerdict ? `
+    <div class="compact-verdict">
+      <div class="cv-top">
+        <div class="cv-label">Wall-Trade AI</div>
+        <div class="ai-row" style="margin:0"><div class="ai-orb"></div>Analysis</div>
+      </div>
+      <div class="cv-verdict-row">
+        <div class="cv-verdict ${vGrad(vtype)}">${vtype}</div>
+        ${gaugeArc(vscore)}
+      </div>
+      <div class="cv-summary">${verdict.headline}</div>
+      <div style="font-size:13px;color:var(--t2);line-height:1.8;margin-top:10px;">${verdict.body}</div>
+      ${technicalReadHTML}
       ${signals.length ? `
-      <div class="sigs-wrap">
-        <div class="sec-lbl">Key signals</div>
-        <div class="sigs">
-          ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
-        </div>
+      <div class="sigs" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--rim);">
+        ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
       </div>` : ''}
+    </div>` : `
+    <div id="verdict-gate" style="padding:4px 20px 16px;">
+      <button class="gen-verdict-btn" onclick="generateVerdict('${ticker}')">
+        <div class="ai-orb" style="flex-shrink:0;margin-right:2px"></div>
+        Generate AI Analysis
+      </button>
+      <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:9px;">Powered by Claude · ~10 seconds</div>
+    </div>`}
 
-      ${hasVerdict ? `
-      <div class="compact-verdict">
-        <div class="cv-top">
-          <div class="cv-label">Wall-Trade AI</div>
-          <div class="ai-row" style="margin:0"><div class="ai-orb"></div>Analysis</div>
+  </div>
+
+  <!-- ══ TECHNICALS TAB ══ -->
+  <div class="tcontent ${tab==='technicals'?'on':''}" id="tc-technicals">
+    <div class="tech-wrap" id="tech-wrap" style="padding-top:16px;">
+      <div class="tech-title-row">
+        <div class="sec-lbl" style="margin:0;">Technical Indicators</div>
+        <div style="font-size:10px;color:var(--t3);">Based on EOD price data</div>
+      </div>
+      <div id="tech-content">
+        <div class="tech-skeleton">
+          <div class="tech-skel-card">
+            <div class="skel-bar w60"></div>
+            <div class="skel-bar w100 tall"></div>
+            <div class="skel-bar w40"></div>
+          </div>
+          <div class="tech-skel-card">
+            <div class="skel-bar w50"></div>
+            <div class="skel-bar w100 tall"></div>
+            <div class="skel-bar w35"></div>
+          </div>
         </div>
-        <div class="cv-verdict-row">
-          <div class="cv-verdict ${vGrad(vtype)}">${vtype}</div>
-          ${gaugeArc(vscore)}
-        </div>
-        <div class="cv-summary">${verdict.headline}</div>
-        <div style="font-size:13px;color:var(--t2);line-height:1.8;margin-top:10px;">${verdict.body}</div>
-        ${technicalReadHTML}
-        ${signals.length ? `
-        <div class="sigs" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--rim);">
-          ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
-        </div>` : ''}
-      </div>` : `
-      <div id="verdict-gate" style="padding:4px 20px 16px;">
-        <button class="gen-verdict-btn" onclick="generateVerdict('${ticker}')">
-          <div class="ai-orb" style="flex-shrink:0;margin-right:2px"></div>
-          Generate AI Analysis
-        </button>
-        <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:9px;">Powered by Claude · ~10 seconds</div>
-      </div>`}
+      </div>
     </div>
-
   </div>
 
   <!-- ══ FINANCIALS TAB ══ -->
   <div class="tcontent ${tab==='financials'?'on':''}" id="tc-financials">
     ${finSections.map(renderFinSection).join('')}
-    <!-- AI verdict sections — surgically updated by applyVerdictPatch() -->
-    <div id="fin-ai-section">
-      ${hasVerdict && Object.keys(scores).length ? `
-      <div class="fin-section" style="margin-top:8px;">
-        <div class="fin-section-lbl">AI Score breakdown</div>
-        ${Object.entries(scores).map(([n,v])=>`
-          <div class="score-item">
-            <div class="score-top">
-              <span class="score-name">${n}</span>
-              <span class="score-num ${scTG(v)}">${v} / 10</span>
-            </div>
-            <div class="strack"><div class="sfill" style="width:${v*10}%;background:${scGrad(v)}"></div></div>
-          </div>`).join('')}
-        <div class="overall-wrap" style="padding:14px 0 4px;">
-          <div class="ocard">
-            <div>
-              <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;">Score</div>
-              <span class="onum ${scTG(vscore)}">${vscore}</span><span class="oden"> /10</span>
-            </div>
-            <div class="oright">
-              <div class="o-eye">Summary</div>
-              <div class="o-desc">${verdict?.summary || ''}</div>
-            </div>
+    ${hasVerdict && Object.keys(scores).length ? `
+    <div class="fin-section" style="margin-top:8px;">
+      <div class="fin-section-lbl">AI Score breakdown</div>
+      ${Object.entries(scores).map(([n,v])=>`
+        <div class="score-item">
+          <div class="score-top">
+            <span class="score-name">${n}</span>
+            <span class="score-num ${scTG(v)}">${v} / 10</span>
+          </div>
+          <div class="strack"><div class="sfill" style="width:${v*10}%;background:${scGrad(v)}"></div></div>
+        </div>`).join('')}
+      <div class="overall-wrap" style="padding:14px 0 4px;">
+        <div class="ocard">
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;">Score</div>
+            <span class="onum ${scTG(vscore)}">${vscore}</span><span class="oden"> /10</span>
+          </div>
+          <div class="oright">
+            <div class="o-eye">Summary</div>
+            <div class="o-desc">${verdict?.summary || ''}</div>
           </div>
         </div>
-      </div>` : ''}
-      ${hasVerdict ? `
-      <div class="fin-section" style="margin-top:4px;padding-bottom:8px;">
-        <div class="fin-section-lbl">AI Analysis</div>
-        <div class="insights" style="margin-bottom:14px;">
-          ${insights.map(ins => {
-            const borderMap = {green:'var(--gb)',amber:'var(--aa)',red:'var(--ra)',purple:'var(--pb)',blue:'var(--bb)'};
-            const gradMap   = {green:'linear-gradient(130deg,#5fffc0,#22d98a)',amber:'linear-gradient(130deg,#fbbf24,#d97706)',red:'linear-gradient(130deg,#ff8080,#ef4444)',purple:'linear-gradient(130deg,#c4b5fd,#8b5cf6)',blue:'linear-gradient(130deg,#93c5fd,#3b82f6)'};
-            return `<div class="insight-card" style="border-left-color:${borderMap[ins.color]||borderMap.purple}">
-              <div class="insight-icon-wrap">${ins.icon}</div>
-              <div class="insight-right">
-                <div class="insight-value" style="background:${gradMap[ins.color]||gradMap.purple};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${ins.value}</div>
-                <div class="insight-label">${ins.label}</div>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
-        <div class="ai-row" style="margin-bottom:8px;"><div class="ai-orb"></div>Full analysis</div>
-        <div class="ai-headline">${verdict.headline}</div>
-        <div class="ai-body">${verdict.body}</div>
-        ${technicalReadHTML}
-      </div>` : ''}
-    </div>
+      </div>
+    </div>` : ''}
+    ${hasVerdict ? `
+    <div class="fin-section" style="margin-top:4px;padding-bottom:8px;">
+      <div class="fin-section-lbl">AI Analysis</div>
+      <div class="insights" style="margin-bottom:14px;">
+        ${insights.map(ins => {
+          const borderMap = {green:'var(--gb)',amber:'var(--aa)',red:'var(--ra)',purple:'var(--pb)',blue:'var(--bb)'};
+          const gradMap   = {green:'linear-gradient(130deg,#5fffc0,#22d98a)',amber:'linear-gradient(130deg,#fbbf24,#d97706)',red:'linear-gradient(130deg,#ff8080,#ef4444)',purple:'linear-gradient(130deg,#c4b5fd,#8b5cf6)',blue:'linear-gradient(130deg,#93c5fd,#3b82f6)'};
+          return `<div class="insight-card" style="border-left-color:${borderMap[ins.color]||borderMap.purple}">
+            <div class="insight-icon-wrap">${ins.icon}</div>
+            <div class="insight-right">
+              <div class="insight-value" style="background:${gradMap[ins.color]||gradMap.purple};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${ins.value}</div>
+              <div class="insight-label">${ins.label}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="ai-row" style="margin-bottom:8px;"><div class="ai-orb"></div>Full analysis</div>
+      <div class="ai-headline">${verdict.headline}</div>
+      <div class="ai-body">${verdict.body}</div>
+      ${technicalReadHTML}
+    </div>` : ''}
     <div style="height:8px;"></div>
   </div>
 
   <!-- ══ KEY FACTORS TAB ══ -->
   <div class="tcontent ${tab==='factors'?'on':''}" id="tc-factors">
-    <div class="factors-wrap" id="factors-inner" style="padding-top:22px;">
+    <div class="factors-wrap" style="padding-top:22px;">
       ${factors.map(f=>`<div class="fi">
         <div class="fi-icon">${f.icon}</div>
         <div><div class="fi-title">${f.title}</div><div class="fi-desc">${f.detail}</div></div>
@@ -1857,117 +1784,9 @@ async function loadStock(ticker) {
 }
 
 // ── GENERATE AI VERDICT ON DEMAND ───────────────────────────
-// Surgically update only verdict-specific sections without touching chart or technicals
-function applyVerdictPatch(ticker, verdict) {
-  if (!verdict) return;
-  const stockData = stockCache[ticker] || {};
-  const vtype    = verdict.verdict   || '';
-  const vscore   = verdict.score     || 0;
-  const insights = verdict.insights  || [];
-  const signals  = verdict.signals   || [];
-  const scores   = verdict.scores    || {};
-  const factors  = verdict.factors?.length ? verdict.factors : buildBaseFactors(stockData, ticker);
-
-  const technicalReadHTML = verdict.technicalRead ? `
-    <div class="tech-read-pill">
-      <div class="tech-read-label">Price Momentum</div>
-      <div class="tech-read-text">${verdict.technicalRead}</div>
-    </div>` : '';
-
-  const borderMap = {green:'var(--gb)',amber:'var(--aa)',red:'var(--ra)',purple:'var(--pb)',blue:'var(--bb)'};
-  const gradMap   = {green:'linear-gradient(130deg,#5fffc0,#22d98a)',amber:'linear-gradient(130deg,#fbbf24,#d97706)',red:'linear-gradient(130deg,#ff8080,#ef4444)',purple:'linear-gradient(130deg,#c4b5fd,#8b5cf6)',blue:'linear-gradient(130deg,#93c5fd,#3b82f6)'};
-
-  // 1 — update overview: signals + verdict card (replaces the generate button)
-  const ovSection = document.getElementById('ov-ai-section');
-  if (ovSection) {
-    ovSection.innerHTML = `
-      ${signals.length ? `
-      <div class="sigs-wrap">
-        <div class="sec-lbl">Key signals</div>
-        <div class="sigs">
-          ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
-        </div>
-      </div>` : ''}
-      <div class="compact-verdict">
-        <div class="cv-top">
-          <div class="cv-label">Wall-Trade AI</div>
-          <div class="ai-row" style="margin:0"><div class="ai-orb"></div>Analysis</div>
-        </div>
-        <div class="cv-verdict-row">
-          <div class="cv-verdict ${vGrad(vtype)}">${vtype}</div>
-          ${gaugeArc(vscore)}
-        </div>
-        <div class="cv-summary">${verdict.headline}</div>
-        <div style="font-size:13px;color:var(--t2);line-height:1.8;margin-top:10px;">${verdict.body}</div>
-        ${technicalReadHTML}
-        ${signals.length ? `
-        <div class="sigs" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--rim);">
-          ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
-        </div>` : ''}
-      </div>`;
-  }
-
-  // 2 — update financials: AI score breakdown + full analysis section
-  const finSection = document.getElementById('fin-ai-section');
-  if (finSection) {
-    finSection.innerHTML = `
-      ${Object.keys(scores).length ? `
-      <div class="fin-section" style="margin-top:8px;">
-        <div class="fin-section-lbl">AI Score breakdown</div>
-        ${Object.entries(scores).map(([n,v])=>`
-          <div class="score-item">
-            <div class="score-top">
-              <span class="score-name">${n}</span>
-              <span class="score-num ${scTG(v)}">${v} / 10</span>
-            </div>
-            <div class="strack"><div class="sfill" style="width:${v*10}%;background:${scGrad(v)}"></div></div>
-          </div>`).join('')}
-        <div class="overall-wrap" style="padding:14px 0 4px;">
-          <div class="ocard">
-            <div>
-              <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;">Score</div>
-              <span class="onum ${scTG(vscore)}">${vscore}</span><span class="oden"> /10</span>
-            </div>
-            <div class="oright">
-              <div class="o-eye">Summary</div>
-              <div class="o-desc">${verdict.summary || ''}</div>
-            </div>
-          </div>
-        </div>
-      </div>` : ''}
-      <div class="fin-section" style="margin-top:4px;padding-bottom:8px;">
-        <div class="fin-section-lbl">AI Analysis</div>
-        <div class="insights" style="margin-bottom:14px;">
-          ${insights.map(ins=>`
-          <div class="insight-card" style="border-left-color:${borderMap[ins.color]||borderMap.purple}">
-            <div class="insight-icon-wrap">${ins.icon}</div>
-            <div class="insight-right">
-              <div class="insight-value" style="background:${gradMap[ins.color]||gradMap.purple};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${ins.value}</div>
-              <div class="insight-label">${ins.label}</div>
-            </div>
-          </div>`).join('')}
-        </div>
-        <div class="ai-row" style="margin-bottom:8px;"><div class="ai-orb"></div>Full analysis</div>
-        <div class="ai-headline">${verdict.headline}</div>
-        <div class="ai-body">${verdict.body}</div>
-        ${technicalReadHTML}
-      </div>`;
-  }
-
-  // 3 — update key factors tab with AI-enhanced factors
-  const factorsInner = document.getElementById('factors-inner');
-  if (factorsInner) {
-    factorsInner.innerHTML = factors.map(f=>`
-      <div class="fi">
-        <div class="fi-icon">${f.icon}</div>
-        <div><div class="fi-title">${f.title}</div><div class="fi-desc">${f.detail}</div></div>
-      </div>`).join('');
-  }
-}
-
 async function generateVerdict(ticker) {
   if (verdictCache[ticker]) {
-    applyVerdictPatch(ticker, verdictCache[ticker]);
+    render(ticker, stockCache[ticker], verdictCache[ticker]);
     return;
   }
 
@@ -2032,7 +1851,7 @@ async function generateVerdict(ticker) {
 
     const data = await res.json();
     verdictCache[ticker] = data.verdict;
-    // Surgically update verdict sections — leaves chart and technicals untouched
+    // Use applyVerdictPatch — surgically updates verdict sections without touching chart or technicals
     applyVerdictPatch(ticker, data.verdict);
     // Refresh home verdicts feed
     if (typeof renderHomeVerdicts === 'function') renderHomeVerdicts();
@@ -2042,6 +1861,123 @@ async function generateVerdict(ticker) {
       document.getElementById('verdict-gate').innerHTML =
         `<div style="color:var(--ra);font-size:13px;padding:12px 0;text-align:center;">Could not generate analysis — please try again.</div>`;
     }
+  }
+}
+
+// ── TARGETED VERDICT UPDATE ───────────────────────────────────
+// Patches verdict into #ov-ai-section, #fin-ai-section, #factors-inner.
+// Never touches chart-canvas-wrap or tech-content — zero chart/technicals flicker.
+function applyVerdictPatch(ticker, verdict) {
+  if (!verdict) { render(ticker, stockCache[ticker], verdict); return; }
+
+  // If the stock screen isn't rendered yet for this ticker, do a full render instead
+  if (!document.getElementById('ov-ai-section')) {
+    render(ticker, stockCache[ticker], verdict);
+    return;
+  }
+
+  const stockData = stockCache[ticker] || {};
+  const vtype    = verdict.verdict   || '';
+  const vscore   = verdict.score     || 0;
+  const insights = verdict.insights  || [];
+  const signals  = verdict.signals   || [];
+  const scores   = verdict.scores    || {};
+  const factors  = verdict.factors?.length ? verdict.factors : buildBaseFactors(stockData, ticker);
+
+  const technicalReadHTML = verdict.technicalRead ? `
+    <div class="tech-read-pill">
+      <div class="tech-read-label">Price Momentum</div>
+      <div class="tech-read-text">${verdict.technicalRead}</div>
+    </div>` : '';
+
+  const borderMap = {green:'var(--gb)',amber:'var(--aa)',red:'var(--ra)',purple:'var(--pb)',blue:'var(--bb)'};
+  const gradMap   = {green:'linear-gradient(130deg,#5fffc0,#22d98a)',amber:'linear-gradient(130deg,#fbbf24,#d97706)',red:'linear-gradient(130deg,#ff8080,#ef4444)',purple:'linear-gradient(130deg,#c4b5fd,#8b5cf6)',blue:'linear-gradient(130deg,#93c5fd,#3b82f6)'};
+
+  // ── 1. Overview: signals + compact verdict card ────────────
+  const ovSection = document.getElementById('ov-ai-section');
+  if (ovSection) {
+    ovSection.innerHTML = `
+      ${signals.length ? `
+      <div class="sigs-wrap">
+        <div class="sec-lbl">Key signals</div>
+        <div class="sigs">
+          ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
+        </div>
+      </div>` : ''}
+      <div class="compact-verdict">
+        <div class="cv-top">
+          <div class="cv-label">Wall-Trade AI</div>
+          <div class="ai-row" style="margin:0"><div class="ai-orb"></div>Analysis</div>
+        </div>
+        <div class="cv-verdict-row">
+          <div class="cv-verdict ${vGrad(vtype)}">${vtype}</div>
+          ${gaugeArc(vscore)}
+        </div>
+        <div class="cv-summary">${verdict.headline || ''}</div>
+        <div style="font-size:13px;color:var(--t2);line-height:1.8;margin-top:10px;">${verdict.body || ''}</div>
+        ${technicalReadHTML}
+        ${signals.length ? `
+        <div class="sigs" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--rim);">
+          ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
+        </div>` : ''}
+      </div>`;
+  }
+
+  // ── 2. Financials: score breakdown + full analysis ─────────
+  const finSection = document.getElementById('fin-ai-section');
+  if (finSection) {
+    finSection.innerHTML = `
+      ${Object.keys(scores).length ? `
+      <div class="fin-section" style="margin-top:8px;">
+        <div class="fin-section-lbl">AI Score breakdown</div>
+        ${Object.entries(scores).map(([n,v])=>`
+          <div class="score-item">
+            <div class="score-top">
+              <span class="score-name">${n}</span>
+              <span class="score-num ${scTG(v)}">${v} / 10</span>
+            </div>
+            <div class="strack"><div class="sfill" style="width:${v*10}%;background:${scGrad(v)}"></div></div>
+          </div>`).join('')}
+        <div class="overall-wrap" style="padding:14px 0 4px;">
+          <div class="ocard">
+            <div>
+              <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;">Score</div>
+              <span class="onum ${scTG(vscore)}">${vscore}</span><span class="oden"> /10</span>
+            </div>
+            <div class="oright">
+              <div class="o-eye">Summary</div>
+              <div class="o-desc">${verdict.summary || ''}</div>
+            </div>
+          </div>
+        </div>
+      </div>` : ''}
+      <div class="fin-section" style="margin-top:4px;padding-bottom:8px;">
+        <div class="fin-section-lbl">AI Analysis</div>
+        <div class="insights" style="margin-bottom:14px;">
+          ${insights.map(ins=>`
+          <div class="insight-card" style="border-left-color:${borderMap[ins.color]||borderMap.purple}">
+            <div class="insight-icon-wrap">${ins.icon}</div>
+            <div class="insight-right">
+              <div class="insight-value" style="background:${gradMap[ins.color]||gradMap.purple};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${ins.value}</div>
+              <div class="insight-label">${ins.label}</div>
+            </div>
+          </div>`).join('')}
+        </div>
+        <div class="ai-row" style="margin-bottom:8px;"><div class="ai-orb"></div>Full analysis</div>
+        <div class="ai-headline">${verdict.headline || ''}</div>
+        <div class="ai-body">${verdict.body || ''}</div>
+        ${technicalReadHTML}
+      </div>`;
+  }
+
+  // ── 3. Key factors tab with AI-enhanced factors ────────────
+  const factorsInner = document.getElementById('factors-inner');
+  if (factorsInner) {
+    factorsInner.innerHTML = factors.map(f=>`
+      <div class="fi">
+        <div class="fi-icon">${f.icon}</div>
+        <div><div class="fi-title">${f.title}</div><div class="fi-desc">${f.detail}</div></div>
+      </div>`).join('');
   }
 }
 
@@ -2162,7 +2098,8 @@ async function fetchChartData(ticker, tf) {
     if (!j || !j.data || !j.data.length) return null;
     if (j.indicators && cfg.eod) {
       indicatorCache[ticker] = j.indicators;
-      renderTechnicals(ticker, j.indicators);
+      // Do NOT call renderTechnicals here — canvas may not exist yet.
+      // renderTechnicals is called inside requestAnimationFrame in loadChart.
     }
     let pts = j.data.map(d => ({ t: d[0] * 1000, p: parseFloat(d[1]) || 0 }))
                     .filter(d => d.p > 0)
@@ -2353,6 +2290,7 @@ async function loadChart(tf) {
     dotCanvas.height = mainCanvas.offsetHeight * dpr;
     const chartState = drawChart(mainCanvas, pts, color);
     setupTooltip(mainCanvas, chartState, chartTicker);
+    // Note: technicals are loaded on-demand when the Technicals tab is opened (setTab)
   });
 }
 
@@ -2466,12 +2404,11 @@ function renderTechnicals(ticker, ind) {
   `;
 }
 
-// FIX 2 — initStockChart now shows skeletons for chart AND technicals immediately
 function initStockChart(ticker) {
   chartTicker = ticker;
   chartTF = '1M';
 
-  // Chart skeleton — immediate, no blank gap
+  // Show chart skeleton immediately
   const wrap = document.getElementById('chart-canvas-wrap');
   if (wrap) {
     wrap.innerHTML = `
@@ -2482,7 +2419,7 @@ function initStockChart(ticker) {
       </div>`;
   }
 
-  // Technicals skeleton — always visible, shows while waiting for data
+  // Reset tech-content to skeleton for when user opens the Technicals tab
   const tc = document.getElementById('tech-content');
   if (tc) {
     tc.innerHTML = `
@@ -2505,9 +2442,31 @@ function initStockChart(ticker) {
 
 function setTab(t) {
   tab = t;
-  // Match tabs by their data-tab attribute instead of parsing text content
   document.querySelectorAll('.tab').forEach(el => el.classList.toggle('on', el.dataset.tab === t));
   document.querySelectorAll('.tcontent').forEach(el => el.classList.toggle('on', el.id === 'tc-' + t));
+
+  // Load technicals on demand when Technicals tab is opened
+  if (t === 'technicals' && chartTicker) {
+    if (indicatorCache[chartTicker]) {
+      renderTechnicals(chartTicker, indicatorCache[chartTicker]);
+    } else {
+      const tc = document.getElementById('tech-content');
+      if (tc && !tc.querySelector('.tech-card')) {
+        fetch('/.netlify/functions/chart?ticker=' + chartTicker + '&type=eod')
+          .then(r => r.json())
+          .then(j => {
+            if (j && j.indicators) {
+              indicatorCache[chartTicker] = j.indicators;
+              renderTechnicals(chartTicker, j.indicators);
+            }
+          })
+          .catch(() => {
+            const tc2 = document.getElementById('tech-content');
+            if (tc2) tc2.innerHTML = '<div style="font-size:12px;color:var(--t3);padding:20px 0;text-align:center;">Could not load technical data.</div>';
+          });
+      }
+    }
+  }
 }
 
 // ── SHEET (STOCK PICKER) ──────────────────────────────────────
@@ -2596,18 +2555,18 @@ function getShortName(ticker) {
 function openSheet() {
   buildSheet();
   document.getElementById('overlay').classList.add('on');
-  document.getElementById('sheet').classList.add('on');
+  document.getElementById('sheet').style.display = 'block';
   setTimeout(() => { const si = document.getElementById('sheet-search'); if (si) si.focus(); }, 100);
 }
 
 function closeSheet() {
   document.getElementById('overlay').classList.remove('on');
-  document.getElementById('sheet').classList.remove('on');
+  document.getElementById('sheet').style.display = 'none';
 }
 
 function select(ticker) {
-  // If compare picker is open, route the selection there instead
-  if (compareMode) {
+  // If compare picker is open, route there instead
+  if (typeof compareMode !== 'undefined' && compareMode) {
     if (compareMode === 'a') cmpA = ticker.toUpperCase();
     else cmpB = ticker.toUpperCase();
     compareMode = null;
@@ -2616,13 +2575,14 @@ function select(ticker) {
     return;
   }
   closeSheet();
-  cur = ticker.toUpperCase(); tab = 'overview'; setTimeout(() => initStockChart(cur), 50);
+  cur = ticker.toUpperCase();
+  tab = 'overview';
   currentSection = 'stocks';
+
   ['home','stocks','crypto','forex'].forEach(s => {
     const el = document.getElementById('bnav-' + s);
     if (el) el.classList.toggle('on', s === 'stocks');
   });
-  // Show stock root, hide home screen
   document.getElementById('home-screen').style.display = 'none';
   document.getElementById('root').style.display = 'block';
   document.getElementById('crypto-root').style.display = 'none';
@@ -2631,10 +2591,22 @@ function select(ticker) {
   if (pill) { pill.style.display = 'flex'; pill.onclick = openSheet; }
   document.getElementById('pill-av').textContent = cur.slice(0,3);
   document.getElementById('pill-lbl').textContent = cur;
+
+  // Pre-warm: fire indicator fetch immediately in background
+  // so by the time user taps Technicals tab, data is already cached
+  if (!indicatorCache[cur]) {
+    fetch('/.netlify/functions/chart?ticker=' + cur + '&type=eod')
+      .then(r => r.json())
+      .then(j => { if (j && j.indicators) indicatorCache[cur] = j.indicators; })
+      .catch(() => {});
+  }
+
+  // Load stock data and init chart in parallel
   loadStock(cur);
+  setTimeout(() => initStockChart(cur), 50);
 }
 
-// ── LIVE PRICES ─────────────────────────────── }�───────────────
+// ── LIVE PRICES ───────────────────────────────────────────────
 let liveCommodities = {};
 
 async function fetchLivePrices() {
@@ -2654,6 +2626,11 @@ async function fetchLivePrices() {
     if (data.kse100) livePrices['KSE100'] = data.kse100;
     if (data.commodities) liveCommodities = data.commodities;
     if (data.pkrusd)      liveCommodities.pkrusd = data.pkrusd;
+    // Store BTC separately for home macro grid
+    if (data.crypto) {
+      const btcData = data.crypto.find ? data.crypto.find(c => c.symbol === 'BTC') : data.crypto['BTC'];
+      if (btcData) livePrices['BTC'] = btcData;
+    }
     // Refresh home screen macro/movers if visible
     if (currentSection === 'home') {
       renderHomeMacro();
@@ -2746,7 +2723,7 @@ updateSheetTitle();
 fetchLivePrices();
 setInterval(fetchLivePrices, 60000);
 
-// Start on home screen
+// Start on home screen, show stock view after first load
 document.getElementById('home-screen').style.display = 'block';
 document.getElementById('root').style.display = 'none';
 document.getElementById('crypto-root').style.display = 'none';
@@ -2754,36 +2731,36 @@ document.getElementById('forex-root').style.display = 'none';
 const _pill = document.getElementById('hdr-pill');
 if (_pill) _pill.style.display = 'none';
 
-// Wire header clock — synced to minute boundary for accurate display
+// Wire header clock
 function updateHdrTime() {
   const now = new Date();
   const t = now.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit', hour12: false });
   const timeEl = document.getElementById('hdr-time');
   if (timeEl) timeEl.textContent = 'Karachi · ' + t + ' PKT';
-  // Market status (PSX: Mon–Fri 09:30–15:30 PKT = UTC+5)
+  // PSX market status: Mon–Fri 09:30–15:30 PKT (UTC+5)
   const dot = document.getElementById('mkt-dot');
   const lbl = document.getElementById('mkt-lbl');
   if (dot && lbl) {
-    const pkt = new Date(now.getTime() + (5 * 60 - now.getTimezoneOffset()) * 60000);
-    const day = pkt.getUTCDay(); // 0=Sun, 6=Sat
-    const hm = pkt.getUTCHours() * 60 + pkt.getUTCMinutes();
-    const open = day >= 1 && day <= 5 && hm >= 570 && hm < 930; // 9:30–15:30
+    const pkt  = new Date(now.getTime() + (5 * 60 - now.getTimezoneOffset()) * 60000);
+    const day  = pkt.getUTCDay();
+    const hm   = pkt.getUTCHours() * 60 + pkt.getUTCMinutes();
+    const open = day >= 1 && day <= 5 && hm >= 570 && hm < 930;
     dot.className = 'mkt-dot ' + (open ? 'open' : 'closed');
     lbl.textContent = open ? 'PSX Open' : 'PSX Closed';
   }
 }
 updateHdrTime();
-// Sync clock to the top of each minute
+// Sync to minute boundary for accurate display
 (function scheduleClock() {
   const now = new Date();
-  const msToNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
-  setTimeout(() => { updateHdrTime(); setInterval(updateHdrTime, 60000); }, msToNextMinute);
+  const msToNext = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+  setTimeout(() => { updateHdrTime(); setInterval(updateHdrTime, 60000); }, msToNext);
 })();
 
 // Render home after first price fetch
 setTimeout(() => { renderHomeScreen(); fetchHomeNews(); }, 1500);
 
-// Pre-load first stock data silently in background WITHOUT switching UI to stocks view
+// Pre-load first stock data silently without switching to stocks view
 loadStock('OGDC');
 
 // ── SECTION SWITCHING ─────────────────────────────────────────
@@ -2802,7 +2779,7 @@ function switchSection(section) {
     if (el) el.classList.toggle('on', s === section);
   });
 
-  const pill = document.getElementById('hdr-pill');
+  const pill   = document.getElementById('hdr-pill');
   const cmpBtn = document.getElementById('hdr-cmp');
 
   if (section === 'home') {
@@ -2837,6 +2814,17 @@ function switchSection(section) {
   }
 }
 
+function toggleCompare() {
+  if (currentSection === 'compare') {
+    switchSection('stocks');
+    if (cur) select(cur);
+  } else {
+    cmpA = cur || 'OGDC';
+    cmpB = cmpA === 'HBL' ? 'OGDC' : 'HBL';
+    switchSection('compare');
+  }
+}
+
 // ── HOME SCREEN ───────────────────────────────────────────────
 let homeRendered = false;
 let homeNewsCache = null;
@@ -2863,7 +2851,7 @@ function updateHomeGreeting() {
   const kseCardChg = document.getElementById('kse-card-chg');
   const kseCardLbl = document.getElementById('kse-card-lbl');
   if (kse && kseCardPx) {
-    kseCardPx.textContent = Number(kse.price).toLocaleString();
+    kseCardPx.textContent = kse.price; // already formatted: "117,234"
     const chgNum = parseFloat(kse.change);
     const isUp = chgNum >= 0;
     if (kseCardChg) {
@@ -2871,7 +2859,7 @@ function updateHomeGreeting() {
       kseCardChg.className = 'kse-chg ' + (isUp ? 'up' : 'dn');
     }
     if (kseCardLbl) kseCardLbl.textContent = (isUp ? '▲' : '▼') + ' KSE-100';
-    drawKseSpark(isUp);
+    drawKseSpark(isUp); // async — fetches real data and updates SVG
   }
 
   // Update meta line
@@ -2882,47 +2870,117 @@ function updateHomeGreeting() {
       Math.abs(chgNum).toFixed(2) + '% today. Energy and banking in focus.';
   }
 
-  // Hdr time
-  const timeEl = document.getElementById('hdr-time');
-  const dateEl = document.getElementById('hdr-date');
-  if (timeEl) {
-    const t = now.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit', hour12: false });
-    timeEl.textContent = 'Karachi · ' + t + ' PKT';
-  }
-  if (dateEl) {
-    dateEl.textContent = now.toLocaleDateString('en-PK', { weekday: 'short', day: 'numeric', month: 'short' });
-  }
+  // Hdr time is handled by updateHdrTime(), no need to duplicate here
 }
 
-function drawKseSpark(isUp) {
+async function drawKseSpark(isUp) {
   const svg = document.getElementById('kse-spark-svg');
   if (!svg) return;
-  const color = isUp ? 'var(--green)' : 'var(--red)';
-  const fill  = isUp ? 'rgba(0,229,160,0.15)' : 'rgba(255,77,109,0.12)';
-  let v = 28, pts = '';
-  for (let i = 0; i < 48; i++) {
-    v += (Math.random() - (isUp ? 0.46 : 0.54)) * 3.5;
-    v = Math.max(4, Math.min(52, v));
-    pts += i * 380/47 + ',' + (56 - v) + ' ';
+
+  const color     = isUp ? '#00e5a0' : '#ff4d6d';
+  const fillStart = isUp ? 'rgba(0,229,160,0.22)' : 'rgba(255,77,109,0.18)';
+  const fillEnd   = 'rgba(0,0,0,0)';
+  const W = 380, H = 80;
+
+  // Show a subtle loading shimmer while fetching
+  svg.innerHTML = `<rect x="0" y="0" width="${W}" height="${H}" fill="none"/>
+    <rect x="0" y="${H*0.3}" width="${W}" height="1" fill="rgba(255,255,255,0.05)"/>`;
+
+  try {
+    const res = await fetch('/.netlify/functions/chart?ticker=KSE100&type=eod');
+    const j   = await res.json();
+
+    if (!j?.data?.length) throw new Error('no data');
+
+    // Parse and sort — use last 90 days
+    let pts = j.data
+      .map(d => ({ t: d[0] * 1000, p: parseFloat(d[1]) }))
+      .filter(d => d.p > 0)
+      .sort((a, b) => a.t - b.t);
+
+    const cutoff = Date.now() - 90 * 86400000;
+    pts = pts.filter(d => d.t >= cutoff);
+    if (pts.length < 5) throw new Error('too few points');
+
+    const prices = pts.map(d => d.p);
+    const minP   = Math.min(...prices);
+    const maxP   = Math.max(...prices);
+    const range  = maxP - minP || 1;
+    const padT   = 6, padB = 6;
+    const cH     = H - padT - padB;
+
+    const xOf = i => (i / (pts.length - 1)) * W;
+    const yOf = p => padT + (1 - (p - minP) / range) * cH;
+
+    // Build SVG path
+    let linePts  = pts.map((d, i) => `${xOf(i).toFixed(1)},${yOf(d.p).toFixed(1)}`).join(' ');
+    let areaPath = `M ${xOf(0).toFixed(1)},${yOf(pts[0].p).toFixed(1)} ` +
+      pts.slice(1).map((d, i) => `L ${xOf(i+1).toFixed(1)},${yOf(d.p).toFixed(1)}`).join(' ') +
+      ` L ${W},${H} L 0,${H} Z`;
+
+    // Determine real direction from actual data
+    const firstP = pts[0].p;
+    const lastP  = pts[pts.length - 1].p;
+    const realUp = lastP >= firstP;
+    const realColor     = realUp ? '#00e5a0' : '#ff4d6d';
+    const realFillStart = realUp ? 'rgba(0,229,160,0.2)' : 'rgba(255,77,109,0.15)';
+
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.innerHTML = `
+      <defs>
+        <linearGradient id="kseg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${realFillStart}"/>
+          <stop offset="100%" stop-color="${fillEnd}"/>
+        </linearGradient>
+      </defs>
+      <path d="${areaPath}" fill="url(#kseg)"/>
+      <polyline fill="none" stroke="${realColor}" stroke-width="1.8"
+        stroke-linejoin="round" stroke-linecap="round"
+        points="${linePts}"/>`;
+
+    // Update KSE card direction based on real 90d data
+    const kseCardChg = document.getElementById('kse-card-chg');
+    if (kseCardChg) {
+      const totalChg = ((lastP - firstP) / firstP * 100).toFixed(2);
+      const todayChg = livePrices['KSE100']?.change || '0';
+      kseCardChg.textContent = (parseFloat(todayChg) >= 0 ? '▲ ' : '▼ ') + Math.abs(parseFloat(todayChg)).toFixed(2) + '% today';
+      kseCardChg.className   = 'kse-chg ' + (parseFloat(todayChg) >= 0 ? '' : 'dn');
+    }
+
+  } catch(e) {
+    // Fallback: draw a smooth trend line that reflects up/down direction
+    const H2 = H, W2 = W;
+    const baseY = isUp ? H2 * 0.65 : H2 * 0.35;
+    const endY  = isUp ? H2 * 0.25 : H2 * 0.70;
+    svg.innerHTML = `
+      <defs>
+        <linearGradient id="kseg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${fillStart}"/>
+          <stop offset="100%" stop-color="${fillEnd}"/>
+        </linearGradient>
+      </defs>
+      <path d="M 0,${baseY} Q ${W2*0.5},${isUp ? H2*0.35 : H2*0.55} ${W2},${endY} L ${W2},${H2} L 0,${H2} Z" fill="url(#kseg)"/>
+      <path d="M 0,${baseY} Q ${W2*0.5},${isUp ? H2*0.35 : H2*0.55} ${W2},${endY}" fill="none" stroke="${color}" stroke-width="1.8"/>`;
   }
-  svg.innerHTML = `<defs><linearGradient id="ksg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color.replace('var(--green)','#00e5a0').replace('var(--red)','#ff4d6d')}" stop-opacity="0.3"/><stop offset="100%" stop-color="${color.replace('var(--green)','#00e5a0').replace('var(--red)','#ff4d6d')}" stop-opacity="0"/></linearGradient></defs><polygon fill="url(#ksg)" points="${pts} 380,56 0,56"/><polyline fill="none" stroke="${color.replace('var(--green)','#00e5a0').replace('var(--red)','#ff4d6d')}" stroke-width="1.5" points="${pts}"/>`;
 }
 
 function renderHomeMacro() {
   const el = document.getElementById('home-macro-grid');
   if (!el) return;
 
-  // Pull from livePrices (fetched by fetchLivePrices every 60s)
-  const brent  = livePrices['BRENT']  || livePrices['brent'];
-  const gold   = livePrices['GOLD']   || livePrices['gold'];
-  const pkrusd = livePrices['PKRUSD'] || livePrices['pkrusd'];
-  const btc    = livePrices['BTC'];
+  // Commodities come from liveCommodities (set by fetchLivePrices → data.commodities)
+  // BTC comes from livePrices via crypto array stored there
+  const brent  = liveCommodities?.brent;
+  const gold   = liveCommodities?.gold;
+  const pkrusd = liveCommodities?.pkrusd;
+  // BTC: stored in livePrices from the crypto array in prices response
+  const btc    = livePrices['BTC'] || (liveCommodities?.btc);
 
   const cells = [
-    { sym: 'PKR/USD', px: pkrusd ? pkrusd.price : '—', chg: pkrusd ? pkrusd.change : null, dir: pkrusd?.dir || 'up', col: '#ff4d6d' },
-    { sym: 'BTC/USD', px: btc ? Number(btc.price).toLocaleString() : '—', chg: btc ? btc.change : null, dir: btc?.dir || 'up', col: '#ffb547' },
-    { sym: 'GOLD',    px: gold ? gold.price : '—', chg: gold ? gold.change : null, dir: gold?.dir || 'up', col: '#e8c87a' },
-    { sym: 'BRENT',   px: brent ? brent.price : '—', chg: brent ? brent.change : null, dir: brent?.dir || 'dn', col: '#9b6dff' },
+    { sym: 'PKR/USD', px: pkrusd ? (pkrusd.price || pkrusd.rate || '—') : '—', chg: pkrusd ? pkrusd.change : null, dir: pkrusd?.dir || 'dn', col: '#ff4d6d' },
+    { sym: 'BTC/USD', px: btc ? ('$' + Number(String(btc.price).replace(/,/g,'')).toLocaleString()) : '—', chg: btc ? btc.change : null, dir: btc?.dir || 'up', col: '#ffb547' },
+    { sym: 'GOLD',    px: gold ? ('$' + gold.price) : '—', chg: gold ? gold.change : null, dir: gold?.dir || 'up', col: '#e8c87a' },
+    { sym: 'BRENT',   px: brent ? ('$' + brent.price) : '—', chg: brent ? brent.change : null, dir: brent?.dir || 'dn', col: '#9b6dff' },
   ];
 
   el.innerHTML = cells.map(m => {
@@ -2963,7 +3021,7 @@ function renderHomeMovers() {
   };
 
   el.innerHTML = movers.map(m => `
-    <div class="mover" onclick="select('${m.ticker}')">
+    <div class="mover" onclick="select('${m.ticker}');switchSection('stocks')">
       <div>
         <div class="mover-tick">${m.ticker}</div>
         <div class="mover-name">${SHORT_NAMES[m.ticker] || m.ticker}</div>
@@ -2992,7 +3050,7 @@ function renderHomeVerdicts() {
 
   const vMap = { 'Strong Fundamentals': 'b', 'Mixed Picture': 'h', 'Needs Monitoring': 's' };
   el.innerHTML = cached.map(([ticker, v]) => `
-    <div class="verdict-feed-item" onclick="select('${ticker}')">
+    <div class="verdict-feed-item" onclick="select('${ticker}');switchSection('stocks')">
       <div class="vf-top">
         <div class="vf-tick">${ticker}</div>
         <span class="v-pill ${vMap[v.verdict] || 'h'}">${v.verdict}</span>
@@ -3252,292 +3310,6 @@ async function renderForexSection() {
     if (grid) grid.innerHTML = `<div style="color:var(--ra);font-size:14px;padding:20px 0">Failed to load rates — please try again</div>`;
   }
 }
-
-// ══ COMPARE STOCKS ════════════════════════════════════════════
-let compareMode = null; // null | 'a' | 'b'
-let cmpA = 'OGDC';
-let cmpB = 'HBL';
-
-function toggleCompare() {
-  if (currentSection === 'compare') {
-    // Return to previous stock view
-    const prev = cur || 'OGDC';
-    switchSection('stocks');
-    select(prev);
-  } else {
-    cmpA = cur || 'OGDC';
-    cmpB = cmpA === 'HBL' ? 'OGDC' : 'HBL';
-    switchSection('compare');
-  }
-}
-
-function openCmpPicker(slot) {
-  compareMode = slot;
-  buildSheet();
-  document.getElementById('sheet').querySelector('.sheet-ttl') && (document.getElementById('sheet').querySelector('.sheet-ttl').textContent = slot === 'a' ? 'Pick stock A to compare' : 'Pick stock B to compare');
-  document.getElementById('overlay').classList.add('on');
-  document.getElementById('sheet').classList.add('on');
-}
-
-function buildCompareUI() {
-  const root = document.getElementById('compare-root');
-  if (!root) return;
-  const lpA = livePrices[cmpA] || {};
-  const lpB = livePrices[cmpB] || {};
-
-  root.innerHTML = `
-  <div class="cmp-wrap">
-    <div class="cmp-hdr-row">
-      <div class="cmp-back" onclick="toggleCompare()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Back
-      </div>
-      <div class="cmp-ttl">Compare Stocks</div>
-    </div>
-
-    <div class="cmp-selectors">
-      <div class="cmp-sel" onclick="openCmpPicker('a')">
-        <div class="cmp-av a">${cmpA.slice(0,3)}</div>
-        <div class="cmp-sel-info">
-          <div class="cmp-sel-tick">${cmpA}</div>
-          <div class="cmp-sel-name">${getShortName(cmpA)}</div>
-        </div>
-        <div class="cmp-sel-arr">▾</div>
-      </div>
-      <div class="cmp-vs">vs</div>
-      <div class="cmp-sel" onclick="openCmpPicker('b')">
-        <div class="cmp-av b">${cmpB.slice(0,3)}</div>
-        <div class="cmp-sel-info">
-          <div class="cmp-sel-tick">${cmpB}</div>
-          <div class="cmp-sel-name">${getShortName(cmpB)}</div>
-        </div>
-        <div class="cmp-sel-arr">▾</div>
-      </div>
-    </div>
-
-    <div style="padding:0 20px 0;">
-      <div class="cmp-chart-box" id="cmp-chart-box">
-        <div class="cmp-loading" id="cmp-chart-loading">Loading chart…</div>
-        <canvas id="cmp-canvas"></canvas>
-      </div>
-      <div class="cmp-legend">
-        <div class="cmp-leg"><span class="cmp-leg-dot a"></span>${cmpA} <span class="cmp-leg-pct" id="cmp-pct-a">—</span></div>
-        <div class="cmp-leg"><span class="cmp-leg-dot b"></span>${cmpB} <span class="cmp-leg-pct" id="cmp-pct-b">—</span></div>
-      </div>
-    </div>
-
-    <div style="padding:0 20px 4px;">
-      <div class="sec-lbl" style="margin-bottom:10px;">1-Month Performance</div>
-      <div id="cmp-table-wrap"></div>
-    </div>
-
-    <div style="padding:0 20px 24px;">
-      <div class="sec-lbl" style="margin-bottom:10px;">AI Score</div>
-      <div id="cmp-ai-wrap"></div>
-    </div>
-  </div>`;
-
-  loadCompareData();
-}
-
-async function loadCompareData() {
-  const [ptsA, ptsB] = await Promise.all([
-    fetchChartData(cmpA, '1M'),
-    fetchChartData(cmpB, '1M')
-  ]);
-
-  const loadingEl = document.getElementById('cmp-chart-loading');
-  if (loadingEl) loadingEl.style.display = 'none';
-  drawCompareChart(ptsA, ptsB);
-
-  const fetches = [];
-  if (!stockCache[cmpA]) fetches.push(loadStock(cmpA));
-  if (!stockCache[cmpB]) fetches.push(loadStock(cmpB));
-  if (fetches.length) await Promise.all(fetches);
-
-  buildCmpTable();
-  buildCmpAI();
-}
-
-function drawCompareChart(ptsA, ptsB) {
-  const canvas = document.getElementById('cmp-canvas');
-  const box = document.getElementById('cmp-chart-box');
-  if (!canvas || !box) return;
-
-  const dpr = window.devicePixelRatio || 1;
-  const W = box.offsetWidth;
-  const H = box.offsetHeight;
-  canvas.width  = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width  = W + 'px';
-  canvas.style.height = H + 'px';
-
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-
-  const normalize = (pts) => {
-    if (!pts || pts.length < 2) return [];
-    const base = pts[0].p;
-    return pts.map(d => ({ t: d.t, p: ((d.p - base) / base) * 100 }));
-  };
-
-  const nA = normalize(ptsA);
-  const nB = normalize(ptsB);
-  if (!nA.length && !nB.length) return;
-
-  const allPcts = [...nA, ...nB].map(d => d.p);
-  const minP = Math.min(...allPcts);
-  const maxP = Math.max(...allPcts);
-  const range = (maxP - minP) || 1;
-  const pad = range * 0.08;
-
-  const padL = 6, padR = 46, padT = 14, padB = 14;
-  const cW = W - padL - padR;
-  const cH = H - padT - padB;
-
-  // Grid lines
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 3; i++) {
-    const y = padT + (i / 3) * cH;
-    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
-  }
-
-  // Zero line
-  const effectiveMin = minP - pad;
-  const effectiveMax = maxP + pad;
-  const effectiveRange = effectiveMax - effectiveMin;
-  const yOf = p => padT + (1 - (p - effectiveMin) / effectiveRange) * cH;
-
-  if (minP <= 0 && maxP >= 0) {
-    const zeroY = yOf(0);
-    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
-    ctx.setLineDash([4, 5]);
-    ctx.beginPath(); ctx.moveTo(padL, zeroY); ctx.lineTo(W - padR, zeroY); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.font = '8px "Geist Mono", monospace'; ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.textAlign = 'left';
-    ctx.fillText('0%', W - padR + 4, zeroY + 3);
-  }
-
-  const drawSeries = (pts, hexColor, slot) => {
-    if (!pts || pts.length < 2) return;
-    const xOf = i => padL + (i / (pts.length - 1)) * cW;
-
-    // Gradient fill
-    const r = parseInt(hexColor.slice(1,3),16), g = parseInt(hexColor.slice(3,5),16), b = parseInt(hexColor.slice(5,7),16);
-    const grad = ctx.createLinearGradient(0, padT, 0, padT + cH);
-    grad.addColorStop(0, `rgba(${r},${g},${b},0.18)`);
-    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-    ctx.beginPath();
-    ctx.moveTo(xOf(0), yOf(pts[0].p));
-    pts.forEach((d, i) => { if (i > 0) ctx.lineTo(xOf(i), yOf(d.p)); });
-    ctx.lineTo(xOf(pts.length - 1), padT + cH);
-    ctx.lineTo(xOf(0), padT + cH);
-    ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
-
-    // Line
-    ctx.beginPath();
-    ctx.moveTo(xOf(0), yOf(pts[0].p));
-    pts.forEach((d, i) => { if (i > 0) ctx.lineTo(xOf(i), yOf(d.p)); });
-    ctx.strokeStyle = hexColor; ctx.lineWidth = 1.8; ctx.lineJoin = 'round'; ctx.stroke();
-
-    // End dot
-    const lx = xOf(pts.length - 1), ly = yOf(pts[pts.length - 1].p);
-    ctx.beginPath(); ctx.arc(lx, ly, 3.5, 0, Math.PI * 2); ctx.fillStyle = hexColor; ctx.fill();
-    ctx.beginPath(); ctx.arc(lx, ly, 2, 0, Math.PI * 2); ctx.fillStyle = '#09090f'; ctx.fill();
-
-    // Label on right side
-    const lastPct = pts[pts.length - 1].p;
-    ctx.font = '9px "Geist Mono", monospace'; ctx.fillStyle = hexColor; ctx.textAlign = 'left';
-    ctx.fillText((lastPct >= 0 ? '+' : '') + lastPct.toFixed(1) + '%', W - padR + 6, ly + 3);
-
-    // Update legend pct
-    const pctEl = document.getElementById(`cmp-pct-${slot}`);
-    if (pctEl) {
-      pctEl.textContent = (lastPct >= 0 ? '+' : '') + lastPct.toFixed(2) + '%';
-      pctEl.className = 'cmp-leg-pct ' + (lastPct >= 0 ? 'up' : 'dn');
-    }
-  };
-
-  drawSeries(nA, '#22d98a', 'a');
-  drawSeries(nB, '#3d9fff', 'b');
-}
-
-function buildCmpTable() {
-  const wrap = document.getElementById('cmp-table-wrap');
-  if (!wrap) return;
-
-  const sA = stockCache[cmpA] || {};
-  const sB = stockCache[cmpB] || {};
-  const lpA = livePrices[cmpA] || {};
-  const lpB = livePrices[cmpB] || {};
-
-  const fmtChg = (lp) => lp.change ? (lp.dir === 'up' ? '+' : '') + lp.change + '%' : '—';
-  const winNum = (a, b, higherWins = true) => {
-    const na = parseFloat(a), nb = parseFloat(b);
-    if (isNaN(na) || isNaN(nb) || a === '—' || b === '—') return null;
-    return higherWins ? (na >= nb ? 'a' : 'b') : (na <= nb ? 'a' : 'b');
-  };
-
-  const rows = [
-    { lbl: 'Price',      a: lpA.price ? 'PKR\u00a0' + lpA.price : '—', b: lpB.price ? 'PKR\u00a0' + lpB.price : '—', win: null,
-      aC: lpA.dir === 'up' ? 'up-c' : 'dn-c', bC: lpB.dir === 'up' ? 'up-c' : 'dn-c' },
-    { lbl: 'Today',      a: fmtChg(lpA), b: fmtChg(lpB),
-      win: winNum(parseFloat(lpA.change || 0), parseFloat(lpB.change || 0)),
-      aC: lpA.dir === 'up' ? 'up-c' : 'dn-c', bC: lpB.dir === 'up' ? 'up-c' : 'dn-c' },
-    { lbl: 'P/E Ratio',  a: sA.pe  ? sA.pe  + '×' : '—', b: sB.pe  ? sB.pe  + '×' : '—', win: winNum(sA.pe,  sB.pe,  false) },
-    { lbl: 'P/B Ratio',  a: sA.pb  ? sA.pb  + '×' : '—', b: sB.pb  ? sB.pb  + '×' : '—', win: winNum(sA.pb,  sB.pb,  false) },
-    { lbl: 'Div Yield',  a: sA.divYield  || '—', b: sB.divYield  || '—', win: winNum(parseFloat(sA.divYield), parseFloat(sB.divYield)) },
-    { lbl: 'ROE',        a: sA.roe       || '—', b: sB.roe       || '—', win: winNum(parseFloat(sA.roe),      parseFloat(sB.roe)) },
-    { lbl: 'Net Margin', a: sA.netMargin || '—', b: sB.netMargin || '—', win: winNum(parseFloat(sA.netMargin),parseFloat(sB.netMargin)) },
-    { lbl: 'EPS',        a: sA.eps ? 'PKR\u00a0' + sA.eps : '—', b: sB.eps ? 'PKR\u00a0' + sB.eps : '—', win: winNum(sA.eps, sB.eps) },
-  ];
-
-  wrap.innerHTML = `
-  <div class="cmp-table">
-    <div class="cmp-thead">
-      <div class="cmp-th lbl">Metric</div>
-      <div class="cmp-th a">${cmpA}</div>
-      <div class="cmp-th b">${cmpB}</div>
-    </div>
-    ${rows.map(r => `
-    <div class="cmp-row">
-      <div class="cmp-cell lbl">${r.lbl}</div>
-      <div class="cmp-cell a ${r.win === 'a' ? 'win' : ''} ${r.aC && r.win !== 'a' ? r.aC : ''}">${r.a}</div>
-      <div class="cmp-cell b ${r.win === 'b' ? 'win' : ''} ${r.bC && r.win !== 'b' ? r.bC : ''}">${r.b}</div>
-    </div>`).join('')}
-  </div>`;
-}
-
-function buildCmpAI() {
-  const wrap = document.getElementById('cmp-ai-wrap');
-  if (!wrap) return;
-  const vA = verdictCache[cmpA];
-  const vB = verdictCache[cmpB];
-
-  const scoreColor = s => s >= 7 ? 'var(--green)' : s >= 5 ? 'var(--amber)' : 'var(--ra)';
-
-  const cardHTML = (ticker, v, slot) => `
-    <div class="cmp-ai-card ${slot}">
-      <div class="cmp-ai-ticker">${ticker}</div>
-      ${v
-        ? `<div class="cmp-ai-score-num" style="color:${scoreColor(v.score)}">${v.score}<span>/10</span></div>
-           <div class="cmp-ai-verdict-lbl">${v.verdict}</div>`
-        : `<div class="cmp-ai-na">No AI analysis yet.<br>Open the stock and tap Generate.</div>`}
-    </div>`;
-
-  const arrow = vA && vB
-    ? (vA.score > vB.score ? '← better' : vA.score < vB.score ? 'better →' : 'tied')
-    : 'vs';
-
-  wrap.innerHTML = `
-  <div class="cmp-ai-row">
-    ${cardHTML(cmpA, vA, 'a')}
-    <div class="cmp-ai-vs">${arrow}</div>
-    ${cardHTML(cmpB, vB, 'b')}
-  </div>`;
-}
-
 </script>
 
 <!-- ── BROKER MODAL ── -->
