@@ -63,6 +63,7 @@
 
   --card-shadow: 0 0 0 1px var(--rim2), 0 2px 8px rgba(0,0,0,0.5), 0 12px 32px rgba(0,0,0,0.3);
   --float-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 4px 16px rgba(0,0,0,0.6), 0 24px 64px rgba(0,0,0,0.4);
+  --gdim: rgba(34,217,138,0.08);
 }
 
 html, body { background: var(--bg); }
@@ -908,7 +909,7 @@ h1 em, h2 em, h3 em, .acc, .h-h em, .sh-name, .kse-name, .mover-name,
 <header class="hdr" id="main-hdr">
   <div class="hdr-meta">
     <span id="hdr-time">Karachi · PKT</span>
-    <span id="hdr-date"></span>
+    <span><span class="mkt-dot" id="mkt-dot"></span><span id="mkt-lbl"></span></span>
   </div>
   <div class="hdr-main">
     <div class="brand">Wall<em>·</em>Trade</div>
@@ -918,6 +919,9 @@ h1 em, h2 em, h3 em, .acc, .h-h em, .sh-name, .kse-name, .mover-name,
       <span class="hdr-pill-r">▾</span>
     </div>
     <div class="hdr-acts">
+      <div class="hdr-cmp" id="hdr-cmp" onclick="toggleCompare()" title="Compare stocks">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 6H20M4 12H20M4 18H11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M17 15L20 18L17 21" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
       <div class="hdr-act" onclick="signOut()" title="Sign out">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
@@ -994,6 +998,7 @@ h1 em, h2 em, h3 em, .acc, .h-h em, .sh-name, .kse-name, .mover-name,
 <div id="root"></div>
 <div id="crypto-root" style="display:none;"></div>
 <div id="forex-root" style="display:none;"></div>
+<div id="compare-root" style="display:none;"></div>
 
 <!-- Bottom navigation -->
 <nav class="bnav" id="bnav">
@@ -1841,7 +1846,8 @@ async function generateVerdict(ticker) {
 
     const data = await res.json();
     verdictCache[ticker] = data.verdict;
-    render(ticker, stockCache[ticker], data.verdict);
+    // Use applyVerdictPatch — surgically updates verdict sections without touching chart or technicals
+    applyVerdictPatch(ticker, data.verdict);
     // Refresh home verdicts feed
     if (typeof renderHomeVerdicts === 'function') renderHomeVerdicts();
 
@@ -1850,6 +1856,123 @@ async function generateVerdict(ticker) {
       document.getElementById('verdict-gate').innerHTML =
         `<div style="color:var(--ra);font-size:13px;padding:12px 0;text-align:center;">Could not generate analysis — please try again.</div>`;
     }
+  }
+}
+
+// ── TARGETED VERDICT UPDATE ───────────────────────────────────
+// Patches verdict into #ov-ai-section, #fin-ai-section, #factors-inner.
+// Never touches chart-canvas-wrap or tech-content — zero chart/technicals flicker.
+function applyVerdictPatch(ticker, verdict) {
+  if (!verdict) { render(ticker, stockCache[ticker], verdict); return; }
+
+  // If the stock screen isn't rendered yet for this ticker, do a full render instead
+  if (!document.getElementById('ov-ai-section')) {
+    render(ticker, stockCache[ticker], verdict);
+    return;
+  }
+
+  const stockData = stockCache[ticker] || {};
+  const vtype    = verdict.verdict   || '';
+  const vscore   = verdict.score     || 0;
+  const insights = verdict.insights  || [];
+  const signals  = verdict.signals   || [];
+  const scores   = verdict.scores    || {};
+  const factors  = verdict.factors?.length ? verdict.factors : buildBaseFactors(stockData, ticker);
+
+  const technicalReadHTML = verdict.technicalRead ? `
+    <div class="tech-read-pill">
+      <div class="tech-read-label">Price Momentum</div>
+      <div class="tech-read-text">${verdict.technicalRead}</div>
+    </div>` : '';
+
+  const borderMap = {green:'var(--gb)',amber:'var(--aa)',red:'var(--ra)',purple:'var(--pb)',blue:'var(--bb)'};
+  const gradMap   = {green:'linear-gradient(130deg,#5fffc0,#22d98a)',amber:'linear-gradient(130deg,#fbbf24,#d97706)',red:'linear-gradient(130deg,#ff8080,#ef4444)',purple:'linear-gradient(130deg,#c4b5fd,#8b5cf6)',blue:'linear-gradient(130deg,#93c5fd,#3b82f6)'};
+
+  // ── 1. Overview: signals + compact verdict card ────────────
+  const ovSection = document.getElementById('ov-ai-section');
+  if (ovSection) {
+    ovSection.innerHTML = `
+      ${signals.length ? `
+      <div class="sigs-wrap">
+        <div class="sec-lbl">Key signals</div>
+        <div class="sigs">
+          ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
+        </div>
+      </div>` : ''}
+      <div class="compact-verdict">
+        <div class="cv-top">
+          <div class="cv-label">Wall-Trade AI</div>
+          <div class="ai-row" style="margin:0"><div class="ai-orb"></div>Analysis</div>
+        </div>
+        <div class="cv-verdict-row">
+          <div class="cv-verdict ${vGrad(vtype)}">${vtype}</div>
+          ${gaugeArc(vscore)}
+        </div>
+        <div class="cv-summary">${verdict.headline || ''}</div>
+        <div style="font-size:13px;color:var(--t2);line-height:1.8;margin-top:10px;">${verdict.body || ''}</div>
+        ${technicalReadHTML}
+        ${signals.length ? `
+        <div class="sigs" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--rim);">
+          ${signals.map(sg=>`<div class="spill"><div class="sdot" style="background:${sdC(sg.type)}"></div>${sg.label}</div>`).join('')}
+        </div>` : ''}
+      </div>`;
+  }
+
+  // ── 2. Financials: score breakdown + full analysis ─────────
+  const finSection = document.getElementById('fin-ai-section');
+  if (finSection) {
+    finSection.innerHTML = `
+      ${Object.keys(scores).length ? `
+      <div class="fin-section" style="margin-top:8px;">
+        <div class="fin-section-lbl">AI Score breakdown</div>
+        ${Object.entries(scores).map(([n,v])=>`
+          <div class="score-item">
+            <div class="score-top">
+              <span class="score-name">${n}</span>
+              <span class="score-num ${scTG(v)}">${v} / 10</span>
+            </div>
+            <div class="strack"><div class="sfill" style="width:${v*10}%;background:${scGrad(v)}"></div></div>
+          </div>`).join('')}
+        <div class="overall-wrap" style="padding:14px 0 4px;">
+          <div class="ocard">
+            <div>
+              <div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;">Score</div>
+              <span class="onum ${scTG(vscore)}">${vscore}</span><span class="oden"> /10</span>
+            </div>
+            <div class="oright">
+              <div class="o-eye">Summary</div>
+              <div class="o-desc">${verdict.summary || ''}</div>
+            </div>
+          </div>
+        </div>
+      </div>` : ''}
+      <div class="fin-section" style="margin-top:4px;padding-bottom:8px;">
+        <div class="fin-section-lbl">AI Analysis</div>
+        <div class="insights" style="margin-bottom:14px;">
+          ${insights.map(ins=>`
+          <div class="insight-card" style="border-left-color:${borderMap[ins.color]||borderMap.purple}">
+            <div class="insight-icon-wrap">${ins.icon}</div>
+            <div class="insight-right">
+              <div class="insight-value" style="background:${gradMap[ins.color]||gradMap.purple};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${ins.value}</div>
+              <div class="insight-label">${ins.label}</div>
+            </div>
+          </div>`).join('')}
+        </div>
+        <div class="ai-row" style="margin-bottom:8px;"><div class="ai-orb"></div>Full analysis</div>
+        <div class="ai-headline">${verdict.headline || ''}</div>
+        <div class="ai-body">${verdict.body || ''}</div>
+        ${technicalReadHTML}
+      </div>`;
+  }
+
+  // ── 3. Key factors tab with AI-enhanced factors ────────────
+  const factorsInner = document.getElementById('factors-inner');
+  if (factorsInner) {
+    factorsInner.innerHTML = factors.map(f=>`
+      <div class="fi">
+        <div class="fi-icon">${f.icon}</div>
+        <div><div class="fi-title">${f.title}</div><div class="fi-desc">${f.detail}</div></div>
+      </div>`).join('');
   }
 }
 
@@ -1970,7 +2093,8 @@ async function fetchChartData(ticker, tf) {
     if (!j || !j.data || !j.data.length) return null;
     if (j.indicators && cfg.eod) {
       indicatorCache[ticker] = j.indicators;
-      renderTechnicals(ticker, j.indicators);
+      // Do NOT call renderTechnicals here — canvas may not exist yet.
+      // renderTechnicals is called inside requestAnimationFrame in loadChart.
     }
     let pts = j.data.map(d => ({ t: d[0] * 1000, p: parseFloat(d[1]) || 0 }))
                     .filter(d => d.p > 0)
@@ -2161,6 +2285,11 @@ async function loadChart(tf) {
     dotCanvas.height = mainCanvas.offsetHeight * dpr;
     const chartState = drawChart(mainCanvas, pts, color);
     setupTooltip(mainCanvas, chartState, chartTicker);
+
+    // Render technicals now — canvas is fully drawn, DOM is stable
+    if (indicatorCache[chartTicker]) {
+      renderTechnicals(chartTicker, indicatorCache[chartTicker]);
+    }
   });
 }
 
@@ -2557,56 +2686,92 @@ function updateHdrTime() {
   const now = new Date();
   const t = now.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit', hour12: false });
   const timeEl = document.getElementById('hdr-time');
-  const dateEl = document.getElementById('hdr-date');
   if (timeEl) timeEl.textContent = 'Karachi · ' + t + ' PKT';
-  if (dateEl) dateEl.textContent = now.toLocaleDateString('en-PK', { weekday: 'short', day: 'numeric', month: 'short' });
+  // PSX market status: Mon–Fri 09:30–15:30 PKT (UTC+5)
+  const dot = document.getElementById('mkt-dot');
+  const lbl = document.getElementById('mkt-lbl');
+  if (dot && lbl) {
+    const pkt  = new Date(now.getTime() + (5 * 60 - now.getTimezoneOffset()) * 60000);
+    const day  = pkt.getUTCDay();
+    const hm   = pkt.getUTCHours() * 60 + pkt.getUTCMinutes();
+    const open = day >= 1 && day <= 5 && hm >= 570 && hm < 930;
+    dot.className = 'mkt-dot ' + (open ? 'open' : 'closed');
+    lbl.textContent = open ? 'PSX Open' : 'PSX Closed';
+  }
 }
 updateHdrTime();
-setInterval(updateHdrTime, 60000);
+// Sync to minute boundary for accurate display
+(function scheduleClock() {
+  const now = new Date();
+  const msToNext = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+  setTimeout(() => { updateHdrTime(); setInterval(updateHdrTime, 60000); }, msToNext);
+})();
 
 // Render home after first price fetch
 setTimeout(() => { renderHomeScreen(); fetchHomeNews(); }, 1500);
 
-// Pre-load first stock silently in background
-select('OGDC');
+// Pre-load first stock data silently without switching to stocks view
+loadStock('OGDC');
 
 // ── SECTION SWITCHING ─────────────────────────────────────────
 function switchSection(section) {
   closeSheet();
-  const prev = currentSection;
   currentSection = section;
 
   document.getElementById('home-screen').style.display   = 'none';
   document.getElementById('root').style.display          = 'none';
   document.getElementById('crypto-root').style.display   = 'none';
   document.getElementById('forex-root').style.display    = 'none';
+  document.getElementById('compare-root').style.display  = 'none';
 
   ['home','stocks','crypto','forex'].forEach(s => {
     const el = document.getElementById('bnav-' + s);
     if (el) el.classList.toggle('on', s === section);
   });
 
-  const pill = document.getElementById('hdr-pill');
+  const pill   = document.getElementById('hdr-pill');
+  const cmpBtn = document.getElementById('hdr-cmp');
 
   if (section === 'home') {
     document.getElementById('home-screen').style.display = 'block';
     if (pill) pill.style.display = 'none';
+    if (cmpBtn) { cmpBtn.classList.remove('on','active'); }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     renderHomeScreen();
   } else if (section === 'stocks') {
     document.getElementById('root').style.display = 'block';
     if (pill) { pill.style.display = 'flex'; pill.onclick = openSheet; }
+    if (cmpBtn) { cmpBtn.classList.add('on'); cmpBtn.classList.remove('active'); }
     openSheet();
   } else if (section === 'crypto') {
     document.getElementById('crypto-root').style.display = 'block';
     if (pill) pill.style.display = 'none';
+    if (cmpBtn) { cmpBtn.classList.remove('on','active'); }
     window.scrollTo({ top: 0, behavior: 'instant' });
     renderCryptoSection();
   } else if (section === 'forex') {
     document.getElementById('forex-root').style.display = 'block';
     if (pill) pill.style.display = 'none';
+    if (cmpBtn) { cmpBtn.classList.remove('on','active'); }
     window.scrollTo({ top: 0, behavior: 'instant' });
     renderForexSection();
+  } else if (section === 'compare') {
+    document.getElementById('compare-root').style.display = 'block';
+    if (pill) pill.style.display = 'none';
+    if (cmpBtn) { cmpBtn.classList.add('on','active'); }
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    buildCompareUI();
+  }
+}
+
+function toggleCompare() {
+  if (currentSection === 'compare') {
+    switchSection('stocks');
+    if (cur) select(cur);
+  } else {
+    cmpA = cur || 'OGDC';
+    cmpB = cmpA === 'HBL' ? 'OGDC' : 'HBL';
+    switchSection('compare');
   }
 }
 
@@ -2655,16 +2820,7 @@ function updateHomeGreeting() {
       Math.abs(chgNum).toFixed(2) + '% today. Energy and banking in focus.';
   }
 
-  // Hdr time
-  const timeEl = document.getElementById('hdr-time');
-  const dateEl = document.getElementById('hdr-date');
-  if (timeEl) {
-    const t = now.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit', hour12: false });
-    timeEl.textContent = 'Karachi · ' + t + ' PKT';
-  }
-  if (dateEl) {
-    dateEl.textContent = now.toLocaleDateString('en-PK', { weekday: 'short', day: 'numeric', month: 'short' });
-  }
+  // Hdr time is handled by updateHdrTime(), no need to duplicate here
 }
 
 function drawKseSpark(isUp) {
