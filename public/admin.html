@@ -9,6 +9,7 @@
   --bg: #07090A;
   --bg2: #0E1214;
   --bg3: #161B1E;
+  --bg4: #1C2226;
   --green: #00E5A0;
   --green-dim: rgba(0,229,160,0.08);
   --border: rgba(255,255,255,0.07);
@@ -16,8 +17,11 @@
   --t1: #F0F4F3;
   --t2: rgba(240,244,243,0.6);
   --t3: rgba(240,244,243,0.35);
+  --t4: rgba(240,244,243,0.16);
   --red: #FF4560;
   --amber: #FFB020;
+  --blue: #3D9FFF;
+  --purple: #9B6DFF;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -30,27 +34,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 20px;
+  padding: 40px 20px 80px;
 }
 
-.logo {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  color: var(--green);
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
-
+.logo { font-size: 13px; font-weight: 700; letter-spacing: 0.15em; color: var(--green); text-transform: uppercase; margin-bottom: 8px; }
 .logo span { color: var(--t3); }
-
-.title {
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: var(--t3);
-  text-transform: uppercase;
-  margin-bottom: 48px;
-}
+.title { font-size: 11px; letter-spacing: 0.1em; color: var(--t3); text-transform: uppercase; margin-bottom: 48px; }
 
 .card {
   background: var(--bg2);
@@ -58,7 +47,7 @@ body {
   border-radius: 16px;
   padding: 28px;
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
   margin-bottom: 16px;
 }
 
@@ -74,15 +63,14 @@ body {
   gap: 8px;
 }
 
-.card-title::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--green);
-}
+.card-title::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+.card-title.amber { color: var(--amber); }
+.card-title.amber::before { background: var(--amber); }
+.card-title.blue { color: var(--blue); }
+.card-title.blue::before { background: var(--blue); }
+.card-title.purple { color: var(--purple); }
+.card-title.purple::before { background: var(--purple); }
 
-/* Password gate */
 .pw-input {
   width: 100%;
   background: var(--bg3);
@@ -96,7 +84,6 @@ body {
   transition: border-color 0.2s;
   margin-bottom: 12px;
 }
-
 .pw-input:focus { border-color: var(--border-g); }
 .pw-input::placeholder { color: var(--t3); }
 
@@ -113,26 +100,13 @@ body {
   cursor: pointer;
   transition: all 0.15s;
 }
-
-.btn-primary {
-  background: var(--green);
-  color: #07090A;
-}
-
+.btn-primary { background: var(--green); color: #07090A; }
 .btn-primary:hover { opacity: 0.88; }
 .btn-primary:active { opacity: 0.75; transform: scale(0.99); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.btn-secondary {
-  background: transparent;
-  color: var(--t2);
-  border: 1px solid var(--border);
-  margin-top: 8px;
-}
-
+.btn-secondary { background: transparent; color: var(--t2); border: 1px solid var(--border); margin-top: 8px; }
 .btn-secondary:hover { border-color: var(--border-g); color: var(--t1); }
 
-/* Upload zone */
 .drop-zone {
   border: 1px dashed var(--border-g);
   border-radius: 12px;
@@ -144,50 +118,18 @@ body {
   background: var(--green-dim);
   position: relative;
 }
-
-.drop-zone:hover, .drop-zone.drag { 
-  border-color: var(--green); 
-  background: rgba(0,229,160,0.12);
-}
-
-.drop-zone input[type="file"] {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  width: 100%;
-  height: 100%;
-}
-
+.drop-zone:hover, .drop-zone.drag { border-color: var(--green); background: rgba(0,229,160,0.12); }
+.drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
 .drop-icon { font-size: 28px; margin-bottom: 10px; }
-
-.drop-label {
-  font-size: 12px;
-  color: var(--t2);
-  line-height: 1.6;
-}
-
+.drop-label { font-size: 12px; color: var(--t2); line-height: 1.6; }
 .drop-label strong { color: var(--green); }
 
-.file-preview {
-  display: none;
-  background: var(--bg3);
-  border: 1px solid var(--border-g);
-  border-radius: 10px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  font-size: 12px;
-  color: var(--t2);
-  align-items: center;
-  gap: 10px;
-}
-
+.file-preview { display: none; background: var(--bg3); border: 1px solid var(--border-g); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 12px; color: var(--t2); align-items: center; gap: 10px; }
 .file-preview.on { display: flex; }
 .file-preview-icon { font-size: 20px; flex-shrink: 0; }
 .file-preview-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-preview-remove { color: var(--red); cursor: pointer; font-size: 16px; flex-shrink: 0; }
 
-/* Text input */
 .text-area {
   width: 100%;
   background: var(--bg3);
@@ -204,149 +146,354 @@ body {
   transition: border-color 0.2s;
   margin-bottom: 16px;
 }
-
 .text-area:focus { border-color: var(--border-g); }
 .text-area::placeholder { color: var(--t3); }
 
-/* Tabs */
-.tabs {
-  display: flex;
-  gap: 4px;
+.f-in {
+  width: 100%;
   background: var(--bg3);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 4px;
-  margin-bottom: 20px;
+  padding: 11px 14px;
+  color: var(--t1);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 12px;
 }
+.f-in:focus { border-color: var(--border-g); }
+.f-in::placeholder { color: var(--t3); }
 
-.tab {
-  flex: 1;
-  padding: 8px;
-  text-align: center;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--t3);
-  border-radius: 7px;
+.f-sel {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: var(--t1);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
   cursor: pointer;
-  transition: all 0.15s;
+  margin-bottom: 12px;
+  appearance: none;
 }
 
-.tab.on {
-  background: var(--bg2);
-  color: var(--green);
-  border: 1px solid var(--border-g);
-}
+.f-lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t3); margin-bottom: 7px; display: block; }
 
-/* Status */
-.status {
-  display: none;
-  border-radius: 10px;
-  padding: 14px 16px;
-  font-size: 12px;
-  line-height: 1.6;
-  margin-top: 12px;
-}
+.tabs { display: flex; gap: 4px; background: var(--bg3); border-radius: 10px; padding: 4px; margin-bottom: 20px; }
+.tab { flex: 1; padding: 8px; text-align: center; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t3); border-radius: 7px; cursor: pointer; transition: all 0.15s; }
+.tab.on { background: var(--bg2); color: var(--green); border: 1px solid var(--border-g); }
 
+.status { display: none; border-radius: 10px; padding: 14px 16px; font-size: 12px; line-height: 1.6; margin-top: 12px; }
 .status.on { display: block; }
 .status.loading { background: rgba(0,229,160,0.06); border: 1px solid var(--border-g); color: var(--t2); }
 .status.success { background: rgba(0,229,160,0.08); border: 1px solid var(--border-g); color: var(--green); }
 .status.error   { background: rgba(255,69,96,0.08); border: 1px solid rgba(255,69,96,0.2); color: var(--red); }
 
-.spinner {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border: 1.5px solid var(--border-g);
-  border-top-color: var(--green);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  margin-right: 8px;
-  vertical-align: middle;
-}
-
+.spinner { display: inline-block; width: 10px; height: 10px; border: 1.5px solid var(--border-g); border-top-color: var(--green); border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Result preview */
-.result-wrap {
-  display: none;
-  margin-top: 16px;
-}
-
+.result-wrap { display: none; margin-top: 16px; }
 .result-wrap.on { display: block; }
+.result-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t3); margin-bottom: 8px; }
+.result-box { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; font-size: 11px; color: var(--t2); line-height: 1.7; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
 
-.result-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--t3);
-  margin-bottom: 8px;
-}
+/* ── DIVIDER ── */
+.section-divider { width: 100%; max-width: 520px; display: flex; align-items: center; gap: 12px; margin: 8px 0 20px; }
+.sd-line { flex: 1; height: 1px; background: var(--border); }
+.sd-label { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--t4); white-space: nowrap; }
 
-.result-box {
+/* ── PITCH PORTAL CARD ── */
+.pitch-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.pitch-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
   background: var(--bg3);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 14px 16px;
-  font-size: 11px;
-  color: var(--t2);
-  line-height: 1.7;
-  max-height: 200px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
+  cursor: pointer;
+  transition: all 0.14s;
+  position: relative;
 }
+.pitch-row:hover { border-color: var(--border-g); background: var(--bg4); }
+.pitch-row.on { border-color: var(--green); background: rgba(0,229,160,0.05); }
+.pr-icon { font-size: 20px; flex-shrink: 0; }
+.pr-name { font-size: 12px; font-weight: 700; color: var(--t1); flex: 1; }
+.pr-type { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t3); margin-top: 2px; }
+.pr-badge {
+  font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 3px; border: 1px solid; flex-shrink: 0;
+}
+.prb-live { color: var(--green); border-color: rgba(0,229,160,0.3); background: rgba(0,229,160,0.07); }
+.prb-draft { color: var(--t4); border-color: var(--border); }
 
-/* Gate */
+.pitch-url-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.pitch-url-input {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 13px;
+  color: var(--t1);
+  font-family: inherit;
+  font-size: 11px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.pitch-url-input:focus { border-color: var(--border-g); }
+.pitch-url-input::placeholder { color: var(--t4); }
+.pitch-url-save {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  background: var(--green);
+  color: #07090A;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.14s;
+  flex-shrink: 0;
+}
+.pitch-url-save:hover { opacity: 0.88; }
+
+.present-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 13px;
+  border-radius: 10px; border: none;
+  background: var(--green); color: #07090A;
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; transition: opacity 0.14s;
+  margin-bottom: 8px;
+}
+.present-btn:hover { opacity: 0.88; }
+.present-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.open-tab-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; padding: 11px;
+  border-radius: 10px; border: 1px solid var(--border);
+  background: transparent; color: var(--t2);
+  font-family: inherit; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.14s;
+  margin-bottom: 16px;
+}
+.open-tab-btn:hover { border-color: var(--border-g); color: var(--t1); }
+
+/* guest link generator */
+.guest-link-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 12px;
+}
+.glb-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t3); margin-bottom: 12px; }
+.glb-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.glb-input {
+  flex: 1; background: var(--bg4); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 12px; color: var(--t1);
+  font-family: inherit; font-size: 11px; outline: none;
+  transition: border-color 0.2s;
+}
+.glb-input:focus { border-color: var(--border-g); }
+.glb-input::placeholder { color: var(--t4); }
+.glb-btn {
+  padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border-g);
+  background: rgba(0,229,160,0.08); color: var(--green);
+  font-family: inherit; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.14s; flex-shrink: 0;
+}
+.glb-btn:hover { background: rgba(0,229,160,0.15); }
+.glb-result {
+  display: none;
+  background: var(--bg4); border: 1px solid var(--border-g);
+  border-radius: 8px; padding: 10px 12px;
+  font-size: 11px; color: var(--green);
+  word-break: break-all; margin-top: 8px;
+}
+.glb-result.on { display: block; }
+.glb-copy-row { display: none; gap: 7px; margin-top: 7px; }
+.glb-copy-row.on { display: flex; }
+.glb-copy-btn {
+  flex: 1; padding: 7px;
+  border-radius: 7px; border: 1px solid var(--border);
+  background: var(--bg4); color: var(--t2);
+  font-family: inherit; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.14s;
+}
+.glb-copy-btn:hover { border-color: var(--border-g); color: var(--green); }
+
+/* ── PRESENTATION OVERLAY ── */
+.present-overlay {
+  display: none; position: fixed; inset: 0; z-index: 999;
+  background: #000; flex-direction: column;
+}
+.present-overlay.on { display: flex; }
+.present-topbar {
+  height: 48px; background: rgba(7,9,10,0.95);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; flex-shrink: 0;
+}
+.ptb-l { display: flex; align-items: center; gap: 14px; }
+.ptb-logo { font-size: 13px; font-weight: 700; letter-spacing: 0.12em; color: var(--green); text-transform: uppercase; }
+.ptb-sep { width: 1px; height: 18px; background: var(--border); }
+.ptb-name { font-size: 12px; font-weight: 700; color: var(--t1); letter-spacing: 0.04em; }
+.ptb-type { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t3); margin-top: 1px; }
+.ptb-r { display: flex; gap: 8px; align-items: center; }
+.ptb-btn {
+  padding: 6px 14px; border-radius: 7px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--t2); font-family: inherit; font-size: 10px;
+  font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.13s;
+}
+.ptb-btn:hover { background: var(--bg4); color: var(--t1); }
+.ptb-btn.green { background: rgba(0,229,160,0.1); color: var(--green); border-color: var(--border-g); }
+.ptb-btn.green:hover { background: rgba(0,229,160,0.18); }
+.present-frame-wrap { flex: 1; position: relative; }
+.present-frame { width: 100%; height: 100%; border: none; display: block; }
+.present-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--t3); }
+.pe-icon { font-size: 48px; opacity: 0.2; }
+.pe-text { font-size: 13px; line-height: 1.6; text-align: center; max-width: 320px; }
+
+/* ── KEY DOCS CARD ── */
+.doc-list { display: flex; flex-direction: column; gap: 0; margin-bottom: 16px; }
+.doc-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.doc-row:last-child { border-bottom: none; }
+.doc-icon { font-size: 18px; flex-shrink: 0; width: 32px; text-align: center; }
+.doc-name { font-size: 12px; font-weight: 700; color: var(--t1); flex: 1; }
+.doc-meta { font-size: 10px; color: var(--t3); margin-top: 2px; }
+.doc-badge {
+  font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 3px; border: 1px solid; flex-shrink: 0;
+}
+.dob-conf { color: var(--amber); border-color: rgba(255,176,32,0.3); background: rgba(255,176,32,0.07); }
+.dob-int  { color: var(--purple); border-color: rgba(155,109,255,0.3); background: rgba(155,109,255,0.07); }
+.dob-pub  { color: var(--green); border-color: rgba(0,229,160,0.3); background: rgba(0,229,160,0.07); }
+.doc-action {
+  padding: 5px 11px; border-radius: 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--t3); font-family: inherit; font-size: 9px;
+  font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.13s; flex-shrink: 0;
+}
+.doc-action:hover { border-color: var(--border-g); color: var(--green); }
+
+/* add doc form */
+.add-doc-form {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 12px;
+  display: none;
+}
+.add-doc-form.on { display: block; }
+.add-doc-drop {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.add-doc-drop:hover { border-color: var(--border-g); }
+.add-doc-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.add-doc-drop-label { font-size: 11px; color: var(--t3); }
+.add-doc-drop-label strong { color: var(--t2); }
+.add-doc-btn-row { display: flex; gap: 8px; }
+.adb-cancel { flex: 1; padding: 9px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--t3); font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
+.adb-cancel:hover { color: var(--t1); }
+.adb-save { flex: 2; padding: 9px; border-radius: 8px; border: none; background: var(--green); color: #07090A; font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: opacity 0.14s; }
+.adb-save:hover { opacity: 0.88; }
+
+/* doc link modal */
+.doc-link-popup {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: rgba(7,9,10,0.88); backdrop-filter: blur(12px);
+  align-items: center; justify-content: center;
+}
+.doc-link-popup.on { display: flex; }
+.dlp-box {
+  width: 400px; max-width: calc(100vw - 32px);
+  background: var(--bg2); border: 1px solid var(--border-g);
+  border-radius: 16px; padding: 28px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+}
+.dlp-title { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); margin-bottom: 16px; }
+.dlp-name { font-size: 14px; font-weight: 700; color: var(--t1); margin-bottom: 4px; }
+.dlp-sub { font-size: 11px; color: var(--t3); margin-bottom: 20px; }
+.dlp-link-box {
+  background: var(--bg3); border: 1px solid var(--border-g);
+  border-radius: 10px; padding: 12px 14px;
+  font-size: 11px; color: var(--green);
+  word-break: break-all; margin-bottom: 12px;
+}
+.dlp-pass-box {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px;
+  font-size: 12px; color: var(--t2);
+  margin-bottom: 16px;
+}
+.dlp-btn-row { display: flex; gap: 8px; }
+.dlp-copy { flex: 1; padding: 10px; border-radius: 9px; border: 1px solid var(--border-g); background: rgba(0,229,160,0.08); color: var(--green); font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.14s; }
+.dlp-copy:hover { background: rgba(0,229,160,0.16); }
+.dlp-close { flex: 1; padding: 10px; border-radius: 9px; border: 1px solid var(--border); background: transparent; color: var(--t2); font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: all 0.14s; }
+.dlp-close:hover { border-color: var(--border-g); color: var(--t1); }
+
 #gate, #main { transition: opacity 0.3s; }
 #main { display: none; }
-
-.version-tag {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  font-size: 9px;
-  color: var(--t3);
-  letter-spacing: 0.08em;
-}
+.version-tag { position: fixed; bottom: 20px; right: 20px; font-size: 9px; color: var(--t3); letter-spacing: 0.08em; }
 </style>
 </head>
 <body>
 
 <div class="logo">Wall<span>-Trade</span></div>
-<div class="title">Admin Console · Macro + Quarterly Reports</div>
+<div class="title">Admin Console</div>
 
 <!-- PASSWORD GATE -->
 <div id="gate">
   <div class="card">
     <div class="card-title">Authentication Required</div>
-    <input class="pw-input" type="password" id="pw-input" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')checkPw()"/>
-    <button class="btn btn-primary" onclick="checkPw()">Access Console</button>
+    <input class="pw-input" type="password" id="pw-input" placeholder="Enter your access password" onkeydown="if(event.key==='Enter')checkPw()"/>
+    <button class="btn btn-primary" onclick="checkPw()">Enter →</button>
+    <div id="pw-error" style="font-size:11px;color:var(--red);margin-top:10px;text-align:center;min-height:14px;letter-spacing:0.04em"></div>
+    <div style="font-size:10px;color:var(--t3);margin-top:14px;text-align:center;line-height:1.7;letter-spacing:0.04em">This portal is private.<br>Contact the Wall-Trade team for access.</div>
   </div>
 </div>
 
 <!-- MAIN CONSOLE -->
 <div id="main">
 
+  <!-- ── SECTION: MACRO + QUARTERLY ── -->
+  <div class="section-divider"><div class="sd-line"></div><div class="sd-label">Market Data</div><div class="sd-line"></div></div>
+
   <!-- MACRO UPDATE CARD -->
   <div class="card">
     <div class="card-title">Daily Macro Context Update</div>
-
     <div class="tabs">
       <div class="tab on" id="tab-file" onclick="setTab('file')">File / Image</div>
       <div class="tab" id="tab-text" onclick="setTab('text')">Paste Text</div>
     </div>
-
-    <!-- File upload -->
     <div id="panel-file">
       <div class="drop-zone" id="drop-zone">
         <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.webp" onchange="handleFile(this.files[0])"/>
         <div class="drop-icon">📄</div>
-        <div class="drop-label">
-          <strong>Tap to upload</strong> or drag & drop<br>
-          PDF · PNG · JPG · WEBP
-        </div>
+        <div class="drop-label"><strong>Tap to upload</strong> or drag & drop<br>PDF · PNG · JPG · WEBP</div>
       </div>
       <div class="file-preview" id="file-preview">
         <span class="file-preview-icon" id="file-icon">📄</span>
@@ -354,18 +501,11 @@ body {
         <span class="file-preview-remove" onclick="clearFile()">✕</span>
       </div>
     </div>
-
-    <!-- Text paste -->
     <div id="panel-text" style="display:none;">
       <textarea class="text-area" id="text-input" placeholder="Paste morning brief text here — KSE-100 levels, SBP rate, oil prices, market commentary..."></textarea>
     </div>
-
-    <button class="btn btn-primary" id="extract-btn" onclick="extractMacro()" disabled>
-      Extract & Update Macro
-    </button>
-
+    <button class="btn btn-primary" id="extract-btn" onclick="extractMacro()" disabled>Extract & Update Macro</button>
     <div class="status" id="status"></div>
-
     <div class="result-wrap" id="result-wrap">
       <div class="result-label">Extracted Macro Context</div>
       <div class="result-box" id="result-box"></div>
@@ -381,81 +521,29 @@ body {
   <!-- QUARTERLY REPORT CARD -->
   <div class="card">
     <div class="card-title">Quarterly Report Extraction</div>
-
     <div style="margin-bottom:16px;">
-      <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;">Select Ticker</div>
-      <select id="q-ticker" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--t1);font-family:inherit;font-size:13px;outline:none;cursor:pointer;">
+      <div class="f-lbl">Select Ticker</div>
+      <select id="q-ticker" class="f-sel">
         <option value="">— Select stock —</option>
-        <optgroup label="Banking">
-          <option>HBL</option><option>MCB</option><option>UBL</option><option>NBP</option>
-          <option>MEBL</option><option>BAFL</option><option>ABL</option><option>FABL</option>
-          <option>BAHL</option><option>AKBL</option><option>BOP</option><option>SNBL</option>
-        </optgroup>
-        <optgroup label="E&P">
-          <option>OGDC</option><option>PPL</option><option>MARI</option><option>POL</option>
-        </optgroup>
-        <optgroup label="OMC">
-          <option>PSO</option><option>APL</option><option>SHEL</option><option>HASCOL</option>
-        </optgroup>
-        <optgroup label="Fertilizer">
-          <option>FFC</option><option>EFERT</option><option>FATIMA</option><option>FFBL</option>
-        </optgroup>
-        <optgroup label="Cement">
-          <option>LUCK</option><option>DGKC</option><option>MLCF</option><option>CHCC</option>
-          <option>FCCL</option><option>PIOC</option><option>KOHC</option><option>ACPL</option><option>POWER</option>
-        </optgroup>
-        <optgroup label="Power">
-          <option>HUBC</option><option>KEL</option><option>KAPCO</option>
-          <option>NPL</option><option>NCPL</option><option>PKGP</option>
-        </optgroup>
-        <optgroup label="Technology / Telecom">
-          <option>SYS</option><option>TRG</option><option>PTC</option>
-          <option>AIRLINK</option><option>AVN</option><option>NETSOL</option>
-        </optgroup>
-        <optgroup label="Auto & Engineering">
-          <option>INDU</option><option>HCAR</option><option>PSMC</option><option>GHNL</option>
-          <option>SAZEW</option><option>MTL</option><option>AGTL</option>
-        </optgroup>
-        <optgroup label="Consumer / Food">
-          <option>NESTLE</option><option>UNITY</option><option>NATF</option>
-          <option>MUREB</option><option>COLG</option>
-        </optgroup>
-        <optgroup label="Textile">
-          <option>ILP</option><option>NML</option><option>GATM</option>
-          <option>KTML</option><option>SAPT</option>
-        </optgroup>
-        <optgroup label="Holding / Diversified">
-          <option>ENGROH</option><option>DAWH</option>
-        </optgroup>
-        <optgroup label="Chemicals / Industrial">
-          <option>EPCL</option><option>LOTCHEM</option><option>SNGP</option><option>SSGC</option>
-        </optgroup>
-        <optgroup label="Insurance">
-          <option>EFUG</option><option>EFUL</option><option>JGICL</option>
-        </optgroup>
-        <optgroup label="Pharma">
-          <option>SEARL</option><option>AGP</option><option>GLAXO</option><option>ABOT</option>
-        </optgroup>
-        <optgroup label="Steel / Materials">
-          <option>MUGHAL</option><option>ASTL</option><option>ISL</option><option>ASL</option>
-        </optgroup>
-        <optgroup label="Logistics">
-          <option>PIBTL</option>
-        </optgroup>
-        <optgroup label="Aviation">
-          <option>PIAA</option>
-        </optgroup>
-        <optgroup label="Media">
-          <option>HUMNL</option>
-        </optgroup>
+        <optgroup label="Banking"><option>HBL</option><option>MCB</option><option>UBL</option><option>NBP</option><option>MEBL</option><option>BAFL</option><option>ABL</option><option>BAHL</option></optgroup>
+        <optgroup label="E&P"><option>OGDC</option><option>PPL</option><option>MARI</option><option>POL</option></optgroup>
+        <optgroup label="OMC"><option>PSO</option><option>APL</option><option>HASCOL</option></optgroup>
+        <optgroup label="Fertilizer"><option>FFC</option><option>EFERT</option><option>FATIMA</option></optgroup>
+        <optgroup label="Cement"><option>LUCK</option><option>DGKC</option><option>MLCF</option><option>CHCC</option><option>FCCL</option></optgroup>
+        <optgroup label="Power"><option>HUBC</option><option>KEL</option><option>KAPCO</option></optgroup>
+        <optgroup label="Technology"><option>SYS</option><option>TRG</option><option>PTC</option><option>AIRLINK</option></optgroup>
+        <optgroup label="Auto"><option>INDU</option><option>HCAR</option><option>PSMC</option></optgroup>
+        <optgroup label="Consumer"><option>NESTLE</option><option>UNITY</option><option>COLG</option></optgroup>
+        <optgroup label="Steel"><option>MUGHAL</option><option>ASTL</option><option>ISL</option></optgroup>
+        <optgroup label="Chemicals"><option>EPCL</option><option>SNGP</option><option>SSGC</option></optgroup>
+        <optgroup label="Pharma"><option>SEARL</option><option>AGP</option><option>GLAXO</option></optgroup>
+        <optgroup label="Holding"><option>ENGROH</option><option>DAWH</option></optgroup>
       </select>
     </div>
-
     <div class="tabs">
       <div class="tab on" id="q-tab-file" onclick="setQTab('file')">PDF / Image</div>
       <div class="tab" id="q-tab-text" onclick="setQTab('text')">Paste Text</div>
     </div>
-
     <div id="q-panel-file">
       <div class="drop-zone" id="q-drop-zone">
         <input type="file" id="q-file-input" accept=".pdf,.png,.jpg,.jpeg" onchange="handleQFile(this.files[0])"/>
@@ -468,50 +556,302 @@ body {
         <span class="file-preview-remove" onclick="clearQFile()">✕</span>
       </div>
     </div>
-
     <div id="q-panel-text" style="display:none;">
       <textarea class="text-area" id="q-text-input" placeholder="Paste quarterly report text here..."></textarea>
     </div>
-
-    <button class="btn btn-primary" id="q-extract-btn" onclick="extractQuarterly()" disabled>
-      Extract & Update stock.js
-    </button>
-
+    <button class="btn btn-primary" id="q-extract-btn" onclick="extractQuarterly()" disabled>Extract & Update stock.js</button>
     <div class="status" id="q-status"></div>
-
     <div class="result-wrap" id="q-result-wrap">
       <div class="result-label">Extracted Data — Committed to GitHub</div>
       <div class="result-box" id="q-result-box"></div>
-      <div style="font-size:10px;color:var(--t3);margin-top:8px;line-height:1.6;">
-        ✓ Committed to GitHub. Netlify auto-deploys in ~60 seconds.
+      <div style="font-size:10px;color:var(--t3);margin-top:8px;line-height:1.6;">✓ Committed to GitHub. Netlify auto-deploys in ~60 seconds.</div>
+    </div>
+  </div>
+
+  <!-- ── SECTION: PITCH PORTAL ── -->
+  <div class="section-divider"><div class="sd-line"></div><div class="sd-label">Pitch Portal</div><div class="sd-line"></div></div>
+
+  <div class="card">
+    <div class="card-title blue">Pitch Decks — Presentation Mode</div>
+
+    <!-- Pitch selector -->
+    <div class="pitch-list" id="pitch-list">
+      <div class="pitch-row on" id="pr-investor" onclick="selectPitch('investor')">
+        <div class="pr-icon">📊</div>
+        <div style="flex:1"><div class="pr-name">Investor Pitch Deck</div><div class="pr-type">Pre-seed · Investor</div></div>
+        <span class="pr-badge prb-live">Live</span>
       </div>
+      <div class="pitch-row" id="pr-b2b" onclick="selectPitch('b2b')">
+        <div class="pr-icon">🤝</div>
+        <div style="flex:1"><div class="pr-name">B2B Sales Deck</div><div class="pr-type">Brokerage · Partner</div></div>
+        <span class="pr-badge prb-live">Live</span>
+      </div>
+      <div class="pitch-row" id="pr-university" onclick="selectPitch('university')">
+        <div class="pr-icon">🎓</div>
+        <div style="flex:1"><div class="pr-name">University Partnerships</div><div class="pr-type">IBA · LUMS · NUST</div></div>
+        <span class="pr-badge prb-draft">Draft</span>
+      </div>
+      <div class="pitch-row" id="pr-capitalstake" onclick="selectPitch('capitalstake')">
+        <div class="pr-icon">📡</div>
+        <div style="flex:1"><div class="pr-name">Capital Stake Deck</div><div class="pr-type">Data Partner</div></div>
+        <span class="pr-badge prb-draft">Draft</span>
+      </div>
+    </div>
+
+    <!-- URL input for selected pitch -->
+    <div class="f-lbl">Figma / Slide URL — <span id="selected-pitch-name" style="color:var(--blue)">Investor Pitch Deck</span></div>
+    <div class="pitch-url-row">
+      <input class="pitch-url-input" id="pitch-url-input" type="url" placeholder="https://figma.com/proto/..." onkeydown="if(event.key==='Enter')savePitchUrl()">
+      <button class="pitch-url-save" onclick="savePitchUrl()">Save →</button>
+    </div>
+
+    <!-- Present + open tab buttons -->
+    <button class="present-btn" id="present-btn" onclick="openPresentation()">⛶ Present Full Screen</button>
+    <button class="open-tab-btn" id="open-tab-btn" onclick="openInTab()">↗ Open in New Tab</button>
+
+    <!-- Guest link generator -->
+    <div class="guest-link-box">
+      <div class="glb-title">Generate Guest Access Link</div>
+      <div class="glb-row">
+        <input class="glb-input" id="glb-name" type="text" placeholder="Guest name (e.g. Ahmed Hassan)">
+        <input class="glb-input" id="glb-pass" type="text" placeholder="Password (optional)">
+      </div>
+      <button class="glb-btn" style="width:100%;margin-bottom:0" onclick="generateGuestLink()">Generate Link</button>
+      <div class="glb-result" id="glb-result"></div>
+      <div class="glb-copy-row" id="glb-copy-row">
+        <button class="glb-copy-btn" onclick="copyGLink()">Copy link</button>
+        <button class="glb-copy-btn" onclick="copyGPass()" style="color:var(--t3)">Copy password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECTION: KEY DOCS ── -->
+  <div class="section-divider"><div class="sd-line"></div><div class="sd-label">Key Documents</div><div class="sd-line"></div></div>
+
+  <div class="card">
+    <div class="card-title amber">Key Documents — Internal & Guest Access</div>
+
+    <div class="doc-list" id="doc-list">
+      <div class="doc-row">
+        <div class="doc-icon">📐</div>
+        <div style="flex:1"><div class="doc-name">Market Sizing Document</div><div class="doc-meta">April 2026 · PDF · 3 pages</div></div>
+        <span class="doc-badge dob-conf">Confidential</span>
+        <button class="doc-action" onclick="shareDoc('Market Sizing Document','market-sizing-2026','PDF · 3 pages · April 2026')">Share</button>
+      </div>
+      <div class="doc-row">
+        <div class="doc-icon">⚖️</div>
+        <div style="flex:1"><div class="doc-name">SECP Compliance Memo</div><div class="doc-meta">May 2026 · Internal legal memo</div></div>
+        <span class="doc-badge dob-int">Internal</span>
+        <button class="doc-action" onclick="shareDoc('SECP Compliance Memo','secp-compliance-may26','Internal memo · May 2026')">Share</button>
+      </div>
+      <div class="doc-row">
+        <div class="doc-icon">🏗️</div>
+        <div style="flex:1"><div class="doc-name">Developer Documentation</div><div class="doc-meta">Full app requirements · v2.1</div></div>
+        <span class="doc-badge dob-int">Internal</span>
+        <button class="doc-action" onclick="shareDoc('Developer Documentation','dev-docs-v2','Full app requirements · v2.1')">Share</button>
+      </div>
+      <div class="doc-row">
+        <div class="doc-icon">💰</div>
+        <div style="flex:1"><div class="doc-name">Pricing Strategy</div><div class="doc-meta">4-tier model · PKR + USD · May 2026</div></div>
+        <span class="doc-badge dob-conf">Confidential</span>
+        <button class="doc-action" onclick="shareDoc('Pricing Strategy','pricing-may26','4-tier model · May 2026')">Share</button>
+      </div>
+      <div class="doc-row">
+        <div class="doc-icon">📊</div>
+        <div style="flex:1"><div class="doc-name">Competitive Analysis</div><div class="doc-meta">Investing.com · TradingView · Sarmaaya · Investify</div></div>
+        <span class="doc-badge dob-conf">Confidential</span>
+        <button class="doc-action" onclick="shareDoc('Competitive Analysis','competitive-may26','4 competitors · May 2026')">Share</button>
+      </div>
+      <div class="doc-row">
+        <div class="doc-icon">🗓️</div>
+        <div style="flex:1"><div class="doc-name">Product Roadmap</div><div class="doc-meta">Phase 1–3 · Beta → Scale → SECP</div></div>
+        <span class="doc-badge dob-conf">Confidential</span>
+        <button class="doc-action" onclick="shareDoc('Product Roadmap','roadmap-2026','Phase 1-3 · 2026')">Share</button>
+      </div>
+    </div>
+
+    <!-- Add doc toggle -->
+    <button class="btn btn-secondary" onclick="toggleAddDoc()">+ Add document</button>
+
+    <div class="add-doc-form" id="add-doc-form">
+      <div class="f-lbl" style="margin-bottom:6px">Document name</div>
+      <input class="f-in" id="new-doc-name" type="text" placeholder="e.g. Term Sheet Draft">
+      <div class="f-lbl" style="margin-bottom:6px">Visibility</div>
+      <select class="f-sel" id="new-doc-vis">
+        <option value="conf">Confidential — selected guests only</option>
+        <option value="int">Internal — admin only</option>
+        <option value="pub">Public — no password required</option>
+      </select>
+      <div class="add-doc-drop">
+        <input type="file" accept=".pdf,.docx,.xlsx,.png,.jpg">
+        <div class="drop-icon" style="font-size:22px;margin-bottom:6px">📎</div>
+        <div class="add-doc-drop-label"><strong>Upload file</strong> or drag & drop<br>PDF · DOCX · XLSX · Images</div>
+      </div>
+      <div class="add-doc-btn-row">
+        <button class="adb-cancel" onclick="toggleAddDoc()">Cancel</button>
+        <button class="adb-save" onclick="saveNewDoc()">Save Document</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end main -->
+
+<!-- ═══════════════════════════════════
+     GUEST VIEW — Investor Pitch Only
+═══════════════════════════════════ -->
+<div id="guest-view" style="display:none;position:fixed;inset:0;z-index:900;background:var(--bg);flex-direction:column">
+
+  <!-- Guest topbar -->
+  <div style="height:50px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="font-size:12px;font-weight:700;letter-spacing:0.14em;color:var(--green);text-transform:uppercase">Wall-Trade</div>
+      <div style="width:1px;height:18px;background:var(--border)"></div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:0.04em">Investor Pitch Deck</div>
+        <div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);margin-top:1px">Confidential · For authorised recipients only</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:4px 10px;border-radius:4px;background:var(--green-dim);color:var(--green);border:1px solid var(--border-g)">Guest</span>
+      <button onclick="doLogout()" style="padding:6px 14px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);color:var(--t3);font-family:inherit;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:all 0.13s">Sign out</button>
+    </div>
+  </div>
+
+  <!-- Guest frame -->
+  <div style="flex:1;position:relative">
+    <iframe id="guest-frame" src="about:blank" style="width:100%;height:100%;border:none;display:none" allowfullscreen allow="fullscreen"></iframe>
+    <div id="guest-placeholder" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+      <div style="font-size:48px;opacity:0.2">📊</div>
+      <div style="font-size:14px;font-weight:700;color:var(--t1)">Investor Pitch Deck</div>
+      <div style="font-size:12px;color:var(--t3);text-align:center;line-height:1.6;max-width:320px">The presentation will load here. If it doesn't appear, use the button below to open it directly.</div>
+      <a id="guest-fallback-link" href="#" target="_blank" style="display:none;padding:10px 22px;border-radius:9px;background:var(--green-dim);border:1px solid var(--border-g);color:var(--green);font-family:inherit;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;text-decoration:none">Open presentation →</a>
     </div>
   </div>
 
 </div>
 
-<div class="version-tag">WT-ADMIN v1.0</div>
+<!-- ── PRESENTATION OVERLAY ── -->
+<div class="present-overlay" id="present-overlay">
+  <div class="present-topbar">
+    <div class="ptb-l">
+      <div class="ptb-logo">Wall-Trade</div>
+      <div class="ptb-sep"></div>
+      <div>
+        <div class="ptb-name" id="ptb-name">Investor Pitch Deck</div>
+        <div class="ptb-type" id="ptb-type">Investor · Confidential</div>
+      </div>
+    </div>
+    <div class="ptb-r">
+      <button class="ptb-btn green" onclick="fullscreenFrame()">⛶ Fullscreen</button>
+      <button class="ptb-btn" onclick="reloadPresentFrame()">↺ Reload</button>
+      <button class="ptb-btn" onclick="closePresentation()">✕ Close</button>
+    </div>
+  </div>
+  <div class="present-frame-wrap">
+    <iframe class="present-frame" id="present-frame" src="about:blank" allowfullscreen allow="fullscreen"></iframe>
+    <div class="present-empty" id="present-empty">
+      <div class="pe-icon">🎯</div>
+      <div class="pe-text">Paste your Figma URL in the URL field above and click Save, then Present.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DOC LINK POPUP ── -->
+<div class="doc-link-popup" id="doc-link-popup">
+  <div class="dlp-box">
+    <div class="dlp-title">Share Document</div>
+    <div class="dlp-name" id="dlp-name"></div>
+    <div class="dlp-sub" id="dlp-sub"></div>
+    <div class="dlp-link-box" id="dlp-link"></div>
+    <div class="dlp-pass-box" id="dlp-pass"></div>
+    <div class="dlp-btn-row">
+      <button class="dlp-copy" onclick="copyDocLink()">Copy link</button>
+      <button class="dlp-copy" onclick="copyDocPass()" style="background:rgba(155,109,255,0.08);color:#c4b5fd;border-color:rgba(155,109,255,0.3)">Copy password</button>
+      <button class="dlp-close" onclick="closeDocPopup()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="version-tag">WT-ADMIN v2.0</div>
 
 <script>
-// ── CONFIG ─────────────────────────────────────────────────────
-const ADMIN_PASSWORD = 'ASNSTOCKKINGXXX77'; // change this
-const SUPABASE_URL   = 'REPLACE_WITH_YOUR_SUPABASE_URL';
-const SUPABASE_KEY   = 'REPLACE_WITH_YOUR_SUPABASE_ANON_KEY';
+// ── CONFIG ──────────────────────────────────────────────
+const ADMIN_PASSWORD = 'ASNSTOCKKINGXXX77';
+const GUEST_PITCH_PASSWORD = 'investor2026'; // guest pitch portal password
+const SUPABASE_URL = 'REPLACE_WITH_YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'REPLACE_WITH_YOUR_SUPABASE_ANON_KEY';
+const PITCH_PORTAL_URL = window.location.origin + '/pitch';
 
-// ── AUTH ───────────────────────────────────────────────────────
+// pitch URL storage
+const PITCH_URLS = JSON.parse(localStorage.getItem('wt_pitch_urls') || '{}');
+let currentPitch = 'investor';
+
+const PITCHES = {
+  investor:     { name:'Investor Pitch Deck',    type:'Investor · Pre-seed' },
+  b2b:          { name:'B2B Sales Deck',          type:'B2B · Brokerage' },
+  university:   { name:'University Partnerships', type:'Partnership' },
+  capitalstake: { name:'Capital Stake Deck',      type:'Partner · Data' },
+};
+
+// ── AUTH ────────────────────────────────────────────────
 function checkPw() {
   const val = document.getElementById('pw-input').value.trim();
+  const err = document.getElementById('pw-error');
+  err.textContent = '';
+
   if (val === ADMIN_PASSWORD) {
+    // Admin → full console
     document.getElementById('gate').style.display = 'none';
     document.getElementById('main').style.display = 'block';
     loadCurrentMacro();
-  } else {
-    document.getElementById('pw-input').style.borderColor = 'var(--red)';
-    setTimeout(() => document.getElementById('pw-input').style.borderColor = '', 1000);
+    const saved = PITCH_URLS['investor'] || '';
+    document.getElementById('pitch-url-input').value = saved;
+    document.getElementById('present-btn').disabled  = !saved;
+    document.getElementById('open-tab-btn').disabled = !saved;
+    return;
   }
+
+  if (val === GUEST_PITCH_PASSWORD) {
+    // Guest → investor pitch only, full screen
+    document.getElementById('gate').style.display      = 'none';
+    const gv = document.getElementById('guest-view');
+    gv.style.display = 'flex';
+    const url   = PITCH_URLS['investor'] || '';
+    const frame = document.getElementById('guest-frame');
+    const ph    = document.getElementById('guest-placeholder');
+    const fb    = document.getElementById('guest-fallback-link');
+    if (url) {
+      frame.src           = url;
+      frame.style.display = 'block';
+      ph.style.display    = 'none';
+    } else {
+      frame.style.display = 'none';
+      ph.style.display    = 'flex';
+      fb.href             = '#';
+      fb.style.display    = 'none';
+    }
+    return;
+  }
+
+  // Wrong password
+  err.textContent = 'Incorrect password — please try again.';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-input').focus();
+  document.getElementById('pw-input').style.borderColor = 'var(--red)';
+  setTimeout(() => document.getElementById('pw-input').style.borderColor = '', 900);
 }
 
-// ── TABS ───────────────────────────────────────────────────────
+function doLogout() {
+  document.getElementById('main').style.display       = 'none';
+  document.getElementById('guest-view').style.display = 'none';
+  document.getElementById('gate').style.display       = 'block';
+  document.getElementById('guest-frame').src          = 'about:blank';
+  document.getElementById('pw-input').value           = '';
+  document.getElementById('pw-error').textContent     = '';
+  closePresentation();
+}
+
+// ── MACRO TABS ──────────────────────────────────────────
 let currentTab = 'file';
 function setTab(tab) {
   currentTab = tab;
@@ -522,20 +862,16 @@ function setTab(tab) {
   checkReady();
 }
 
-// ── FILE HANDLING ──────────────────────────────────────────────
 let selectedFile = null;
-
 function handleFile(file) {
   if (!file) return;
   selectedFile = file;
-  const icon = file.type.includes('pdf') ? '📄' : '🖼️';
-  document.getElementById('file-icon').textContent = icon;
+  document.getElementById('file-icon').textContent = file.type.includes('pdf') ? '📄' : '🖼️';
   document.getElementById('file-name').textContent = file.name;
   document.getElementById('file-preview').classList.add('on');
   document.getElementById('drop-zone').style.display = 'none';
   checkReady();
 }
-
 function clearFile() {
   selectedFile = null;
   document.getElementById('file-input').value = '';
@@ -543,104 +879,53 @@ function clearFile() {
   document.getElementById('drop-zone').style.display = 'block';
   checkReady();
 }
+function checkReady() {
+  const ok = (currentTab === 'file' && selectedFile) || (currentTab === 'text' && document.getElementById('text-input').value.trim().length > 20);
+  document.getElementById('extract-btn').disabled = !ok;
+}
+document.getElementById('text-input').addEventListener('input', checkReady);
 
-// Drag and drop
 const dz = document.getElementById('drop-zone');
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
 dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
-dz.addEventListener('drop', e => {
-  e.preventDefault();
-  dz.classList.remove('drag');
-  const file = e.dataTransfer.files[0];
-  if (file) handleFile(file);
-});
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
 
-// Text input listener
-document.getElementById('text-input').addEventListener('input', checkReady);
-
-function checkReady() {
-  const hasFile = currentTab === 'file' && selectedFile;
-  const hasText = currentTab === 'text' && document.getElementById('text-input').value.trim().length > 20;
-  document.getElementById('extract-btn').disabled = !(hasFile || hasText);
-}
-
-// ── EXTRACT MACRO ──────────────────────────────────────────────
 async function extractMacro() {
   setStatus('loading', '<span class="spinner"></span> Sending to Claude for extraction...');
   document.getElementById('extract-btn').disabled = true;
   document.getElementById('result-wrap').classList.remove('on');
-
   try {
     let body;
-
     if (currentTab === 'file' && selectedFile) {
-      // Convert file to base64
       const base64 = await fileToBase64(selectedFile);
-      body = JSON.stringify({
-        type:      selectedFile.type.includes('pdf') ? 'pdf' : 'image',
-        mediaType: selectedFile.type,
-        data:      base64,
-      });
+      body = JSON.stringify({ type: selectedFile.type.includes('pdf') ? 'pdf' : 'image', mediaType: selectedFile.type, data: base64 });
     } else {
-      // Plain text
-      body = JSON.stringify({
-        type: 'text',
-        text: document.getElementById('text-input').value.trim(),
-      });
+      body = JSON.stringify({ type: 'text', text: document.getElementById('text-input').value.trim() });
     }
-
-    const res = await fetch('/.netlify/functions/macro', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    });
-
+    const res = await fetch('/.netlify/functions/macro', { method:'POST', headers:{'Content-Type':'application/json'}, body });
     const data = await res.json();
-
     if (!res.ok) throw new Error(data.error || 'Server error');
-
-    setStatus('success', '✓ Macro context updated successfully. All new verdicts will use today\'s brief.');
+    setStatus('success', '✓ Macro context updated. All new verdicts will use today\'s brief.');
     document.getElementById('result-box').textContent = data.macro;
     document.getElementById('result-wrap').classList.add('on');
     loadCurrentMacro();
-
-  } catch(e) {
-    setStatus('error', '✕ Error: ' + e.message);
-  }
-
+  } catch(e) { setStatus('error', '✕ Error: ' + e.message); }
   document.getElementById('extract-btn').disabled = false;
 }
 
-// ── LOAD CURRENT MACRO ─────────────────────────────────────────
 async function loadCurrentMacro() {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/macro?select=content,updated_at&order=updated_at.desc&limit=1`, {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-      }
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
     });
     const data = await res.json();
     if (data?.[0]?.content) {
       const d = new Date(data[0].updated_at);
-      const label = `Last updated: ${d.toLocaleDateString('en-PK')} ${d.toLocaleTimeString('en-PK')}\n\n`;
-      document.getElementById('current-macro').textContent = label + data[0].content;
+      document.getElementById('current-macro').textContent = `Last updated: ${d.toLocaleDateString('en-PK')} ${d.toLocaleTimeString('en-PK')}\n\n` + data[0].content;
     } else {
       document.getElementById('current-macro').textContent = 'No macro set yet.';
     }
-  } catch(e) {
-    document.getElementById('current-macro').textContent = 'Could not load.';
-  }
-}
-
-// ── HELPERS ────────────────────────────────────────────────────
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  } catch(e) { document.getElementById('current-macro').textContent = 'Could not load.'; }
 }
 
 function setStatus(type, msg) {
@@ -649,10 +934,17 @@ function setStatus(type, msg) {
   el.innerHTML = msg;
 }
 
-// ── QUARTERLY EXTRACTION ───────────────────────────────────────
-let qSelectedFile = null;
-let qCurrentTab = 'file';
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
 
+// ── QUARTERLY ──────────────────────────────────────────
+let qSelectedFile = null, qCurrentTab = 'file';
 function setQTab(tab) {
   qCurrentTab = tab;
   document.getElementById('q-tab-file').classList.toggle('on', tab === 'file');
@@ -661,18 +953,15 @@ function setQTab(tab) {
   document.getElementById('q-panel-text').style.display = tab === 'text' ? 'block' : 'none';
   checkQReady();
 }
-
 function handleQFile(file) {
   if (!file) return;
   qSelectedFile = file;
-  const icon = file.type.includes('pdf') ? '📄' : '🖼️';
-  document.getElementById('q-file-icon').textContent = icon;
+  document.getElementById('q-file-icon').textContent = file.type.includes('pdf') ? '📄' : '🖼️';
   document.getElementById('q-file-name').textContent = file.name;
   document.getElementById('q-file-preview').classList.add('on');
   document.getElementById('q-drop-zone').style.display = 'none';
   checkQReady();
 }
-
 function clearQFile() {
   qSelectedFile = null;
   document.getElementById('q-file-input').value = '';
@@ -680,82 +969,43 @@ function clearQFile() {
   document.getElementById('q-drop-zone').style.display = 'block';
   checkQReady();
 }
-
 function checkQReady() {
-  const ticker  = document.getElementById('q-ticker').value;
-  const hasFile = qCurrentTab === 'file' && qSelectedFile;
-  const hasText = qCurrentTab === 'text' && document.getElementById('q-text-input').value.trim().length > 20;
-  document.getElementById('q-extract-btn').disabled = !(ticker && (hasFile || hasText));
+  const ticker = document.getElementById('q-ticker').value;
+  const ok = ticker && ((qCurrentTab === 'file' && qSelectedFile) || (qCurrentTab === 'text' && document.getElementById('q-text-input').value.trim().length > 20));
+  document.getElementById('q-extract-btn').disabled = !ok;
 }
-
 document.getElementById('q-ticker').addEventListener('change', checkQReady);
-document.getElementById('q-text-input')?.addEventListener('input', checkQReady);
 
-// Drag and drop for quarterly
 const qdz = document.getElementById('q-drop-zone');
 qdz.addEventListener('dragover', e => { e.preventDefault(); qdz.classList.add('drag'); });
 qdz.addEventListener('dragleave', () => qdz.classList.remove('drag'));
-qdz.addEventListener('drop', e => {
-  e.preventDefault();
-  qdz.classList.remove('drag');
-  const file = e.dataTransfer.files[0];
-  if (file) handleQFile(file);
-});
+qdz.addEventListener('drop', e => { e.preventDefault(); qdz.classList.remove('drag'); if (e.dataTransfer.files[0]) handleQFile(e.dataTransfer.files[0]); });
 
 async function extractQuarterly() {
   const ticker = document.getElementById('q-ticker').value;
   if (!ticker) return;
-
   setQStatus('loading', `<span class="spinner"></span> Extracting ${ticker} quarterly data via Claude...`);
   document.getElementById('q-extract-btn').disabled = true;
   document.getElementById('q-result-wrap').classList.remove('on');
-
   try {
     let body;
-
     if (qCurrentTab === 'file' && qSelectedFile) {
       const base64 = await fileToBase64(qSelectedFile);
-      body = JSON.stringify({
-        ticker,
-        type:      qSelectedFile.type.includes('pdf') ? 'pdf' : 'image',
-        mediaType: qSelectedFile.type,
-        data:      base64,
-      });
+      body = JSON.stringify({ ticker, type: qSelectedFile.type.includes('pdf') ? 'pdf' : 'image', mediaType: qSelectedFile.type, data: base64 });
     } else {
-      body = JSON.stringify({
-        ticker,
-        type: 'text',
-        text: document.getElementById('q-text-input').value.trim(),
-      });
+      body = JSON.stringify({ ticker, type: 'text', text: document.getElementById('q-text-input').value.trim() });
     }
-
     setQStatus('loading', `<span class="spinner"></span> Claude reading report... committing to GitHub...`);
-
-    const res = await fetch('/.netlify/functions/extract', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    });
-
+    const res = await fetch('/.netlify/functions/extract', { method:'POST', headers:{'Content-Type':'application/json'}, body });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Server error');
-
-    setQStatus('success', `✓ ${ticker} updated for ${data.period}. GitHub committed. Netlify deploying (~60 seconds).`);
-
-    // Show extracted data for review
-    const preview = JSON.stringify(data.extracted, null, 2);
-    document.getElementById('q-result-box').textContent = preview;
+    setQStatus('success', `✓ ${ticker} updated for ${data.period}. GitHub committed. Netlify deploying (~60s).`);
+    document.getElementById('q-result-box').textContent = JSON.stringify(data.extracted, null, 2);
     document.getElementById('q-result-wrap').classList.add('on');
-
-    // Clear form
     clearQFile();
     document.getElementById('q-ticker').value = '';
     document.getElementById('q-extract-btn').disabled = true;
-
-  } catch(e) {
-    setQStatus('error', '✕ Error: ' + e.message);
-  }
-
+  } catch(e) { setQStatus('error', '✕ Error: ' + e.message); }
   document.getElementById('q-extract-btn').disabled = false;
 }
 
@@ -764,6 +1014,165 @@ function setQStatus(type, msg) {
   el.className = 'status on ' + type;
   el.innerHTML = msg;
 }
+
+// ── PITCH PORTAL ────────────────────────────────────────
+function selectPitch(id) {
+  currentPitch = id;
+  document.querySelectorAll('.pitch-row').forEach(r => r.classList.remove('on'));
+  document.getElementById('pr-' + id).classList.add('on');
+  document.getElementById('selected-pitch-name').textContent = PITCHES[id].name;
+  const saved = PITCH_URLS[id] || '';
+  document.getElementById('pitch-url-input').value = saved;
+  const hasSaved = saved.length > 0;
+  document.getElementById('present-btn').disabled = !hasSaved;
+  document.getElementById('open-tab-btn').disabled = !hasSaved;
+  // clear guest link
+  document.getElementById('glb-result').classList.remove('on');
+  document.getElementById('glb-copy-row').classList.remove('on');
+}
+
+function savePitchUrl() {
+  const url = document.getElementById('pitch-url-input').value.trim();
+  if (!url) return;
+  PITCH_URLS[currentPitch] = url;
+  localStorage.setItem('wt_pitch_urls', JSON.stringify(PITCH_URLS));
+  document.getElementById('present-btn').disabled = false;
+  document.getElementById('open-tab-btn').disabled = false;
+  toast('✓ URL saved for ' + PITCHES[currentPitch].name);
+}
+
+function openPresentation() {
+  const url = PITCH_URLS[currentPitch];
+  if (!url) return;
+  const p = PITCHES[currentPitch];
+  document.getElementById('ptb-name').textContent = p.name;
+  document.getElementById('ptb-type').textContent = p.type + ' · Confidential';
+  const frame  = document.getElementById('present-frame');
+  const empty  = document.getElementById('present-empty');
+  frame.src    = url;
+  frame.style.display = 'block';
+  empty.style.display = 'none';
+  document.getElementById('present-overlay').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePresentation() {
+  document.getElementById('present-overlay').classList.remove('on');
+  document.getElementById('present-frame').src = 'about:blank';
+  document.body.style.overflow = '';
+}
+
+function fullscreenFrame() {
+  const wrap = document.getElementById('present-overlay');
+  if (wrap.requestFullscreen) wrap.requestFullscreen();
+  else if (wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
+}
+
+function reloadPresentFrame() {
+  const f = document.getElementById('present-frame');
+  if (f.src && f.src !== 'about:blank') { f.src = f.src; }
+}
+
+function openInTab() {
+  const url = PITCH_URLS[currentPitch];
+  if (url) window.open(url, '_blank');
+}
+
+// Guest link
+let lastGuestPass = '';
+function generateGuestLink() {
+  const pass = document.getElementById('glb-pass').value.trim() || GUEST_PITCH_PASSWORD;
+  lastGuestPass = pass;
+  const link = PITCH_PORTAL_URL + '?p=' + encodeURIComponent(pass);
+  document.getElementById('glb-result').textContent = link;
+  document.getElementById('glb-result').classList.add('on');
+  document.getElementById('glb-copy-row').classList.add('on');
+}
+function copyGLink() {
+  navigator.clipboard.writeText(document.getElementById('glb-result').textContent)
+    .then(() => toast('✓ Link copied'));
+}
+function copyGPass() {
+  navigator.clipboard.writeText(lastGuestPass || GUEST_PITCH_PASSWORD)
+    .then(() => toast('✓ Password copied'));
+}
+
+// ── KEY DOCS ────────────────────────────────────────────
+function shareDoc(name, slug, meta) {
+  const pass = slug + '-wt26';
+  const link = window.location.origin + '/docs/' + slug + '?p=' + pass;
+  document.getElementById('dlp-name').textContent = name;
+  document.getElementById('dlp-sub').textContent  = meta;
+  document.getElementById('dlp-link').textContent = link;
+  document.getElementById('dlp-pass').innerHTML   = '<span style="color:var(--t3)">Password:</span> <strong style="color:var(--t1)">' + pass + '</strong>';
+  document.getElementById('doc-link-popup').classList.add('on');
+}
+
+function closeDocPopup() {
+  document.getElementById('doc-link-popup').classList.remove('on');
+}
+
+function copyDocLink() {
+  navigator.clipboard.writeText(document.getElementById('dlp-link').textContent)
+    .then(() => toast('✓ Link copied'));
+}
+
+function copyDocPass() {
+  const passText = document.getElementById('dlp-pass').querySelector('strong').textContent;
+  navigator.clipboard.writeText(passText).then(() => toast('✓ Password copied'));
+}
+
+function toggleAddDoc() {
+  document.getElementById('add-doc-form').classList.toggle('on');
+}
+
+function saveNewDoc() {
+  const name = document.getElementById('new-doc-name').value.trim();
+  if (!name) return;
+  const vis   = document.getElementById('new-doc-vis').value;
+  const list  = document.getElementById('doc-list');
+  const icons = { conf:'🔒', int:'⚙️', pub:'📄' };
+  const badges = { conf:'dob-conf', int:'dob-int', pub:'dob-pub' };
+  const labels = { conf:'Confidential', int:'Internal', pub:'Public' };
+  const slug  = name.toLowerCase().replace(/\s+/g,'-') + '-' + Date.now();
+  const row   = document.createElement('div');
+  row.className = 'doc-row';
+  row.innerHTML = `
+    <div class="doc-icon">${icons[vis]}</div>
+    <div style="flex:1"><div class="doc-name">${name}</div><div class="doc-meta">Just added</div></div>
+    <span class="doc-badge ${badges[vis]}">${labels[vis]}</span>
+    <button class="doc-action" onclick="shareDoc('${name}','${slug}','Just added')">Share</button>`;
+  list.appendChild(row);
+  document.getElementById('new-doc-name').value = '';
+  document.getElementById('add-doc-form').classList.remove('on');
+  toast('✓ Document added');
+}
+
+// ── UTILS ───────────────────────────────────────────────
+function toast(msg) {
+  let t = document.getElementById('toast-el');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast-el';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--green);color:#07090A;font-weight:700;font-size:11px;padding:10px 20px;border-radius:9px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.4);font-family:inherit;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;transition:opacity 0.2s;pointer-events:none';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.opacity = '0', 2200);
+}
+
+// initialise present button state
+document.getElementById('present-btn').disabled = true;
+document.getElementById('open-tab-btn').disabled = true;
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closePresentation();
+    closeDocPopup();
+  }
+});
 </script>
 </body>
 </html>
